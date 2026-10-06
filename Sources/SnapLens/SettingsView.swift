@@ -90,6 +90,11 @@ private struct ShareSection: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         .onAppear { key = ShareConfig.key }
+        .onReceive(NotificationCenter.default.publisher(for: ShareConfig.changed)) { _ in
+            key = ShareConfig.key
+            server = UserDefaults.standard.string(forKey: "share.server") ?? ""
+            status = "✓ chave recebida do painel"
+        }
     }
 }
 

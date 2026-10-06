@@ -18,6 +18,7 @@ enum ShareExpiry: Int, CaseIterable, Identifiable {
 
 enum ShareConfig {
     static let defaultServer = "https://lens.ribeiros.click"
+    static let changed = Notification.Name("SnapLensShareConfigChanged")
 
     static var server: String {
         let s = UserDefaults.standard.string(forKey: "share.server") ?? ""

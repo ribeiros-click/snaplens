@@ -28,6 +28,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: URL scheme (snaplens://auth?key=…&server=…) — vindo do painel web
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            Trace.log("open url: \(url.scheme ?? "")://\(url.host ?? "")")
+            guard url.scheme == "snaplens", url.host == "auth",
+                  let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+                  let key = items.first(where: { $0.name == "key" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  key.hasPrefix("lens_"), key.count > 20 else {
+                Toast.show("Link de autenticação inválido", symbol: "exclamationmark.triangle.fill")
+                continue
+            }
+            if let server = items.first(where: { $0.name == "server" })?.value, server.hasPrefix("https://") {
+                UserDefaults.standard.set(server, forKey: "share.server")
+            }
+            Keychain.set(key, account: "share.key")
+            NotificationCenter.default.post(name: ShareConfig.changed, object: nil)
+            Toast.show("Chave recebida, testando conexão…", symbol: "link")
+            Task {
+                do {
+                    let msg = try await ShareClient.ping()
+                    NSSound(named: "Pop")?.play()
+                    Toast.show("SnapLens conectado · \(msg)", symbol: "checkmark.circle.fill")
+                } catch {
+                    Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+                }
+            }
+        }
+    }
+
     // MARK: Gravação
 
     private var recTimer: Timer?

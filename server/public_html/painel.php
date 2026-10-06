@@ -47,7 +47,9 @@ page_header('Painel');
 <?php if ($newKey): ?>
   <div class="note"><strong>Copie agora — ela não será mostrada de novo.</strong>
     <div class="key"><code id="k"><?= h($newKey) ?></code> <button class="btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('k').textContent).then(()=>this.textContent='Copiado ✓')">Copiar</button></div>
-    Cole em <em>SnapLens → Ajustes → Compartilhar por link público → Chave de API</em> e clique em “Testar conexão”.</div>
+    <p style="margin:12px 0 6px"><a class="btn primary" href="snaplens://auth?key=<?= rawurlencode($newKey) ?>&amp;server=<?= rawurlencode($base) ?>">Abrir no SnapLens e conectar</a>
+      <span class="muted">— o app recebe a chave sozinho (precisa do SnapLens 1.4+ instalado).</span></p>
+    Ou cole manualmente em <em>SnapLens → Ajustes → Compartilhar por link público → Chave de API</em> e clique em “Testar conexão”.</div>
 <?php else: ?>
   <p>Chave ativa terminando em <code>…<?= h((string) $u['api_key_hint']) ?></code>. Se a perdeu, gere outra (a atual deixa de funcionar).</p>
 <?php endif; ?>

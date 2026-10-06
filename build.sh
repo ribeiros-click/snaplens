@@ -35,6 +35,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>NSHumanReadableCopyright</key><string>© 2026 José Junior</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
+  <key>CFBundleURLTypes</key><array><dict>
+    <key>CFBundleURLName</key><string>com.jjunior.snaplens.auth</string>
+    <key>CFBundleURLSchemes</key><array><string>snaplens</string></array>
+  </dict></array>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSMicrophoneUsageDescription</key><string>O SnapLens grava o microfone junto com a gravação de tela, se você ativar em Ajustes.</string>
   <key>NSScreenCaptureUsageDescription</key><string>O SnapLens precisa gravar a tela para capturar screenshots.</string>
