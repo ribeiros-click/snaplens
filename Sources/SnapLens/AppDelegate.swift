@@ -13,6 +13,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Trace.log("=== SnapLens iniciado · macOS \(ProcessInfo.processInfo.operatingSystemVersionString) · telas=\(NSScreen.screens.count)")
+        for n in [NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification] {
+            NotificationCenter.default.addObserver(forName: n, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { Trace.log("app \(n == NSApplication.didBecomeActiveNotification ? "ATIVO" : "inativo") · overlayVisível=\(OverlayWindow.anyVisible)") }
+            }
+        }
         NSApp.applicationIconImage = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
         setupMenu()
         setupHotKeys()
@@ -112,6 +118,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let cancelItem = NSMenuItem(title: "Cancelar captura em andamento", action: #selector(cancelCapture), keyEquivalent: "")
         cancelItem.target = self
         menu.addItem(cancelItem)
+        let diag = NSMenu()
+        let d1 = NSMenuItem(title: "Revelar log no Finder", action: #selector(revealLog), keyEquivalent: ""); d1.target = self; diag.addItem(d1)
+        let d2 = NSMenuItem(title: "Copiar últimas 200 linhas do log", action: #selector(copyLog), keyEquivalent: ""); d2.target = self; diag.addItem(d2)
+        let diagItem = NSMenuItem(title: "Diagnóstico", action: nil, keyEquivalent: ""); diagItem.submenu = diag
+        menu.addItem(diagItem)
         let prefs = NSMenuItem(title: "Ajustes…", action: #selector(showSettings), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
@@ -172,6 +183,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ])
     }
 
+    @objc func revealLog() { NSWorkspace.shared.activateFileViewerSelecting([Trace.fileURL]) }
+    @objc func copyLog() { copyText(Trace.tail(200)); Toast.show("Log copiado — cole no chat", symbol: "doc.on.doc") }
+
     @objc func cancelCapture() { overlay?.dismiss(); overlay = nil; OverlayWindow.closeAll() }
 
     @objc func captureRegion() { Task { await startCapture(region: true, auto: nil) } }
@@ -183,13 +197,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startCapture(region: Bool, auto: ShotAction?) async {
         // Atalho pressionado de novo com o overlay aberto: cancela em vez de empilhar outro.
-        if (overlay?.isActive ?? false) || OverlayWindow.anyVisible { cancelCapture(); return }
+        Trace.log("startCapture region=\(region) auto=\(String(describing: auto)) overlayActive=\(overlay?.isActive ?? false) anyVisible=\(OverlayWindow.anyVisible) starting=\(isStartingCapture)")
+        if (overlay?.isActive ?? false) || OverlayWindow.anyVisible { Trace.log("startCapture: overlay já aberto → cancelando"); cancelCapture(); return }
         guard !isStartingCapture else { return }
         isStartingCapture = true
         defer { isStartingCapture = false }
         Toast.dismiss()
         let screen = Capture.screenUnderMouse()
-        guard let image = await Capture.screenImage(for: screen) else {
+        let t0 = Date()
+        let captured = await Capture.screenImage(for: screen)
+        Trace.log("screenImage: \(captured.map { "\($0.width)x\($0.height)" } ?? "nil") em \(Int(Date().timeIntervalSince(t0) * 1000))ms")
+        guard let image = captured else {
             CGRequestScreenCaptureAccess()
             Toast.show("Permita “Gravação de Tela” ao SnapLens em Ajustes e tente de novo", symbol: "exclamationmark.triangle.fill")
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
@@ -210,6 +228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func finish(_ action: ShotAction, data: Data) async {
+        Trace.log("finish action=\(action) bytes=\(data.count)")
         let item = store.addImage(data: data, kind: .screenshot)
         switch action {
         case .copy:
@@ -258,6 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSSound(named: "Pop")?.play()
             Toast.show("Link copiado · \(expiryText(it.shareExpires))", symbol: "link")
         } catch {
+            Trace.log("share ERRO: \(error.localizedDescription)")
             Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
         }
     }

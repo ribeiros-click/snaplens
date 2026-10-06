@@ -15,6 +15,7 @@ enum HotKeys {
         let hkID = EventHotKeyID(signature: OSType(0x534E4150), id: id) // 'SNAP'
         let status = RegisterEventHotKey(UInt32(keyCode), UInt32(modifiers), hkID, GetApplicationEventTarget(), 0, &ref)
         if let ref { refs[id] = ref }
+        if status != noErr { Trace.log("RegisterEventHotKey id=\(id) key=\(keyCode) mods=\(modifiers) FALHOU status=\(status)") }
         return status == noErr
     }
 
@@ -32,6 +33,7 @@ enum HotKeys {
             GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
                               nil, MemoryLayout<EventHotKeyID>.size, nil, &hkID)
             if let h = HotKeys.handlers[hkID.id] {
+                Trace.log("hotkey id=\(hkID.id) pressionado")
                 DispatchQueue.main.async { h() }
             }
             return noErr

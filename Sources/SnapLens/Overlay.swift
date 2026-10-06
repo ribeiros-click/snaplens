@@ -42,6 +42,8 @@ final class OverlayWindow: NSWindow {
     /// Fecha TODA janela de overlay existente, mesmo que alguma referência tenha se perdido.
     /// É a garantia final contra "tela presa": qualquer caminho de cancelamento passa por aqui.
     @MainActor static func closeAll() {
+        let n = NSApp.windows.filter { $0 is OverlayWindow && $0.isVisible }.count
+        if n > 0 { Trace.log("OverlayWindow.closeAll: \(n) janela(s) visível(is)") }
         for w in NSApp.windows where w is OverlayWindow {
             w.orderOut(nil)
             w.contentView = nil
@@ -65,7 +67,8 @@ final class CaptureOverlay {
 
     func present(screen: NSScreen, image: CGImage, autoAction: ShotAction?,
                  onFinish: @escaping (ShotAction, Data) -> Void) {
-        dismiss() // nunca empilha dois overlays
+        Trace.log("present: screen=\(screen.frame) image=\(image.width)x\(image.height) auto=\(String(describing: autoAction)) active=\(NSApp.isActive)")
+        dismiss(reason: "present") // nunca empilha dois overlays
         let w = OverlayWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         w.setFrame(screen.frame, display: false)
         // Abaixo da barra de menus e do Dock: o usuário nunca fica sem saída (Cmd-Tab, Dock e menu continuam acessíveis).
@@ -79,7 +82,8 @@ final class CaptureOverlay {
         let v = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size), image: image, autoAction: autoAction)
         // Captura a própria janela: fecha mesmo se `self.window` já tiver sido zerado por outro caminho.
         v.onFinish = { [weak self, weak w] action, data in
-            self?.dismiss()
+            Trace.log("onFinish: action=\(action) data=\(data?.count ?? 0)B")
+            self?.dismiss(reason: "onFinish")
             w?.orderOut(nil)
             OverlayWindow.closeAll()
             if let data { onFinish(action, data) }
@@ -92,16 +96,18 @@ final class CaptureOverlay {
         w.makeKeyAndOrderFront(nil)
         w.orderFrontRegardless()
         w.makeFirstResponder(v)
+        Trace.log("present: janela visível=\(w.isVisible) key=\(w.isKeyWindow) appActive=\(NSApp.isActive) firstResponder=\(w.firstResponder === v)")
 
         // Saída de emergência: Esc global (não depende de a janela ter o foco do teclado).
         HotKeys.register(id: Self.escapeHotKeyID, keyCode: 53, modifiers: 0) { [weak self] in
-            if let v = self?.view { v.handleEscape() } else { self?.dismiss() }
+            Trace.log("hotkey Esc global: view=\(self?.view != nil)")
+            if let v = self?.view { v.handleEscape() } else { self?.dismiss(reason: "esc-sem-view") }
         }
         // Mudança na configuração de telas invalida a geometria: fecha. (Perder o foco NÃO fecha mais:
         // isso disparava durante a abertura e deixava uma janela órfã impossível de fechar.)
         observers = [
             NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.dismiss() }
+                MainActor.assumeIsolated { self?.dismiss(reason: "screenParametersChanged") }
             },
         ]
 
@@ -114,7 +120,7 @@ final class CaptureOverlay {
         watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { OverlayWindow.closeAll(); return }
-                if Date().timeIntervalSince(self.lastActivity) > 60 { self.dismiss() }
+                if Date().timeIntervalSince(self.lastActivity) > 60 { self.dismiss(reason: "watchdog-60s") }
             }
         }
     }
@@ -126,7 +132,8 @@ final class CaptureOverlay {
         return v
     }
 
-    func dismiss() {
+    func dismiss(reason: String = "unspecified") {
+        if window != nil || OverlayWindow.anyVisible { Trace.log("dismiss(\(reason)): window=\(window != nil) anyVisible=\(OverlayWindow.anyVisible)") }
         HotKeys.unregister(id: Self.escapeHotKeyID)
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         observers = []
@@ -313,6 +320,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
 
     override func mouseDown(with event: NSEvent) {
         let p = clamp(convert(event.locationInWindow, from: nil))
+        Trace.log("mouseDown p=\(Int(p.x)),\(Int(p.y)) sel=\(selection.map { "\(Int($0.width))x\(Int($0.height))" } ?? "nil") tool=\(String(describing: tool)) mode=\(mode)")
         if let s = selection {
             if tool == .text, s.contains(p) {
                 beginText(at: p)
@@ -359,6 +367,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     }
 
     override func mouseUp(with event: NSEvent) {
+        Trace.log("mouseUp mode=\(mode) sel=\(selection.map { "\(Int($0.width))x\(Int($0.height))" } ?? "nil")")
         defer { mode = .idle; needsDisplay = true }
         guard let s = selection else { return }
         if s.width < 4 || s.height < 4 {
@@ -373,6 +382,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     // MARK: Cancelamento
 
     func handleEscape() {
+        Trace.log("handleEscape textField=\(textField != nil)")
         if textField != nil {
             textField?.stringValue = ""
             commitText()
@@ -445,6 +455,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     // MARK: Keyboard
 
     override func keyDown(with event: NSEvent) {
+        Trace.log("keyDown code=\(event.keyCode) mods=\(event.modifierFlags.rawValue)")
         let cmd = event.modifierFlags.contains(.command)
         switch event.keyCode {
         case 53: handleEscape()                                 // Esc
@@ -624,6 +635,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     // MARK: Output
 
     private func finish(_ action: ShotAction) {
+        Trace.log("finish(\(action)) sel=\(selection.map { "\(Int($0.width))x\(Int($0.height))" } ?? "nil") annotations=\(annotations.count)")
         commitText()
         onFinish?(action, renderSelection(annotated: action != .ocr && action != .describe))
     }
