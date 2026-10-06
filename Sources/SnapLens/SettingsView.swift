@@ -36,6 +36,7 @@ struct SettingsView: View {
                 Text("Grava a tela inteira onde está o mouse, em MP4. Com os dois desligados, o vídeo fica sem áudio. Os vídeos vão para a Biblioteca.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            ShareSection()
             Section("Provedor de IA") {
                 Picker("Provedor ativo", selection: $active) {
                     Text("Nativo (Apple Vision, offline)").tag("")
@@ -51,7 +52,41 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 840)
+        .frame(width: 520, height: 900)
+    }
+}
+
+private struct ShareSection: View {
+    @AppStorage("share.server") private var server = ""
+    @AppStorage("share.expiry") private var expiry = ShareExpiry.d7.rawValue
+    @State private var key = ""
+    @State private var status: String?
+    @State private var testing = false
+
+    var body: some View {
+        Section("Compartilhar por link público") {
+            TextField("Servidor", text: $server, prompt: Text(ShareConfig.defaultServer))
+            SecureField("Chave de upload", text: $key)
+                .onChange(of: key) { _, v in Keychain.set(v.trimmingCharacters(in: .whitespacesAndNewlines), account: "share.key") }
+            Picker("Validade padrão do link", selection: $expiry) {
+                ForEach(ShareExpiry.allCases) { Text($0.title).tag($0.rawValue) }
+            }
+            HStack {
+                Button(testing ? "Testando…" : "Testar conexão") {
+                    testing = true
+                    Task {
+                        do { status = "✓ " + (try await ShareClient.ping()) }
+                        catch { status = "✗ " + error.localizedDescription }
+                        testing = false
+                    }
+                }
+                .disabled(testing || key.isEmpty)
+                if let status { Text(status).font(.caption).foregroundStyle(status.hasPrefix("✓") ? .green : .red) }
+            }
+            Text("O botão “link” no overlay e na Biblioteca envia a imagem ao servidor e copia a URL. Links expiram sozinhos e podem ser revogados na Biblioteca. A chave fica no Keychain; ela está em server/config.php do projeto.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onAppear { key = ShareConfig.key }
     }
 }
 

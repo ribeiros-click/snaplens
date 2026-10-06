@@ -8,6 +8,8 @@ struct HistoryView: View {
     var onCopyImage: (Item) -> Void
     var onCopyText: (String) -> Void
     var onPlay: (Item) -> Void
+    var onShare: (Item) -> Void
+    var onRevoke: (Item) -> Void
 
     enum Tab: String, CaseIterable { case images = "Imagens", videos = "Vídeos", texts = "Texto" }
     @State private var tab: Tab = .images
@@ -61,7 +63,10 @@ struct HistoryView: View {
             else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
-                        ForEach(images) { item in ImageCard(item: item, store: store, onDescribe: onDescribe, onOCR: onOCR, onCopy: onCopyImage) }
+                        ForEach(images) { item in
+                            ImageCard(item: item, store: store, onDescribe: onDescribe, onOCR: onOCR, onCopy: onCopyImage,
+                                      onShare: onShare, onRevoke: onRevoke, onCopyText: onCopyText)
+                        }
                     }
                     .padding(14)
                 }
@@ -106,6 +111,9 @@ private struct ImageCard: View {
     var onDescribe: (Item) -> Void
     var onOCR: (Item) -> Void
     var onCopy: (Item) -> Void
+    var onShare: (Item) -> Void
+    var onRevoke: (Item) -> Void
+    var onCopyText: (String) -> Void
     @State private var thumb: NSImage?
 
     var body: some View {
@@ -117,11 +125,28 @@ private struct ImageCard: View {
             .frame(height: 140)
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .onTapGesture(count: 2) { if let u = store.url(for: item) { NSWorkspace.shared.open(u) } }
+            if let link = item.shareURL {
+                HStack(spacing: 6) {
+                    Image(systemName: "link").foregroundStyle(.tint)
+                    Text(link.replacingOccurrences(of: "https://", with: "")).lineLimit(1).truncationMode(.middle)
+                    Text("· \(expiryText(item.shareExpires))").foregroundStyle(.secondary)
+                    Spacer()
+                    Button { onCopyText(link) } label: { Image(systemName: "doc.on.doc") }.help("Copiar link")
+                    Button { if let u = URL(string: link) { NSWorkspace.shared.open(u) } } label: { Image(systemName: "safari") }.help("Abrir no navegador")
+                    Button(role: .destructive) { onRevoke(item) } label: { Image(systemName: "link.badge.plus").symbolRenderingMode(.hierarchical) }.help("Revogar link")
+                }
+                .font(.caption)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, 2)
+            }
             HStack {
                 Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(date: .omitted, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button { onCopy(item) } label: { Image(systemName: "doc.on.doc") }.help("Copiar imagem")
+                if item.shareURL == nil {
+                    Button { onShare(item) } label: { Image(systemName: "link") }.help("Compartilhar por link público")
+                }
                 Button { onDescribe(item) } label: { Image(systemName: "sparkles") }.help("Descrever com IA")
                 Button { onOCR(item) } label: { Image(systemName: "text.viewfinder") }.help("Extrair texto (OCR)")
                 Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help("Exportar…")

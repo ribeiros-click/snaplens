@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnapLens — screenshots, OCR e IA para macOS</title>
+<meta name="description" content="SnapLens: app nativo de barra de menu para macOS com captura de tela anotada, OCR local, descrição por IA, gravação de tela, biblioteca e links públicos com validade.">
+<meta property="og:title" content="SnapLens para macOS">
+<meta property="og:description" content="Capture, anote, extraia texto e compartilhe com link que expira.">
+<meta property="og:image" content="https://lens.ribeiros.click/assets/img/overlay.png">
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28"> SnapLens</a>
+  <nav>
+    <a href="#recursos">Recursos</a>
+    <a href="#prints">Prints</a>
+    <a href="#atalhos">Atalhos</a>
+    <a href="#compartilhar">Links públicos</a>
+    <a href="#baixar">Baixar</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero wrap">
+    <img class="icon" src="/assets/icon.png" alt="Ícone do SnapLens" width="128" height="128">
+    <h1>Capture, anote e <span>compartilhe</span><br>sem sair do teclado.</h1>
+    <p>SnapLens é um app nativo de barra de menu para macOS: screenshot de seleção com anotações, OCR offline, descrição por IA, gravação de tela e links públicos que expiram sozinhos.</p>
+    <div class="cta">
+      <a class="btn primary big" href="/download/SnapLens.dmg" id="dl">⬇︎ Baixar para macOS</a>
+      <a class="btn big" href="#prints">Ver prints</a>
+    </div>
+    <p class="req">macOS 15 ou mais recente · Apple Silicon · gratuito e sem conta</p>
+    <div class="hero-shot"><img src="/assets/img/overlay.png" alt="Overlay de captura do SnapLens com seleção e anotações" width="1440" height="900"></div>
+  </section>
+
+  <section id="recursos" class="wrap">
+    <h2>Tudo que um screenshot precisa</h2>
+    <p class="lead">Rápido como o Lightshot, nativo como o macOS.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">⌨️</div><h3>Atalho global</h3><p>⌥⌘P congela a tela e abre a seleção. Todos os atalhos são configuráveis.</p></div>
+      <div class="card"><div class="ic">✏️</div><h3>Anotações</h3><p>Retângulo, elipse, linha, seta, caneta e texto, com 7 cores e desfazer.</p></div>
+      <div class="card"><div class="ic">🔤</div><h3>OCR local</h3><p>Extrai o texto da imagem com o Apple Vision — offline, sem enviar nada.</p></div>
+      <div class="card"><div class="ic">✨</div><h3>Descrição por IA</h3><p>Claude, OpenAI, DeepSeek ou qualquer API compatível. Sem chave, usa o modo nativo.</p></div>
+      <div class="card"><div class="ic">🎥</div><h3>Gravação de tela</h3><p>MP4 com áudio do sistema e/ou microfone, direto da barra de menu.</p></div>
+      <div class="card"><div class="ic">🗂️</div><h3>Biblioteca</h3><p>Histórico de screenshots, vídeos, textos copiados e resultados de OCR, com busca e exportação.</p></div>
+      <div class="card"><div class="ic">🔗</div><h3>Links públicos</h3><p>Um clique envia a imagem para lens.ribeiros.click e copia o link. Validade de 1 hora a 30 dias, ou permanente.</p></div>
+      <div class="card"><div class="ic">🔒</div><h3>Privado por padrão</h3><p>Nada sai do Mac sem você pedir. Chaves ficam no Keychain. Senhas copiadas são ignoradas.</p></div>
+    </div>
+  </section>
+
+  <section id="prints" class="wrap">
+    <h2>Prints</h2>
+    <p class="lead">Interface real do app, renderizada sobre um desktop de demonstração.</p>
+    <div class="shots">
+      <div class="shot-row">
+        <img src="/assets/img/overlay.png" alt="Overlay de captura com seleção, seta, retângulo e texto" loading="lazy">
+        <div><h3>Overlay de captura</h3><p>Selecione, redimensione pelas alças, anote e escolha o destino: copiar, salvar, OCR, IA ou link público. Esc, botão direito ou o botão Cancelar saem a qualquer momento.</p></div>
+      </div>
+      <div class="shot-row">
+        <img src="/assets/img/biblioteca.png" alt="Janela Biblioteca com screenshots e um link compartilhado" loading="lazy">
+        <div><h3>Biblioteca</h3><p>Tudo que você capturou ou copiou, em um só lugar. Itens compartilhados mostram o link, a validade e um botão para revogar.</p></div>
+      </div>
+      <div class="shot-row">
+        <img src="/assets/img/ajustes.png" alt="Janela de Ajustes com atalhos, compartilhamento e provedores de IA" loading="lazy">
+        <div><h3>Ajustes</h3><p>Atalhos, iniciar com o macOS, gravação, servidor de links e provedores de IA — cada um com sua chave, modelo e URL.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="atalhos" class="wrap">
+    <h2>Atalhos padrão</h2>
+    <p class="lead">Troque qualquer um em Ajustes → Atalhos globais.</p>
+    <table class="keys">
+      <tr><td>Capturar seleção</td><td><kbd>⌥ ⌘ P</kbd></td></tr>
+      <tr><td>Capturar tela inteira</td><td><kbd>⌃ ⌥ F</kbd></td></tr>
+      <tr><td>OCR de uma seleção</td><td><kbd>⌃ ⌥ T</kbd></td></tr>
+      <tr><td>Descrever seleção com IA</td><td><kbd>⌃ ⌥ D</kbd></td></tr>
+      <tr><td>Gravar / parar gravação</td><td><kbd>⌃ ⌥ R</kbd></td></tr>
+      <tr><td>Biblioteca</td><td><kbd>⌃ ⌥ H</kbd></td></tr>
+      <tr><td>No overlay: copiar · salvar · desfazer · cancelar</td><td><kbd>⏎</kbd> <kbd>⌘ S</kbd> <kbd>⌘ Z</kbd> <kbd>Esc</kbd></td></tr>
+    </table>
+  </section>
+
+  <section id="compartilhar" class="wrap">
+    <h2>Links públicos com validade</h2>
+    <p class="lead">O botão 🔗 no overlay ou na Biblioteca envia a imagem para este servidor e copia a URL.</p>
+    <div class="how">
+      <div><strong>Escolha a validade</strong><br><span style="color:var(--muted)">1 hora, 1 dia, 7 dias, 30 dias ou sem expirar — padrão configurável.</span></div>
+      <div><strong>Compartilhe</strong><br><span style="color:var(--muted)">O link abre uma página limpa com a imagem, tamanho, prazo e botões de baixar e copiar.</span></div>
+      <div><strong>Expira sozinho</strong><br><span style="color:var(--muted)">Passado o prazo, o arquivo é apagado do servidor e o link mostra “indisponível”.</span></div>
+      <div><strong>Revogue quando quiser</strong><br><span style="color:var(--muted)">Na Biblioteca, um clique remove o link e a imagem na hora.</span></div>
+    </div>
+  </section>
+
+  <section id="baixar" class="wrap" style="text-align:center">
+    <h2>Baixar</h2>
+    <p class="lead">Arraste para Aplicativos. Na primeira abertura, use clique direito → Abrir e permita “Gravação de Tela”.</p>
+    <a class="btn primary big" href="/download/SnapLens.dmg">⬇︎ SnapLens.dmg</a>
+  </section>
+</main>
+
+<footer class="foot">SnapLens · criado por <a href="mailto:joserribeiro26@gmail.com">joserribeiro26@gmail.com</a> · © 2026</footer>
+</body>
+</html>

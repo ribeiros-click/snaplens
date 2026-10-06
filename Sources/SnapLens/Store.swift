@@ -15,6 +15,11 @@ struct Item: Codable, Identifiable, Equatable {
     var file: String?
     var source: String?
     var duration: Double?
+    // Link público (lens.ribeiros.click)
+    var shareID: String?
+    var shareURL: String?
+    var shareExpires: Date?
+    var shareToken: String?
 }
 
 @MainActor
@@ -29,9 +34,9 @@ final class Store: ObservableObject {
     let videosDir: URL
     private var indexURL: URL { dir.appendingPathComponent("history.json") }
 
-    init() {
+    init(dir customDir: URL? = nil) {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        dir = base.appendingPathComponent("SnapLens", isDirectory: true)
+        dir = customDir ?? base.appendingPathComponent("SnapLens", isDirectory: true)
         imagesDir = dir.appendingPathComponent("images", isDirectory: true)
         videosDir = dir.appendingPathComponent("videos", isDirectory: true)
         try? FileManager.default.createDirectory(at: imagesDir, withIntermediateDirectories: true)
@@ -72,6 +77,12 @@ final class Store: ObservableObject {
         }
         save()
         return item
+    }
+
+    func update(_ item: Item) {
+        guard let i = items.firstIndex(where: { $0.id == item.id }) else { return }
+        items[i] = item
+        save()
     }
 
     func remove(_ item: Item) {

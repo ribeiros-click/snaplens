@@ -231,6 +231,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await runOCR(on: item)
         case .describe:
             await runDescribe(on: item)
+        case .share:
+            await share(item)
+        }
+    }
+
+    // MARK: Link público
+
+    func share(_ item: Item) async {
+        guard ShareConfig.isConfigured else {
+            Toast.show("Configure a chave de compartilhamento em Ajustes", symbol: "link.badge.plus")
+            showSettings()
+            return
+        }
+        guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
+        Toast.show("Enviando para \(ShareConfig.server.replacingOccurrences(of: "https://", with: ""))…", symbol: "link")
+        do {
+            let r = try await ShareClient.upload(data: data, expiry: ShareConfig.expiry)
+            var it = item
+            it.shareID = r.id
+            it.shareURL = r.url
+            it.shareExpires = r.expires_at.map { Date(timeIntervalSince1970: $0) }
+            it.shareToken = r.delete_token
+            store.update(it)
+            copyText(r.url)
+            NSSound(named: "Pop")?.play()
+            Toast.show("Link copiado · \(expiryText(it.shareExpires))", symbol: "link")
+        } catch {
+            Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+        }
+    }
+
+    func revoke(_ item: Item) async {
+        guard let id = item.shareID, let token = item.shareToken else { return }
+        do {
+            try await ShareClient.revoke(id: id, token: token)
+            var it = item
+            it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil
+            store.update(it)
+            Toast.show("Link revogado", symbol: "link.badge.plus")
+        } catch {
+            Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
         }
     }
 
@@ -271,7 +312,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         if settingsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 840),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 900),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
             w.title = "SnapLens — Ajustes"
             w.contentView = NSHostingView(rootView: SettingsView())
@@ -298,6 +339,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Toast.show("Texto copiado")
             }, onPlay: { [weak self] item in
                 if let u = self?.store.url(for: item) { NSWorkspace.shared.open(u) }
+            }, onShare: { [weak self] item in
+                Task { await self?.share(item) }
+            }, onRevoke: { [weak self] item in
+                Task { await self?.revoke(item) }
             })
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
