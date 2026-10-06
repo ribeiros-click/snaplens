@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de Segurança · SnapLens</title>
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28"> SnapLens</a>
+  <nav><a href="/#recursos">Recursos</a><a href="/#baixar">Baixar</a><a href="/politicas/">Políticas</a></nav>
+</header>
+<main class="doc">
+  <h1>Política de Segurança e Divulgação Responsável</h1>
+  <p class="updated">Versão 1.0 · vigente a partir de 6 de outubro de 2026</p>
+
+  <h2>1. Medidas em vigor</h2>
+  <h3>No App</h3>
+  <ul>
+    <li>Nenhuma transmissão de dados sem ação explícita do usuário (compartilhar, descrever com IA).</li>
+    <li>Chaves guardadas no Keychain do macOS, nunca em arquivos de texto.</li>
+    <li>Conteúdo confidencial da área de transferência (sinalizado por gerenciadores de senha) é ignorado.</li>
+    <li>OCR e classificação de imagem executados localmente pelo Vision da Apple.</li>
+  </ul>
+  <h3>No Serviço</h3>
+  <ul>
+    <li>HTTPS obrigatório, com redirecionamento de HTTP.</li>
+    <li>Upload e exclusão autenticados por chave secreta enviada em cabeçalho, comparada em tempo constante.</li>
+    <li>Identificadores de link com 10 caracteres aleatórios (≈ 57 bits), gerados com fonte criptográfica.</li>
+    <li>Tokens de revogação armazenados apenas como hash SHA-256.</li>
+    <li>Arquivos e metadados fora do alcance direto do servidor web; servidos apenas pelo código do Serviço após validação de existência e prazo.</li>
+    <li>Validação do tipo real da imagem (não apenas da extensão); limite de 25 MB.</li>
+    <li>Cabeçalhos <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: SAMEORIGIN</code>, <code>Referrer-Policy: no-referrer</code>, <code>noindex</code> nas páginas de link.</li>
+    <li>Exclusão automática de conteúdo expirado (a cada acesso, a cada upload e diariamente).</li>
+  </ul>
+
+  <h2>2. O que o Serviço não oferece</h2>
+  <p>Para transparência: não há proteção por senha nos links, não há autenticação de quem visualiza, e não há criptografia do arquivo em repouso além da aplicada pelo provedor de hospedagem. Qualquer pessoa com a URL pode ver a imagem enquanto o link estiver ativo.</p>
+
+  <h2>3. Divulgação responsável</h2>
+  <p>Se você encontrar uma vulnerabilidade no App ou no Serviço, pedimos que:</p>
+  <ul>
+    <li>Envie os detalhes para <a href="mailto:contato@ribeiros.click?subject=Seguran%C3%A7a%20SnapLens">contato@ribeiros.click</a> com o assunto “Segurança SnapLens”, incluindo passos para reproduzir.</li>
+    <li>Não acesse, altere ou apague dados de terceiros além do mínimo necessário para demonstrar o problema.</li>
+    <li>Não execute ataques de negação de serviço nem testes automatizados em volume.</li>
+    <li>Aguarde nossa correção antes de divulgar publicamente. Confirmaremos o recebimento em até 5 dias úteis e daremos retorno sobre a correção em até 30 dias.</li>
+  </ul>
+  <p>Não há programa de recompensas. Pesquisadores que seguirem estas regras não serão alvo de medidas legais por parte do desenvolvedor e, se desejarem, serão creditados.</p>
+
+  <h2>4. Resposta a incidentes</h2>
+  <p>Em caso de incidente de segurança que afete dados pessoais, o desenvolvedor irá: conter o incidente e revogar chaves comprometidas; avaliar o impacto; comunicar a Autoridade Nacional de Proteção de Dados (ANPD) e os titulares afetados quando houver risco relevante, nos termos do art. 48 da LGPD; e publicar um resumo nesta página.</p>
+
+  <h2>5. Dependências e atualizações</h2>
+  <p>O App é distribuído em DMG assinado localmente (sem notarização da Apple no momento); verifique sempre que o download veio de lens.ribeiros.click ou do repositório oficial. O Serviço roda em PHP mantido pelo provedor de hospedagem, que aplica as atualizações de segurança da plataforma.</p>
+</main>
+<footer class="foot">SnapLens · contato: <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> · © 2026
+  <nav><a href="/politicas/">Todas as políticas</a></nav>
+</footer>
+</body>
+</html>

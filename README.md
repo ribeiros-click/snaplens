@@ -39,4 +39,4 @@ Deploy: `./server/deploy.sh` (token em `.hostinger/token` ou `HOSTINGER_API_TOKE
 Baixe o `.dmg` em Releases, arraste o SnapLens para Applications. Se o macOS bloquear a abertura (build sem notarização), use clique direito → Abrir. Permita "Gravação de Tela" (e Microfone, se for usar) em Ajustes do Sistema → Privacidade e Segurança.
 
 ## Autor
-Criado por joserribeiro26@gmail.com
+Criado por contato@ribeiros.click

@@ -63,7 +63,9 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
   </a>
 <?php endif; ?>
 </main>
-<footer class="foot">Compartilhado com <a href="/">SnapLens</a> para macOS</footer>
+<footer class="foot">Compartilhado com <a href="/">SnapLens</a> para macOS
+  <nav><a href="/politicas/privacidade.html">Privacidade</a><a href="/politicas/termos.html">Termos</a><a href="mailto:contato@ribeiros.click?subject=Den%C3%BAncia%20de%20conte%C3%BAdo%20<?= $h($id ?? '') ?>">Denunciar conteúdo</a></nav>
+</footer>
 <script>
 document.getElementById('copy')?.addEventListener('click', async (e) => {
   const b = e.currentTarget;

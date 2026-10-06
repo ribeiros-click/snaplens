@@ -153,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: Actions
 
     @objc func showAbout() {
-        let email = "joserribeiro26@gmail.com"
+        let email = "contato@ribeiros.click"
         let para = NSMutableParagraphStyle()
         para.alignment = .center
         let base: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor, .paragraphStyle: para]

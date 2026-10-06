@@ -64,7 +64,8 @@ api -X POST "$API/hosting/v1/accounts/$USERNAME/websites/$DOMAIN/ssl/setup" -d '
 api -X PATCH "$API/hosting/v1/accounts/$USERNAME/websites/$DOMAIN/ssl/https-redirect/toggle" -d '{"is_enabled":true}' >/dev/null || true
 
 # 8. Cron diário de limpeza de links expirados
-if ! api "$API/hosting/v1/accounts/$USERNAME/cron-jobs" | grep -q "$DOMAIN/public_html/cleanup.php"; then
+# A listagem devolve as barras escapadas (\/), por isso a comparação ignora barras.
+if ! api "$API/hosting/v1/accounts/$USERNAME/cron-jobs" | tr -d '\\/' | grep -q "${DOMAIN}public_htmlcleanup.php"; then
   api -X POST "$API/hosting/v1/accounts/$USERNAME/cron-jobs" -d "{\"command\":\"php /home/$USERNAME/domains/$DOMAIN/public_html/cleanup.php\",\"time\":\"0 3 * * *\"}" || true; echo
 fi
 

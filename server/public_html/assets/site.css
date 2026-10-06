@@ -81,3 +81,23 @@ body.share { display: flex; flex-direction: column; min-height: 100vh; }
 .gone h1 { font-size: 26px; margin: 0 0 10px; }
 .gone p { color: var(--muted); margin: 0 0 22px; }
 @media (max-width: 700px) { .share .bar { flex-wrap: wrap; } .share .bar .actions { margin-left: 0; width: 100%; } }
+
+/* Documentos (políticas) */
+.doc { max-width: 820px; margin: 0 auto; padding: 48px 20px 64px; }
+.doc h1 { font-size: 36px; letter-spacing: -.02em; margin: 0 0 6px; }
+.doc .updated { color: var(--muted); font-size: 14px; margin: 0 0 32px; }
+.doc h2 { font-size: 22px; margin: 36px 0 10px; }
+.doc h3 { font-size: 17px; margin: 24px 0 8px; }
+.doc p, .doc li { color: var(--text); line-height: 1.65; }
+.doc li { margin: 4px 0; }
+.doc table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+.doc th, .doc td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.doc th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.doc .note { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; padding: 14px 16px; margin: 18px 0; }
+.doc code { font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+.policies { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 24px; }
+.policies a { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; text-decoration: none; }
+.policies a:hover { border-color: var(--accent); }
+.policies strong { display: block; margin-bottom: 4px; }
+.policies span { color: var(--muted); font-size: 14px; }
+.foot nav { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }

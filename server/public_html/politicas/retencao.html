@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Política de Retenção de Dados · SnapLens</title>
+<link rel="icon" href="/assets/icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28"> SnapLens</a>
+  <nav><a href="/#recursos">Recursos</a><a href="/#baixar">Baixar</a><a href="/politicas/">Políticas</a></nav>
+</header>
+<main class="doc">
+  <h1>Política de Retenção de Dados</h1>
+  <p class="updated">Versão 1.0 · vigente a partir de 6 de outubro de 2026</p>
+
+  <p>Esta política define por quanto tempo cada categoria de dado é mantida pelo App e pelo Serviço, e como a exclusão acontece.</p>
+
+  <h2>1. Princípio</h2>
+  <p>Guardamos o mínimo pelo menor tempo necessário. A validade de um link é definida por quem o cria; o Serviço aplica esse prazo automaticamente e não mantém cópias após a exclusão.</p>
+
+  <h2>2. Prazos</h2>
+  <table>
+    <tr><th>Categoria</th><th>Onde</th><th>Prazo</th><th>Mecanismo de exclusão</th></tr>
+    <tr><td>Biblioteca (imagens, textos, OCR, descrições)</td><td>No Mac do usuário</td><td>Até 500 itens; os mais antigos são removidos automaticamente</td><td>Rotação automática; exclusão manual pelo usuário</td></tr>
+    <tr><td>Gravações de vídeo</td><td>No Mac do usuário</td><td>Indefinido</td><td>Somente exclusão manual</td></tr>
+    <tr><td>Imagem de link público</td><td>Servidor lens.ribeiros.click</td><td>Validade escolhida: 1 h, 1 dia, 7 dias ou 30 dias; links “sem expirar” até revogação</td><td>Verificação a cada acesso; limpeza a cada novo upload; rotina diária às 03:00 (horário do servidor); revogação pelo usuário</td></tr>
+    <tr><td>Metadados do link</td><td>Servidor</td><td>Mesmo prazo da imagem</td><td>Apagados junto com a imagem</td></tr>
+    <tr><td>Contador de visualizações</td><td>Servidor (dentro dos metadados)</td><td>Mesmo prazo da imagem</td><td>Apagado junto com a imagem</td></tr>
+    <tr><td>Logs de acesso HTTP</td><td>Provedor de hospedagem (Hostinger)</td><td>Política padrão do provedor</td><td>Rotação automática pelo provedor</td></tr>
+    <tr><td>Chaves de API e de upload</td><td>Keychain do macOS</td><td>Até o usuário apagar</td><td>Campo em branco em Ajustes remove a chave</td></tr>
+    <tr><td>E-mails de contato, denúncias e solicitações LGPD</td><td>Caixa contato@ribeiros.click</td><td>Até 2 anos após o encerramento do atendimento</td><td>Exclusão manual periódica</td></tr>
+  </table>
+
+  <h2>3. Exclusão por revogação ou expiração</h2>
+  <p>A exclusão é definitiva: o arquivo e o registro de metadados são removidos do disco do servidor. Não há lixeira, backup próprio ou versão em cache controlada pelo Serviço. Backups eventuais do provedor de hospedagem seguem a política de retenção dele e não são usados para restaurar conteúdo expirado.</p>
+  <p>Após a exclusão, a URL passa a responder “link indisponível” (HTTP 410). Cópias feitas por terceiros enquanto o link estava ativo — inclusive caches de navegadores e pré-visualizações em aplicativos de mensagens — fogem ao controle do Serviço.</p>
+
+  <h2>4. Retenção prolongada</h2>
+  <p>Podemos manter dados além dos prazos acima somente quando necessário para cumprir obrigação legal, ordem judicial ou para a apuração de abuso em andamento, limitado ao estritamente necessário.</p>
+
+  <h2>5. Revisão</h2>
+  <p>Esta política é revisada ao menos uma vez por ano ou quando o Serviço mudar de forma relevante.</p>
+</main>
+<footer class="foot">SnapLens · contato: <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> · © 2026
+  <nav><a href="/politicas/">Todas as políticas</a></nav>
+</footer>
+</body>
+</html>
