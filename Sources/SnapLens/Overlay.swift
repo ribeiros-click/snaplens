@@ -35,9 +35,19 @@ struct Annotation {
     var text: String = ""
 }
 
-private final class OverlayWindow: NSWindow {
+final class OverlayWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+
+    /// Fecha TODA janela de overlay existente, mesmo que alguma referência tenha se perdido.
+    /// É a garantia final contra "tela presa": qualquer caminho de cancelamento passa por aqui.
+    @MainActor static func closeAll() {
+        for w in NSApp.windows where w is OverlayWindow {
+            w.orderOut(nil)
+            w.contentView = nil
+        }
+    }
+    @MainActor static var anyVisible: Bool { NSApp.windows.contains { $0 is OverlayWindow && $0.isVisible } }
 }
 
 /// Apresenta a tela congelada para seleção de área + anotações (estilo Lightshot).
@@ -51,7 +61,7 @@ final class CaptureOverlay {
     private var lastActivity = Date()
     private static let escapeHotKeyID: UInt32 = 99
 
-    var isActive: Bool { window != nil }
+    var isActive: Bool { window != nil || OverlayWindow.anyVisible }
 
     func present(screen: NSScreen, image: CGImage, autoAction: ShotAction?,
                  onFinish: @escaping (ShotAction, Data) -> Void) {
@@ -67,33 +77,33 @@ final class CaptureOverlay {
         w.isReleasedWhenClosed = false
 
         let v = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size), image: image, autoAction: autoAction)
-        v.onFinish = { [weak self] action, data in
+        // Captura a própria janela: fecha mesmo se `self.window` já tiver sido zerado por outro caminho.
+        v.onFinish = { [weak self, weak w] action, data in
             self?.dismiss()
+            w?.orderOut(nil)
+            OverlayWindow.closeAll()
             if let data { onFinish(action, data) }
         }
         w.contentView = v
         window = w
         view = v
 
-        // Saída de emergência: Esc global (não depende de a janela ter o foco do teclado).
-        HotKeys.register(id: Self.escapeHotKeyID, keyCode: 53, modifiers: 0) { [weak self] in
-            self?.view?.handleEscape()
-        }
-        // Se o app perder o foco ou a configuração de telas mudar, fecha em vez de ficar preso.
-        let nc = NotificationCenter.default
-        observers = [
-            nc.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.dismiss() }
-            },
-            nc.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.dismiss() }
-            },
-        ]
-
         NSApp.activate(ignoringOtherApps: true)
         w.makeKeyAndOrderFront(nil)
         w.orderFrontRegardless()
         w.makeFirstResponder(v)
+
+        // Saída de emergência: Esc global (não depende de a janela ter o foco do teclado).
+        HotKeys.register(id: Self.escapeHotKeyID, keyCode: 53, modifiers: 0) { [weak self] in
+            if let v = self?.view { v.handleEscape() } else { self?.dismiss() }
+        }
+        // Mudança na configuração de telas invalida a geometria: fecha. (Perder o foco NÃO fecha mais:
+        // isso disparava durante a abertura e deixava uma janela órfã impossível de fechar.)
+        observers = [
+            NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.dismiss() }
+            },
+        ]
 
         // Fecha sozinho após 60s sem nenhuma interação (último recurso contra travar a tela).
         lastActivity = Date()
@@ -103,7 +113,7 @@ final class CaptureOverlay {
         }
         watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self else { return }
+                guard let self else { OverlayWindow.closeAll(); return }
                 if Date().timeIntervalSince(self.lastActivity) > 60 { self.dismiss() }
             }
         }
@@ -125,6 +135,7 @@ final class CaptureOverlay {
         window?.orderOut(nil)
         window?.contentView = nil
         window = nil
+        OverlayWindow.closeAll()
         view = nil
     }
 }

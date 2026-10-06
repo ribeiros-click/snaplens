@@ -172,7 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ])
     }
 
-    @objc func cancelCapture() { overlay?.dismiss(); overlay = nil }
+    @objc func cancelCapture() { overlay?.dismiss(); overlay = nil; OverlayWindow.closeAll() }
 
     @objc func captureRegion() { Task { await startCapture(region: true, auto: nil) } }
     @objc func captureFull() { Task { await startCapture(region: false, auto: nil) } }
@@ -183,7 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startCapture(region: Bool, auto: ShotAction?) async {
         // Atalho pressionado de novo com o overlay aberto: cancela em vez de empilhar outro.
-        if let o = overlay, o.isActive { o.dismiss(); overlay = nil; return }
+        if (overlay?.isActive ?? false) || OverlayWindow.anyVisible { cancelCapture(); return }
         guard !isStartingCapture else { return }
         isStartingCapture = true
         defer { isStartingCapture = false }
