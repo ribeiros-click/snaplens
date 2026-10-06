@@ -78,6 +78,7 @@ final class CaptureOverlay {
         w.backgroundColor = .black
         w.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         w.isReleasedWhenClosed = false
+        w.acceptsMouseMovedEvents = true // necessário para o timeout de inatividade enxergar o mouse
 
         let v = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size), image: image, autoAction: autoAction)
         // Captura a própria janela: fecha mesmo se `self.window` já tiver sido zerado por outro caminho.
@@ -117,10 +118,14 @@ final class CaptureOverlay {
             MainActor.assumeIsolated { self?.lastActivity = Date() }
             return e
         }
-        watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        // Sem seleção: 10 s sem mexer o mouse ou teclar encerra a captura. Com seleção: 60 s.
+        watchdog = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self else { OverlayWindow.closeAll(); return }
-                if Date().timeIntervalSince(self.lastActivity) > 60 { self.dismiss(reason: "watchdog-60s") }
+                guard let self, let view = self.view else { OverlayWindow.closeAll(); return }
+                let idle = Date().timeIntervalSince(self.lastActivity)
+                let limit: TimeInterval = view.hasSelection ? 60 : 10
+                view.idleCountdown = view.hasSelection ? nil : max(0, Int((limit - idle).rounded(.up)))
+                if idle > limit { self.dismiss(reason: "inatividade-\(Int(limit))s") }
             }
         }
     }
@@ -155,6 +160,9 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     var onFinish: ((ShotAction, Data?) -> Void)?
 
     private var selection: CGRect?
+    var hasSelection: Bool { selection != nil }
+    /// Segundos restantes até o fechamento automático (só sem seleção); nil = não mostrar.
+    var idleCountdown: Int? { didSet { if idleCountdown != oldValue { needsDisplay = true } } }
     private var annotations: [Annotation] = []
     private var tool: Tool?
     private var color: NSColor = .systemRed
@@ -200,7 +208,8 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         dim.fill()
 
         guard let s = selection else {
-            drawText("Arraste para selecionar · botão direito refaz · Esc cancela", at: CGPoint(x: bounds.midX, y: 64), centered: true)
+            let timer = idleCountdown.map { " · fecha sozinho em \($0)s" } ?? ""
+            drawText("Arraste para selecionar · botão direito refaz · Esc cancela\(timer)", at: CGPoint(x: bounds.midX, y: 64), centered: true)
             return
         }
         NSGraphicsContext.saveGraphicsState()
