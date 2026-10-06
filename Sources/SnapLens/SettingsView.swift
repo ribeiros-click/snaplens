@@ -66,7 +66,7 @@ private struct ShareSection: View {
     var body: some View {
         Section("Compartilhar por link público") {
             TextField("Servidor", text: $server, prompt: Text(ShareConfig.defaultServer))
-            SecureField("Chave de upload", text: $key)
+            SecureField("Chave de API (do seu painel)", text: $key)
                 .onChange(of: key) { _, v in Keychain.set(v.trimmingCharacters(in: .whitespacesAndNewlines), account: "share.key") }
             Picker("Validade padrão do link", selection: $expiry) {
                 ForEach(ShareExpiry.allCases) { Text($0.title).tag($0.rawValue) }
@@ -81,9 +81,12 @@ private struct ShareSection: View {
                     }
                 }
                 .disabled(testing || key.isEmpty)
+                Button("Criar conta / Painel") {
+                    if let u = URL(string: ShareConfig.server + (key.isEmpty ? "/cadastro" : "/painel")) { NSWorkspace.shared.open(u) }
+                }
                 if let status { Text(status).font(.caption).foregroundStyle(status.hasPrefix("✓") ? .green : .red) }
             }
-            Text("O botão “link” no overlay e na Biblioteca envia a imagem ao servidor e copia a URL. Links expiram sozinhos e podem ser revogados na Biblioteca. A chave fica no Keychain; ela está em server/config.php do projeto.")
+            Text("Crie uma conta gratuita no servidor e cole aqui a chave de API mostrada no painel. O botão “link” no overlay e na Biblioteca envia a imagem e copia a URL. Links expiram sozinhos e podem ser revogados na Biblioteca ou no painel. A chave fica no Keychain.")
                 .font(.caption).foregroundStyle(.secondary)
         }
         .onAppear { key = ShareConfig.key }

@@ -2,7 +2,7 @@ Options -Indexes
 RewriteEngine On
 
 # Protege configuração, dados e código auxiliar
-<FilesMatch "^(config(\.example)?\.php|lib\.php)$">
+<FilesMatch "^(config(\.example)?\.php|lib\.php|_inc\.php)$|\.sqlite(-wal|-shm)?$">
     Require all denied
 </FilesMatch>
 RewriteRule ^_data/ - [F,L]
@@ -11,6 +11,7 @@ RewriteRule ^_data/ - [F,L]
 RewriteRule ^s/([A-Za-z0-9]{10})/?$ view.php?id=$1 [L,QSA]
 RewriteRule ^i/([A-Za-z0-9]{10})/?$ image.php?id=$1 [L,QSA]
 RewriteRule ^api/(upload|delete|ping)/?$ api/$1.php [L,QSA]
+RewriteRule ^(cadastro|entrar|sair|painel|admin)/?$ $1.php [L,QSA]
 
 # Uploads
 php_value upload_max_filesize 32M
@@ -20,4 +21,5 @@ php_value post_max_size 34M
 <IfModule mod_headers.c>
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "no-referrer"
+    Header set X-Content-Type-Options "nosniff"
 </IfModule>

@@ -240,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func share(_ item: Item) async {
         guard ShareConfig.isConfigured else {
-            Toast.show("Configure a chave de compartilhamento em Ajustes", symbol: "link.badge.plus")
+            Toast.show("Crie sua conta e cole a chave de API em Ajustes → Compartilhar", symbol: "link.badge.plus")
             showSettings()
             return
         }

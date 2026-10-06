@@ -101,3 +101,30 @@ body.share { display: flex; flex-direction: column; min-height: 100vh; }
 .policies strong { display: block; margin-bottom: 4px; }
 .policies span { color: var(--muted); font-size: 14px; }
 .foot nav { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+
+/* Formulários e painel */
+.form { max-width: 460px; display: grid; gap: 14px; }
+.form.compact { max-width: 360px; }
+.field { display: grid; gap: 6px; }
+.field span { font-size: 13px; color: var(--muted); font-weight: 600; }
+.field small { color: var(--muted); font-size: 12px; }
+.field input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg2); color: var(--text); }
+.field input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); }
+.check input { margin-top: 4px; }
+.muted { color: var(--muted); font-size: 14px; }
+.flash { padding: 12px 14px; border-radius: 10px; margin: 0 0 16px; border: 1px solid var(--line); background: var(--card); }
+.flash.ok { border-color: color-mix(in srgb, var(--ok) 60%, transparent); }
+.flash.error { border-color: #e5484d; color: #e5484d; }
+.inline { display: inline-block; margin: 6px 8px 6px 0; }
+.btn.small { padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+.btn.danger { color: #e5484d; }
+.btn.danger:hover { border-color: #e5484d; }
+.key { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+.key code { font-size: 15px; padding: 8px 12px; word-break: break-all; }
+table.list { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 14px; }
+table.list th, table.list td { padding: 10px 12px; border-top: 1px solid var(--line); text-align: left; vertical-align: middle; }
+table.list th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; border-top: 0; }
+table.list td.actions form { margin: 0; }
+.tag { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--bg2); border: 1px solid var(--line); }
+.tag.ok { color: var(--ok); } .tag.bad { color: #e5484d; }

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Política de Retenção de Dados · SnapLens</title>
 <link rel="icon" href="/assets/icon.png">
-<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/site.css?v=3">
 </head>
 <body>
 <header class="bar">
@@ -26,6 +26,7 @@
     <tr><th>Categoria</th><th>Onde</th><th>Prazo</th><th>Mecanismo de exclusão</th></tr>
     <tr><td>Biblioteca (imagens, textos, OCR, descrições)</td><td>No Mac do usuário</td><td>Até 500 itens; os mais antigos são removidos automaticamente</td><td>Rotação automática; exclusão manual pelo usuário</td></tr>
     <tr><td>Gravações de vídeo</td><td>No Mac do usuário</td><td>Indefinido</td><td>Somente exclusão manual</td></tr>
+    <tr><td>Dados da conta (nome, e-mail, hash de senha, hash da chave de API, datas de acesso)</td><td>Servidor</td><td>Enquanto a conta existir</td><td>Exclusão pelo usuário no painel ou pelo administrador; apaga também todos os links</td></tr>
     <tr><td>Imagem de link público</td><td>Servidor lens.ribeiros.click</td><td>Validade escolhida: 1 h, 1 dia, 7 dias ou 30 dias; links “sem expirar” até revogação</td><td>Verificação a cada acesso; limpeza a cada novo upload; rotina diária às 03:00 (horário do servidor); revogação pelo usuário</td></tr>
     <tr><td>Metadados do link</td><td>Servidor</td><td>Mesmo prazo da imagem</td><td>Apagados junto com a imagem</td></tr>
     <tr><td>Contador de visualizações</td><td>Servidor (dentro dos metadados)</td><td>Mesmo prazo da imagem</td><td>Apagado junto com a imagem</td></tr>

@@ -13,13 +13,11 @@ TOKEN=${HOSTINGER_API_TOKEN:-$(cat "$ROOT/.hostinger/token" 2>/dev/null || true)
 auth=(-H "Authorization: Bearer $TOKEN")
 api() { curl -sS "${auth[@]}" -H "Content-Type: application/json" "$@"; }
 
-# 1. config.php (gera a chave de upload na primeira vez; fica fora do git)
+# 1. config.php (copiado do exemplo na primeira vez; fica fora do git)
 CFG=server/public_html/config.php
 if [ ! -f "$CFG" ]; then
-  KEY=$(openssl rand -hex 24)
-  sed "s/'upload_key' => ''/'upload_key' => '$KEY'/" server/public_html/config.example.php > "$CFG"
-  chmod 600 "$CFG"
-  echo "Chave de upload gerada em $CFG — cole-a em SnapLens → Ajustes → Compartilhar."
+  cp server/public_html/config.example.php "$CFG" && chmod 600 "$CFG"
+  echo "config.php criado a partir do exemplo — ajuste admin_email/cotas se quiser."
 fi
 
 # 2. Site existe?
