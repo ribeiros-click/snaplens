@@ -18,6 +18,11 @@ enum HotKeys {
         return status == noErr
     }
 
+    static func unregister(id: UInt32) {
+        if let old = refs.removeValue(forKey: id) { UnregisterEventHotKey(old) }
+        handlers[id] = nil
+    }
+
     private static func install() {
         guard !installed else { return }
         installed = true

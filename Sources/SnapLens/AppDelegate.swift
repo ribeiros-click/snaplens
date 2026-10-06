@@ -93,6 +93,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu() {
         let menu = NSMenu()
+        let about = NSMenuItem(title: "Sobre o SnapLens", action: #selector(showAbout), keyEquivalent: "")
+        about.target = self
+        menu.addItem(about)
+        menu.addItem(.separator())
         for action in ShortcutAction.allCases {
             let sc = action.shortcut
             let simple = sc.key.count == 1
@@ -104,6 +108,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(item)
             if action == .record { menu.addItem(.separator()) }
         }
+        menu.addItem(.separator())
+        let cancelItem = NSMenuItem(title: "Cancelar captura em andamento", action: #selector(cancelCapture), keyEquivalent: "")
+        cancelItem.target = self
+        menu.addItem(cancelItem)
         let prefs = NSMenuItem(title: "Ajustes…", action: #selector(showSettings), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
@@ -144,12 +152,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Actions
 
+    @objc func showAbout() {
+        let email = "joserribeiro26@gmail.com"
+        let para = NSMutableParagraphStyle()
+        para.alignment = .center
+        let base: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor, .paragraphStyle: para]
+        let credits = NSMutableAttributedString(
+            string: "Captura de tela com anotações, OCR e descrição de imagens com IA, histórico de screenshots e área de transferência.\n\nCriado por\n",
+            attributes: base)
+        credits.append(NSAttributedString(string: email, attributes: base.merging([
+            .link: URL(string: "mailto:\(email)")!, .font: NSFont.systemFont(ofSize: 11, weight: .semibold)]) { $1 }))
+        credits.append(NSAttributedString(string: "\n\n© 2026 · Todos os direitos reservados", attributes: base))
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: "SnapLens",
+            .applicationVersion: "1.0",
+            .version: "",
+            .credits: credits,
+        ])
+    }
+
+    @objc func cancelCapture() { overlay?.dismiss(); overlay = nil }
+
     @objc func captureRegion() { Task { await startCapture(region: true, auto: nil) } }
     @objc func captureFull() { Task { await startCapture(region: false, auto: nil) } }
     @objc func describeRegion() { Task { await startCapture(region: true, auto: .describe) } }
     @objc func ocrRegion() { Task { await startCapture(region: true, auto: .ocr) } }
 
+    private var isStartingCapture = false
+
     private func startCapture(region: Bool, auto: ShotAction?) async {
+        // Atalho pressionado de novo com o overlay aberto: cancela em vez de empilhar outro.
+        if let o = overlay, o.isActive { o.dismiss(); overlay = nil; return }
+        guard !isStartingCapture else { return }
+        isStartingCapture = true
+        defer { isStartingCapture = false }
         Toast.dismiss()
         let screen = Capture.screenUnderMouse()
         guard let image = await Capture.screenImage(for: screen) else {

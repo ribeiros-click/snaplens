@@ -45,12 +45,21 @@ private final class OverlayWindow: NSWindow {
 final class CaptureOverlay {
     private var window: OverlayWindow?
     private var view: OverlayView?
+    private var observers: [NSObjectProtocol] = []
+    private var eventMonitor: Any?
+    private var watchdog: Timer?
+    private var lastActivity = Date()
+    private static let escapeHotKeyID: UInt32 = 99
+
+    var isActive: Bool { window != nil }
 
     func present(screen: NSScreen, image: CGImage, autoAction: ShotAction?,
                  onFinish: @escaping (ShotAction, Data) -> Void) {
+        dismiss() // nunca empilha dois overlays
         let w = OverlayWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         w.setFrame(screen.frame, display: false)
-        w.level = .screenSaver
+        // Abaixo da barra de menus e do Dock: o usuário nunca fica sem saída (Cmd-Tab, Dock e menu continuam acessíveis).
+        w.level = .floating
         w.isOpaque = true
         w.hasShadow = false
         w.backgroundColor = .black
@@ -59,19 +68,55 @@ final class CaptureOverlay {
 
         let v = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size), image: image, autoAction: autoAction)
         v.onFinish = { [weak self] action, data in
-            self?.close()
+            self?.dismiss()
             if let data { onFinish(action, data) }
         }
         w.contentView = v
         window = w
         view = v
+
+        // Saída de emergência: Esc global (não depende de a janela ter o foco do teclado).
+        HotKeys.register(id: Self.escapeHotKeyID, keyCode: 53, modifiers: 0) { [weak self] in
+            self?.view?.handleEscape()
+        }
+        // Se o app perder o foco ou a configuração de telas mudar, fecha em vez de ficar preso.
+        let nc = NotificationCenter.default
+        observers = [
+            nc.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.dismiss() }
+            },
+            nc.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.dismiss() }
+            },
+        ]
+
         NSApp.activate(ignoringOtherApps: true)
         w.makeKeyAndOrderFront(nil)
+        w.orderFrontRegardless()
         w.makeFirstResponder(v)
+
+        // Fecha sozinho após 60s sem nenhuma interação (último recurso contra travar a tela).
+        lastActivity = Date()
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .leftMouseDragged, .rightMouseDown, .mouseMoved]) { [weak self] e in
+            MainActor.assumeIsolated { self?.lastActivity = Date() }
+            return e
+        }
+        watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                if Date().timeIntervalSince(self.lastActivity) > 60 { self.dismiss() }
+            }
+        }
     }
 
-    private func close() {
+    func dismiss() {
+        HotKeys.unregister(id: Self.escapeHotKeyID)
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+        observers = []
+        watchdog?.invalidate(); watchdog = nil
+        if let m = eventMonitor { NSEvent.removeMonitor(m); eventMonitor = nil }
         window?.orderOut(nil)
+        window?.contentView = nil
         window = nil
         view = nil
     }
@@ -99,12 +144,19 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     init(frame: NSRect, image: CGImage, autoAction: ShotAction?) {
         cgImage = image
         background = NSImage(cgImage: image, size: frame.size)
         self.autoAction = autoAction
         super.init(frame: frame)
+        let cancel = NSButton(title: "✕  Cancelar  (Esc)", target: self, action: #selector(doCancel))
+        cancel.bezelStyle = .rounded
+        cancel.controlSize = .large
+        cancel.sizeToFit()
+        cancel.frame.origin = CGPoint(x: frame.midX - cancel.frame.width / 2, y: 16)
+        addSubview(cancel)
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -123,7 +175,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         dim.fill()
 
         guard let s = selection else {
-            drawText("Arraste para selecionar · Esc cancela", at: CGPoint(x: bounds.midX, y: 40), centered: true)
+            drawText("Arraste para selecionar · botão direito refaz · Esc cancela", at: CGPoint(x: bounds.midX, y: 64), centered: true)
             return
         }
         NSGraphicsContext.saveGraphicsState()
@@ -300,6 +352,32 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         showToolbar()
     }
 
+    // MARK: Cancelamento
+
+    func handleEscape() {
+        if textField != nil {
+            textField?.stringValue = ""
+            commitText()
+        } else {
+            onFinish?(.copy, nil)
+        }
+    }
+
+    private func resetSelection() {
+        commitText()
+        selection = nil
+        annotations.removeAll()
+        hideToolbar()
+        mode = .idle
+        needsDisplay = true
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        if selection != nil { resetSelection() } else { onFinish?(.copy, nil) }
+    }
+
+    @objc private func doReselect() { resetSelection() }
+
     // MARK: Text tool
 
     private var textField: NSTextField?
@@ -351,7 +429,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     override func keyDown(with event: NSEvent) {
         let cmd = event.modifierFlags.contains(.command)
         switch event.keyCode {
-        case 53: onFinish?(.copy, nil)                          // Esc
+        case 53: handleEscape()                                 // Esc
         case 36, 76: if selection != nil { finish(.copy) }       // Return
         case 123, 124, 125, 126: nudge(event)
         default:
@@ -437,7 +515,8 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         views.append(button("text.viewfinder", "Extrair texto (OCR)", #selector(doOCR)))
         views.append(button("square.and.arrow.down", "Salvar (⌘S)", #selector(doSave)))
         views.append(button("doc.on.doc", "Copiar (⌘C / Enter)", #selector(doCopy)))
-        views.append(button("xmark", "Cancelar (Esc)", #selector(doCancel)))
+        views.append(button("rectangle.dashed", "Refazer seleção (botão direito)", #selector(doReselect)))
+        views.append(button("xmark", "Cancelar captura (Esc)", #selector(doCancel)))
 
         let stack = NSStackView(views: views)
         stack.spacing = 4
