@@ -20,6 +20,7 @@ struct Item: Codable, Identifiable, Equatable {
     var shareURL: String?
     var shareExpires: Date?
     var shareToken: String?
+    var shareOnce: Bool?
 }
 
 @MainActor

@@ -6,7 +6,15 @@ $id = valid_id($_GET['id'] ?? null);
 $m = $id ? read_meta($id) : null;
 $gone = !$m || is_expired($m);
 if ($m && is_expired($m)) { delete_share($id); }
-if (!$gone) {
+$once = $m && !empty($m['once']);
+$burned = false;
+if (!$gone && $once && (int) $m['views'] >= 1) {
+    delete_share($id);
+    $gone = true;
+    $burned = true;
+}
+// Links "ver apenas uma vez" não contam a página como visualização: quem consome é a imagem.
+if (!$gone && !$once) {
     $m['views'] = (int) ($m['views'] ?? 0) + 1;
     write_meta($id, $m);
 }
@@ -40,7 +48,8 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
     <span><?= (int) $m['width'] ?> × <?= (int) $m['height'] ?></span>
     <span><?= $h(human_size((int) $m['size'])) ?></span>
     <span class="exp <?= $m['expires_at'] ? '' : 'never' ?>"><?= $h(human_expiry($m['expires_at'])) ?></span>
-    <span><?= (int) $m['views'] ?> visualiz.</span>
+    <?php if ($once): ?><span>⏱ Esta imagem se autodestrói após a primeira visualização.</span>
+    <?php else: ?><span><?= (int) $m['views'] ?> visualiz.</span><?php endif; ?>
   </div>
   <div class="actions">
     <button class="btn" id="copy" data-url="<?= $h("$base/s/$id") ?>">Copiar link</button>
@@ -53,8 +62,13 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 <?php if ($gone): ?>
   <div class="gone">
     <div class="gone-icon">⌛</div>
+    <?php if ($burned): ?>
+    <h1>Esta imagem já foi visualizada e se autodestruiu.</h1>
+    <p>Ela foi compartilhada no modo “ver apenas uma vez”: depois da primeira exibição, o arquivo é apagado do servidor.</p>
+    <?php else: ?>
     <h1>Este link não está mais disponível</h1>
     <p>Ele expirou ou foi revogado por quem o criou. Links do SnapLens têm validade definida na hora do compartilhamento.</p>
+    <?php endif; ?>
     <a class="btn primary" href="/">Conheça o SnapLens</a>
   </div>
 <?php else: ?>

@@ -49,7 +49,15 @@ function db(): SQLite3 {
         $db->exec('CREATE TABLE IF NOT EXISTS links (
             id TEXT PRIMARY KEY, ext TEXT, mime TEXT, width INTEGER, height INTEGER, size INTEGER,
             created_at INTEGER, expires_at INTEGER, views INTEGER DEFAULT 0, token_hash TEXT)');
+        // Migração: links ganham a coluna once ("ver apenas uma vez").
+        $hasOnce = false;
+        $info = $db->query('PRAGMA table_info(links)');
+        while ($info && ($col = $info->fetchArray(SQLITE3_ASSOC))) {
+            if ($col['name'] === 'once') { $hasOnce = true; }
+        }
+        if (!$hasOnce) { $db->exec('ALTER TABLE links ADD COLUMN once INTEGER NOT NULL DEFAULT 0'); }
         $db->exec('CREATE INDEX IF NOT EXISTS links_exp ON links(expires_at)');
+        $db->exec('CREATE INDEX IF NOT EXISTS links_token ON links(token_hash)');
         $db->exec('CREATE TABLE IF NOT EXISTS rate (ip TEXT NOT NULL, created_at INTEGER NOT NULL)');
         $db->exec('CREATE INDEX IF NOT EXISTS rate_ip ON rate(ip, created_at)');
         $db->exec('PRAGMA foreign_keys=ON');

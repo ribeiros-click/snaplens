@@ -11,7 +11,7 @@ RewriteRule ^_data/ - [F,L]
 RewriteRule ^s/([A-Za-z0-9]{10})/?$ view.php?id=$1 [L,QSA]
 RewriteRule ^i/([A-Za-z0-9]{10})/?$ image.php?id=$1 [L,QSA]
 RewriteRule ^api/(upload|delete)/?$ api/$1.php [L,QSA]
-RewriteRule ^admin/?$ admin.php [L,QSA]
+RewriteRule ^(admin|token)/?$ $1.php [L,QSA]
 
 # Uploads
 php_value upload_max_filesize 32M

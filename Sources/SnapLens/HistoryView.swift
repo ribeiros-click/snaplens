@@ -130,6 +130,11 @@ private struct ImageCard: View {
                     Image(systemName: "link").foregroundStyle(.tint)
                     Text(link.replacingOccurrences(of: "https://", with: "")).lineLimit(1).truncationMode(.middle)
                     Text("· \(expiryText(item.shareExpires))").foregroundStyle(.secondary)
+                    if item.shareOnce == true {
+                        Text("1×")
+                            .foregroundStyle(.orange)
+                            .help("Visualização única — o link se apaga na primeira abertura")
+                    }
                     Spacer()
                     Button { onCopyText(link) } label: { Image(systemName: "doc.on.doc") }.help("Copiar link")
                     Button { if let u = URL(string: link) { NSWorkspace.shared.open(u) } } label: { Image(systemName: "safari") }.help("Abrir no navegador")

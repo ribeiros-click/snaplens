@@ -23,6 +23,7 @@ enum ShareConfig {
         let s = UserDefaults.standard.string(forKey: "share.server") ?? ""
         return (s.isEmpty ? defaultServer : s).trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
     }
+    static var once: Bool { UserDefaults.standard.bool(forKey: "share.once") }
     static var expiry: ShareExpiry {
         guard UserDefaults.standard.object(forKey: "share.expiry") != nil,
               let e = ShareExpiry(rawValue: UserDefaults.standard.integer(forKey: "share.expiry")) else { return .d7 }
@@ -35,16 +36,18 @@ struct ShareResult: Decodable {
     let url: String
     let expires_at: Double?
     let delete_token: String
+    let once: Bool?
 }
 
 enum ShareClient {
-    static func upload(data: Data, expiry: ShareExpiry) async throws -> ShareResult {
+    static func upload(data: Data, expiry: ShareExpiry, once: Bool) async throws -> ShareResult {
         let boundary = "SnapLens-\(UUID().uuidString)"
         var body = Data()
         func field(_ name: String, _ value: String) {
             body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
         }
         field("expires", String(expiry.rawValue))
+        field("once", once ? "1" : "0")
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"screenshot.png\"\r\nContent-Type: image/png\r\n\r\n".data(using: .utf8)!)
         body.append(data)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)

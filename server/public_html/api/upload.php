@@ -31,8 +31,9 @@ if (!move_uploaded_file($f['tmp_name'], FILES_DIR . "/$id.$ext")) { json_out(500
 
 $token = bin2hex(random_bytes(16));
 $expires = $ttl > 0 ? time() + $ttl : null;
-run('INSERT INTO links (id, ext, mime, width, height, size, created_at, expires_at, views, token_hash) VALUES (?,?,?,?,?,?,?,?,0,?)',
-    [$id, $ext, $info['mime'], (int) $info[0], (int) $info[1], (int) $f['size'], time(), $expires, hash('sha256', $token)]);
+$once = (($_POST['once'] ?? '0') === '1') ? 1 : 0;
+run('INSERT INTO links (id, ext, mime, width, height, size, created_at, expires_at, views, token_hash, once) VALUES (?,?,?,?,?,?,?,?,0,?,?)',
+    [$id, $ext, $info['mime'], (int) $info[0], (int) $info[1], (int) $f['size'], time(), $expires, hash('sha256', $token), $once]);
 
 json_out(201, [
     'id'           => $id,
@@ -40,4 +41,5 @@ json_out(201, [
     'image_url'    => base_url() . "/i/$id",
     'expires_at'   => $expires,
     'delete_token' => $token,
+    'once'         => $once === 1,
 ]);

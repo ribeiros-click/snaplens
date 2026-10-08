@@ -263,17 +263,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
         Toast.show("Enviando para \(ShareConfig.server.replacingOccurrences(of: "https://", with: ""))…", symbol: "link")
         do {
-            let r = try await ShareClient.upload(data: data, expiry: ShareConfig.expiry)
+            let r = try await ShareClient.upload(data: data, expiry: ShareConfig.expiry, once: ShareConfig.once)
             var it = item
             it.shareID = r.id
             it.shareURL = r.url
             it.shareExpires = r.expires_at.flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
             it.shareToken = r.delete_token
+            it.shareOnce = r.once
             store.update(it)
             copyText(r.url)
             NSSound(named: "Pop")?.play()
-            Toast.show("Link copiado · \(expiryText(it.shareExpires))", symbol: "link")
-            showShareResult(url: r.url, expires: it.shareExpires, token: r.delete_token)
+            let once = r.once ?? false
+            Toast.show("Link copiado · \(expiryText(it.shareExpires))" + (once ? " · visualização única" : ""), symbol: "link")
+            showShareResult(url: r.url, expires: it.shareExpires, token: r.delete_token, once: once)
         } catch {
             Trace.log("share ERRO: \(error.localizedDescription)")
             Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
@@ -285,7 +287,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             try await ShareClient.revoke(id: id, token: token)
             var it = item
-            it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil
+            it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil; it.shareOnce = nil
             store.update(it)
             Toast.show("Link revogado", symbol: "link.badge.plus")
         } catch {
@@ -342,7 +344,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    func showShareResult(url: String, expires: Date?, token: String) {
+    func showShareResult(url: String, expires: Date?, token: String, once: Bool) {
         if shareWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 260),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -351,7 +353,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             w.center()
             shareWindow = w
         }
-        shareWindow?.contentView = NSHostingView(rootView: ShareResultView(url: url, expires: expires, token: token) { [weak self] in
+        shareWindow?.contentView = NSHostingView(rootView: ShareResultView(url: url, expires: expires, token: token, once: once) { [weak self] in
             self?.shareWindow?.close()
         })
         NSApp.activate(ignoringOtherApps: true)

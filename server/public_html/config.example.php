@@ -10,6 +10,8 @@ return [
     // Limite de uploads por IP.
     'rate_limit_uploads' => 30,     // uploads
     'rate_limit_window'  => 3600,   // por janela de segundos
+    // Limite de consultas na página /token por IP (mesma janela).
+    'rate_limit_token'   => 30,
     // Tamanho máximo por imagem.
     'max_bytes'          => 25 * 1024 * 1024,
     // Validade máxima permitida, em segundos (0 = permitir "sem expirar").

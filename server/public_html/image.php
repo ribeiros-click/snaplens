@@ -10,6 +10,13 @@ if (!$m || is_expired($m)) {
     header('Content-Type: text/plain; charset=utf-8');
     exit('Link expirado ou inexistente.');
 }
+$once = !empty($m['once']);
+if ($once && (int) $m['views'] >= 1) {
+    delete_share($id);
+    http_response_code(410);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Esta imagem já foi visualizada e se autodestruiu.');
+}
 $path = FILES_DIR . "/$id." . $m['ext'];
 if (!is_file($path)) { http_response_code(404); exit; }
 
@@ -19,3 +26,5 @@ header('Cache-Control: private, max-age=300');
 header('X-Content-Type-Options: nosniff');
 if (isset($_GET['dl'])) { header("Content-Disposition: attachment; filename=\"snaplens-$id." . $m['ext'] . '"'); }
 readfile($path);
+// Links "ver apenas uma vez": a primeira exibição da imagem consome o link.
+if ($once) { $m['views'] = 1; write_meta($id, $m); }

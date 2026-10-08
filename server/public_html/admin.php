@@ -44,7 +44,7 @@ page_header('Administração');
   <tr><th>Link</th><th>Criado</th><th>Validade</th><th>Visualiz.</th><th>Tamanho</th><th></th></tr>
   <?php foreach ($links as $l): ?>
   <tr>
-    <td><a href="/s/<?= h($l['id']) ?>" target="_blank"><?= h($l['id']) ?></a></td>
+    <td><a href="/s/<?= h($l['id']) ?>" target="_blank"><?= h($l['id']) ?></a><?= !empty($l['once']) ? ' <small class="muted" title="Ver apenas uma vez">1×</small>' : '' ?></td>
     <td><?= fmt_date((int) $l['created_at']) ?></td>
     <td><?= h(human_expiry($l['expires_at'] !== null ? (int) $l['expires_at'] : null)) ?></td>
     <td><?= (int) $l['views'] ?></td>

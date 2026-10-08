@@ -5,15 +5,30 @@ struct ShareResultView: View {
     let url: String
     let expires: Date?
     let token: String
+    let once: Bool
     var onClose: () -> Void
     @State private var showToken = false
     @State private var copied = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Link pronto para compartilhar", systemImage: "checkmark.circle.fill")
-                .font(.headline)
-                .foregroundStyle(.green)
+            HStack {
+                Label("Link pronto para compartilhar", systemImage: "checkmark.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(.green)
+                Spacer()
+                if once {
+                    Label("Visualização única", systemImage: "eye")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(.orange.opacity(0.15)))
+                }
+            }
+            if once {
+                Text("Visualização única — o link se apaga na primeira abertura.")
+                    .font(.caption).foregroundStyle(.orange)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Link público")
@@ -71,7 +86,8 @@ struct ShareResultView: View {
 
     private var expiresText: String {
         guard let expires else { return "Sem expiração definida" }
-        return "Expira em " + expires.formatted(date: .abbreviated, time: .shortened)
+        let base = "Expira em " + expires.formatted(date: .abbreviated, time: .shortened)
+        return once ? base + " ou na primeira visualização, o que ocorrer primeiro" : base
     }
 
     private func copy(_ text: String, label: String) {
