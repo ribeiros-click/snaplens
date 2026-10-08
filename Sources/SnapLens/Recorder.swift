@@ -23,8 +23,8 @@ final class Recorder: NSObject, SCStreamDelegate, SCRecordingOutputDelegate {
         case noPermission, noMic
         var errorDescription: String? {
             switch self {
-            case .noPermission: return "Permita “Gravação de Tela” ao SnapLens em Ajustes e tente de novo"
-            case .noMic: return "Permita o Microfone ao SnapLens em Ajustes ou desative o microfone"
+            case .noPermission: return L("Permita “Gravação de Tela” ao SnapLens em Ajustes e tente de novo")
+            case .noMic: return L("Permita o Microfone ao SnapLens em Ajustes ou desative o microfone")
             }
         }
     }
@@ -75,8 +75,8 @@ final class Recorder: NSObject, SCStreamDelegate, SCRecordingOutputDelegate {
         stream = s
         recordingOutput = out
         fileName = name
-        sourceLabel = [wantSystem ? "áudio do sistema" : nil, wantMic ? "microfone" : nil]
-            .compactMap { $0 }.joined(separator: " + ").nonEmpty ?? "sem áudio"
+        sourceLabel = [wantSystem ? L("áudio do sistema") : nil, wantMic ? L("microfone") : nil]
+            .compactMap { $0 }.joined(separator: " + ").nonEmpty ?? L("sem áudio")
         startDate = Date()
         isRecording = true
         finishing = false
@@ -105,13 +105,13 @@ final class Recorder: NSObject, SCStreamDelegate, SCRecordingOutputDelegate {
         recordingOutput = nil
         let url = Store.shared.videosDir.appendingPathComponent(fileName)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            Toast.show("A gravação falhou: arquivo não foi criado", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("A gravação falhou: arquivo não foi criado"), symbol: "exclamationmark.triangle.fill")
             return
         }
         let seconds = (try? await AVURLAsset(url: url).load(.duration).seconds) ?? Date().timeIntervalSince(startDate ?? Date())
         Store.shared.addVideo(file: fileName, duration: seconds.isFinite ? seconds : 0, source: sourceLabel)
         NSSound(named: "Glass")?.play()
-        Toast.show("Gravação salva na biblioteca (\(formatDuration(seconds)))", symbol: "video.fill")
+        Toast.show(L("Gravação salva na biblioteca (%@)", formatDuration(seconds)), symbol: "video.fill")
         NotificationCenter.default.post(name: Self.stateChanged, object: nil)
     }
 
@@ -123,7 +123,7 @@ final class Recorder: NSObject, SCStreamDelegate, SCRecordingOutputDelegate {
 
     nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) {
         Task { @MainActor in
-            Toast.show("Erro na gravação: \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("Erro na gravação: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill")
             if self.isRecording { await self.stop() }
         }
     }

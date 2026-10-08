@@ -7,11 +7,11 @@ struct TargetLanguage: Identifiable, Hashable {
     let name: String
     var id: String { code }
     static let all: [TargetLanguage] = [
-        .init(code: "pt-BR", name: "Português (Brasil)"), .init(code: "en", name: "Inglês"),
-        .init(code: "es", name: "Espanhol"), .init(code: "fr", name: "Francês"),
-        .init(code: "de", name: "Alemão"), .init(code: "it", name: "Italiano"),
-        .init(code: "ja", name: "Japonês"), .init(code: "ko", name: "Coreano"),
-        .init(code: "zh-Hans", name: "Chinês (simplificado)"),
+        .init(code: "pt-BR", name: L("Português (Brasil)")), .init(code: "en", name: L("Inglês")),
+        .init(code: "es", name: L("Espanhol")), .init(code: "fr", name: L("Francês")),
+        .init(code: "de", name: L("Alemão")), .init(code: "it", name: L("Italiano")),
+        .init(code: "ja", name: L("Japonês")), .init(code: "ko", name: L("Coreano")),
+        .init(code: "zh-Hans", name: L("Chinês (simplificado)")),
     ]
 }
 
@@ -21,7 +21,7 @@ struct OCRResultView: View {
 
     @State private var text: String
     @State private var translated = ""
-    @State private var target = TargetLanguage.all[0]
+    @State private var target = TargetLanguage.all.first { $0.code == L10n.code } ?? TargetLanguage.all[0]
     @State private var busy = false
     @State private var error: String?
     @State private var appleTrigger = 0
@@ -36,21 +36,21 @@ struct OCRResultView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("Texto reconhecido", systemImage: "text.viewfinder").font(.headline)
+                Label(L("Texto reconhecido"), systemImage: "text.viewfinder").font(.headline)
                 Spacer()
-                Text("Já copiado para a área de transferência").font(.caption).foregroundStyle(.secondary)
+                Text(L("Já copiado para a área de transferência")).font(.caption).foregroundStyle(.secondary)
             }
             TextEditor(text: $text)
                 .font(.system(size: 13))
                 .frame(minHeight: 120)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary))
             HStack {
-                Button { onCopy(text) } label: { Label("Copiar", systemImage: "doc.on.doc") }
+                Button { onCopy(text) } label: { Label(L("Copiar"), systemImage: "doc.on.doc") }
                 Spacer()
-                Picker("Traduzir para", selection: $target) {
+                Picker(L("Traduzir para"), selection: $target) {
                     ForEach(TargetLanguage.all) { Text($0.name).tag($0) }
                 }.frame(maxWidth: 280)
-                Button { translate() } label: { Label("Traduzir", systemImage: "character.bubble") }
+                Button { translate() } label: { Label(L("Traduzir"), systemImage: "character.bubble") }
                     .buttonStyle(.borderedProminent)
                     .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -58,10 +58,10 @@ struct OCRResultView: View {
             if let error { Text(error).font(.caption).foregroundStyle(.red) }
             if !translated.isEmpty {
                 HStack {
-                    Label("Tradução", systemImage: "character.bubble").font(.headline)
+                    Label(L("Tradução"), systemImage: "character.bubble").font(.headline)
                     if !engine.isEmpty { Text("(\(engine))").font(.caption).foregroundStyle(.secondary) }
                     Spacer()
-                    Button { onCopy(translated) } label: { Label("Copiar tradução", systemImage: "doc.on.doc") }
+                    Button { onCopy(translated) } label: { Label(L("Copiar tradução"), systemImage: "doc.on.doc") }
                 }
                 ScrollView { Text(translated).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
                     .frame(minHeight: 100)
@@ -77,7 +77,7 @@ struct OCRResultView: View {
                     busy = false
                     switch result {
                     case .success(let t): translated = t; engine = "Apple"
-                    case .failure(let e): error = "Falha na tradução: \(e.localizedDescription)"
+                    case .failure(let e): error = L("Falha na tradução: %@", e.localizedDescription)
                     }
                 }
             }
@@ -100,7 +100,7 @@ struct OCRResultView: View {
             appleTrigger += 1
         } else {
             busy = false
-            error = "Configure um provedor de IA em Ajustes para traduzir."
+            error = L("Configure um provedor de IA em Ajustes para traduzir.")
         }
     }
 }
@@ -134,7 +134,7 @@ enum OCRResultWindow {
         window?.close()
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 420),
                          styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        w.title = "SnapLens — Resultado do OCR"
+        w.title = "SnapLens — " + L("Resultado do OCR")
         w.contentView = NSHostingView(rootView: OCRResultView(original: text, onCopy: onCopy))
         w.isReleasedWhenClosed = false
         w.level = .floating

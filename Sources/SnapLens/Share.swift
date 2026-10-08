@@ -7,11 +7,11 @@ enum ShareExpiry: Int, CaseIterable, Identifiable {
     var id: Int { rawValue }
     var title: String {
         switch self {
-        case .h1: return "1 hora"
-        case .d1: return "1 dia"
-        case .d7: return "7 dias"
-        case .d30: return "30 dias"
-        case .never: return "Sem expirar"
+        case .h1: return L("1 hora")
+        case .d1: return L("1 dia")
+        case .d7: return L("7 dias")
+        case .d30: return L("30 dias")
+        case .never: return L("Sem expirar")
         }
     }
 }
@@ -78,17 +78,17 @@ enum ShareClient {
         guard (200..<300).contains(status) else {
             let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
             let msg = obj?["error"] as? String ?? "HTTP \(status)"
-            throw AIError(message: "Compartilhar: \(msg)")
+            throw AIError(message: L("Compartilhar: %@", msg))
         }
         return data
     }
 }
 
 func expiryText(_ date: Date?) -> String {
-    guard let date else { return "sem expirar" }
+    guard let date else { return L("sem expirar") }
     let secs = date.timeIntervalSinceNow
-    if secs <= 0 { return "expirado" }
-    if secs < 3600 { return "expira em \(max(1, Int(secs / 60))) min" }
-    if secs < 86400 * 2 { return "expira em \(Int((secs / 3600).rounded())) h" }
-    return "expira em \(Int((secs / 86400).rounded())) dias"
+    if secs <= 0 { return L("expirado") }
+    if secs < 3600 { return L("expira em %@ min", String(max(1, Int(secs / 60)))) }
+    if secs < 86400 * 2 { return L("expira em %@ h", String(Int((secs / 3600).rounded()))) }
+    return L("expira em %@ dias", String(Int((secs / 86400).rounded())))
 }

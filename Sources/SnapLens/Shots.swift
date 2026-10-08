@@ -5,7 +5,10 @@ import SwiftUI
 /// sobre um "desktop" sintético (nenhuma captura de tela do usuário é usada).
 @MainActor
 enum Shots {
-    static func render(to dir: URL) {
+    static func render(to dir: URL, language: String? = nil) {
+        let previousLang = L10n.selection
+        if let language { L10n.selection = language }
+        defer { if language != nil { L10n.selection = previousLang } }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let desktop = makeDesktop(size: CGSize(width: 1440, height: 900))
         write(desktop, dir.appendingPathComponent("desktop.png"))
@@ -29,8 +32,8 @@ enum Shots {
                 }
             }
         }
-        store.addText("Relatório de vendas — 3º trimestre\nRegião Sul: R$ 182.400 (+12%)\nRegião Sudeste: R$ 401.950 (+8%)", kind: .ocr)
-        store.addText("A imagem mostra uma tabela de vendas por região com três colunas (Região, Receita, Variação)…", kind: .ai, source: "Claude")
+        store.addText(L("Relatório de vendas — 3º trimestre") + "\n" + L("Região Sul: R$ 182.400 (+12%)\nRegião Sudeste: R$ 401.950 (+8%)"), kind: .ocr)
+        store.addText(L("A imagem mostra uma tabela de vendas por região com três colunas (Região, Receita, Variação)…"), kind: .ai, source: "Claude")
         store.addText("https://developer.apple.com/documentation/vision", kind: .clipboardText)
         let history = HistoryView(store: store, onDescribe: { _ in }, onOCR: { _ in }, onCopyImage: { _ in }, onCopyText: { _ in },
                                   onPlay: { _ in }, onShare: { _ in }, onRevoke: { _ in })
@@ -82,7 +85,7 @@ enum Shots {
                                 NSColor(red: 0.84, green: 0.76, blue: 0.58, alpha: 1)])!.draw(in: r, angle: -35)
             // barra de menus
             NSColor(white: 1, alpha: 0.75).setFill(); NSRect(x: 0, y: 0, width: r.width, height: 26).fill()
-            text("  Finder   Arquivo   Editar   Visualizar   Ir   Janela   Ajuda", at: CGPoint(x: 8, y: 5), size: 13, weight: .semibold, color: .black)
+            text("  Finder   " + L("Arquivo   Editar   Visualizar   Ir   Janela   Ajuda"), at: CGPoint(x: 8, y: 5), size: 13, weight: .semibold, color: .black)
             // janela
             let win = NSRect(x: 220, y: 110, width: 1000, height: 640)
             NSColor.black.withAlphaComponent(0.25).setFill(); NSBezierPath(roundedRect: win.offsetBy(dx: 0, dy: 8).insetBy(dx: -4, dy: -4), xRadius: 14, yRadius: 14).fill()
@@ -93,11 +96,11 @@ enum Shots {
             for (i, c) in [NSColor.systemRed, .systemYellow, .systemGreen].enumerated() {
                 c.setFill(); NSBezierPath(ovalIn: NSRect(x: win.minX + 14 + CGFloat(i) * 20, y: win.minY + 17, width: 13, height: 13)).fill()
             }
-            text("Relatório de vendas — 3º trimestre.pages", at: CGPoint(x: win.midX - 140, y: win.minY + 15), size: 13, weight: .medium, color: .darkGray)
-            text("Relatório de vendas — 3º trimestre", at: CGPoint(x: win.minX + 60, y: win.minY + 90), size: 28, weight: .bold, color: .black)
-            text("Resumo por região", at: CGPoint(x: win.minX + 60, y: win.minY + 150), size: 17, weight: .semibold, color: .darkGray)
-            let rows: [[String]] = [["Região", "Receita", "Variação"], ["Sul", "R$ 182.400", "+12%"], ["Sudeste", "R$ 401.950", "+8%"],
-                                    ["Nordeste", "R$ 96.300", "+21%"], ["Norte", "R$ 41.700", "−3%"], ["Centro-Oeste", "R$ 77.250", "+5%"]]
+            text(L("Relatório de vendas — 3º trimestre") + ".pages", at: CGPoint(x: win.midX - 140, y: win.minY + 15), size: 13, weight: .medium, color: .darkGray)
+            text(L("Relatório de vendas — 3º trimestre"), at: CGPoint(x: win.minX + 60, y: win.minY + 90), size: 28, weight: .bold, color: .black)
+            text(L("Resumo por região"), at: CGPoint(x: win.minX + 60, y: win.minY + 150), size: 17, weight: .semibold, color: .darkGray)
+            let rows: [[String]] = [[L("Região"), L("Receita"), L("Variação")], [L("Sul"), "R$ 182.400", "+12%"], [L("Sudeste"), "R$ 401.950", "+8%"],
+                                    [L("Nordeste"), "R$ 96.300", "+21%"], [L("Norte"), "R$ 41.700", "−3%"], [L("Centro-Oeste"), "R$ 77.250", "+5%"]]
             for (ri, row) in rows.enumerated() {
                 let y = win.minY + 190 + CGFloat(ri) * 36
                 if ri == 0 { NSColor(white: 0.95, alpha: 1).setFill(); NSRect(x: win.minX + 60, y: y - 8, width: 620, height: 34).fill() }

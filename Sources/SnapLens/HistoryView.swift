@@ -25,16 +25,16 @@ struct HistoryView: View {
         VStack(spacing: 0) {
             HStack {
                 Picker("", selection: $tab) {
-                    ForEach(Tab.allCases, id: \.self) { Text($0.rawValue) }
+                    ForEach(Tab.allCases, id: \.self) { Text(L($0.rawValue)) }
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 280)
                 if tab == .texts {
-                    TextField("Buscar…", text: $query).textFieldStyle(.roundedBorder)
+                    TextField(L("Buscar…"), text: $query).textFieldStyle(.roundedBorder)
                 }
                 Spacer()
                 Button { Exporter.exportAll(store: store) } label: {
-                    Label("Exportar tudo…", systemImage: "square.and.arrow.up.on.square")
+                    Label(L("Exportar tudo…"), systemImage: "square.and.arrow.up.on.square")
                 }
                 Button(role: .destructive) {
                     switch tab {
@@ -43,7 +43,7 @@ struct HistoryView: View {
                     case .texts: store.clear { $0.isText }
                     }
                 } label: {
-                    Label("Limpar", systemImage: "trash")
+                    Label(L("Limpar"), systemImage: "trash")
                 }
             }
             .padding(12)
@@ -59,7 +59,7 @@ struct HistoryView: View {
 
     private var imageGrid: some View {
         Group {
-            if images.isEmpty { empty("Nenhum screenshot ainda.\nUse \(ShortcutAction.region.shortcut.display) para capturar uma seleção.") }
+            if images.isEmpty { empty(L("Nenhum screenshot ainda.\nUse %@ para capturar uma seleção.", ShortcutAction.region.shortcut.display)) }
             else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
@@ -76,7 +76,7 @@ struct HistoryView: View {
 
     private var videoGrid: some View {
         Group {
-            if videos.isEmpty { empty("Nenhuma gravação ainda.\nUse \(ShortcutAction.record.shortcut.display) para gravar a tela.") }
+            if videos.isEmpty { empty(L("Nenhuma gravação ainda.\nUse %@ para gravar a tela.", ShortcutAction.record.shortcut.display)) }
             else {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
@@ -90,7 +90,7 @@ struct HistoryView: View {
 
     private var textList: some View {
         Group {
-            if texts.isEmpty { empty("Nenhum texto no histórico.") }
+            if texts.isEmpty { empty(L("Nenhum texto no histórico.")) }
             else {
                 List(texts) { item in
                     TextRow(item: item, store: store, onCopy: onCopyText)
@@ -133,12 +133,12 @@ private struct ImageCard: View {
                     if item.shareOnce == true {
                         Text("1×")
                             .foregroundStyle(.orange)
-                            .help("Visualização única — o link se apaga na primeira abertura")
+                            .help(L("Visualização única — o link se apaga na primeira abertura"))
                     }
                     Spacer()
-                    Button { onCopyText(link) } label: { Image(systemName: "doc.on.doc") }.help("Copiar link")
-                    Button { if let u = URL(string: link) { NSWorkspace.shared.open(u) } } label: { Image(systemName: "safari") }.help("Abrir no navegador")
-                    Button(role: .destructive) { onRevoke(item) } label: { Image(systemName: "link.badge.plus").symbolRenderingMode(.hierarchical) }.help("Revogar link")
+                    Button { onCopyText(link) } label: { Image(systemName: "doc.on.doc") }.help(L("Copiar link"))
+                    Button { if let u = URL(string: link) { NSWorkspace.shared.open(u) } } label: { Image(systemName: "safari") }.help(L("Abrir no navegador"))
+                    Button(role: .destructive) { onRevoke(item) } label: { Image(systemName: "link.badge.plus").symbolRenderingMode(.hierarchical) }.help(L("Revogar link"))
                 }
                 .font(.caption)
                 .buttonStyle(.borderless)
@@ -148,15 +148,15 @@ private struct ImageCard: View {
                 Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(date: .omitted, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button { onCopy(item) } label: { Image(systemName: "doc.on.doc") }.help("Copiar imagem")
+                Button { onCopy(item) } label: { Image(systemName: "doc.on.doc") }.help(L("Copiar imagem"))
                 if item.shareURL == nil {
-                    Button { onShare(item) } label: { Image(systemName: "link") }.help("Compartilhar por link público")
+                    Button { onShare(item) } label: { Image(systemName: "link") }.help(L("Compartilhar por link público"))
                 }
-                Button { onDescribe(item) } label: { Image(systemName: "sparkles") }.help("Descrever com IA")
-                Button { onOCR(item) } label: { Image(systemName: "text.viewfinder") }.help("Extrair texto (OCR)")
-                Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help("Exportar…")
-                Button { if let u = store.url(for: item) { NSWorkspace.shared.activateFileViewerSelecting([u]) } } label: { Image(systemName: "folder") }.help("Mostrar no Finder")
-                Button { store.remove(item) } label: { Image(systemName: "trash") }.help("Apagar")
+                Button { onDescribe(item) } label: { Image(systemName: "sparkles") }.help(L("Descrever com IA"))
+                Button { onOCR(item) } label: { Image(systemName: "text.viewfinder") }.help(L("Extrair texto (OCR)"))
+                Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help(L("Exportar…"))
+                Button { if let u = store.url(for: item) { NSWorkspace.shared.activateFileViewerSelecting([u]) } } label: { Image(systemName: "folder") }.help(L("Mostrar no Finder"))
+                Button { store.remove(item) } label: { Image(systemName: "trash") }.help(L("Apagar"))
             }
             .buttonStyle(.borderless)
         }
@@ -180,7 +180,7 @@ private struct TextRow: View {
     private var label: String {
         switch item.kind {
         case .ocr: return "OCR"
-        case .ai: return "IA · \(item.source ?? "")"
+        case .ai: return L("IA · %@", item.source ?? "")
         default: return "Clipboard"
         }
     }
@@ -203,11 +203,11 @@ private struct TextRow: View {
             .onTapGesture { expanded.toggle() }
             Spacer()
             Button { onCopy(item.text ?? "") } label: { Image(systemName: "doc.on.doc") }
-                .help("Copiar").buttonStyle(.borderless)
+                .help(L("Copiar")).buttonStyle(.borderless)
             Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }
-                .help("Exportar como .txt").buttonStyle(.borderless)
+                .help(L("Exportar como .txt")).buttonStyle(.borderless)
             Button { store.remove(item) } label: { Image(systemName: "trash") }
-                .help("Apagar").buttonStyle(.borderless)
+                .help(L("Apagar")).buttonStyle(.borderless)
         }
         .padding(.vertical, 3)
     }
@@ -236,15 +236,15 @@ private struct VideoCard: View {
             .onTapGesture { onPlay(item) }
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Gravação · \(item.date.formatted(date: .abbreviated, time: .shortened))")
+                    Text(L("Gravação · %@", item.date.formatted(date: .abbreviated, time: .shortened)))
                     Text(item.source ?? "").foregroundStyle(.tertiary)
                 }
                 .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button { onPlay(item) } label: { Image(systemName: "play.fill") }.help("Reproduzir")
-                Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help("Exportar…")
-                Button { if let u = store.url(for: item) { NSWorkspace.shared.activateFileViewerSelecting([u]) } } label: { Image(systemName: "folder") }.help("Mostrar no Finder")
-                Button { store.remove(item) } label: { Image(systemName: "trash") }.help("Apagar")
+                Button { onPlay(item) } label: { Image(systemName: "play.fill") }.help(L("Reproduzir"))
+                Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help(L("Exportar…"))
+                Button { if let u = store.url(for: item) { NSWorkspace.shared.activateFileViewerSelecting([u]) } } label: { Image(systemName: "folder") }.help(L("Mostrar no Finder"))
+                Button { store.remove(item) } label: { Image(systemName: "trash") }.help(L("Apagar"))
             }
             .buttonStyle(.borderless)
         }

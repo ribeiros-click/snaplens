@@ -27,9 +27,9 @@ extension OCR {
                 .map { $0.identifier.replacingOccurrences(of: "_", with: " ") }
         }.value
         let text = await recognize(url: url).trimmingCharacters(in: .whitespacesAndNewlines)
-        var out = "Descrição nativa (sem IA externa — configure um provedor em Ajustes para descrições completas)"
-        if !labels.isEmpty { out += "\nElementos detectados: " + labels.joined(separator: ", ") }
-        if !text.isEmpty { out += "\n\nTexto na imagem:\n" + text }
+        var out = L("Descrição nativa (sem IA externa — configure um provedor em Ajustes para descrições completas)")
+        if !labels.isEmpty { out += "\n" + L("Elementos detectados: ") + labels.joined(separator: ", ") }
+        if !text.isEmpty { out += "\n\n" + L("Texto na imagem:") + "\n" + text }
         return out
     }
 }

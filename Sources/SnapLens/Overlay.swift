@@ -16,12 +16,12 @@ enum Tool: Int, CaseIterable {
     }
     var title: String {
         switch self {
-        case .rect: return "Retângulo"
-        case .ellipse: return "Elipse"
-        case .line: return "Linha"
-        case .arrow: return "Seta"
-        case .pen: return "Caneta"
-        case .text: return "Texto"
+        case .rect: return L("Retângulo")
+        case .ellipse: return L("Elipse")
+        case .line: return L("Linha")
+        case .arrow: return L("Seta")
+        case .pen: return L("Caneta")
+        case .text: return L("Texto")
         }
     }
 }
@@ -184,7 +184,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         background = NSImage(cgImage: image, size: frame.size)
         self.autoAction = autoAction
         super.init(frame: frame)
-        let cancel = NSButton(title: "✕  Cancelar  (Esc)", target: self, action: #selector(doCancel))
+        let cancel = NSButton(title: "✕  " + L("Cancelar") + "  (Esc)", target: self, action: #selector(doCancel))
         cancel.bezelStyle = .rounded
         cancel.controlSize = .large
         cancel.sizeToFit()
@@ -208,8 +208,8 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         dim.fill()
 
         guard let s = selection else {
-            let timer = idleCountdown.map { " · fecha sozinho em \($0)s" } ?? ""
-            drawText("Arraste para selecionar · botão direito refaz · Esc cancela\(timer)", at: CGPoint(x: bounds.midX, y: 64), centered: true)
+            let timer = idleCountdown.map { L(" · fecha sozinho em %@s", String($0)) } ?? ""
+            drawText(L("Arraste para selecionar · botão direito refaz · Esc cancela") + timer, at: CGPoint(x: bounds.midX, y: 64), centered: true)
             return
         }
         NSGraphicsContext.saveGraphicsState()
@@ -428,7 +428,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         f.focusRingType = .none
         f.font = .systemFont(ofSize: 20, weight: .bold)
         f.textColor = color
-        f.placeholderString = "Digite…"
+        f.placeholderString = L("Digite…")
         f.delegate = self
         addSubview(f)
         textField = f
@@ -547,15 +547,15 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         }
         views += colorButtons
         views.append(separator())
-        views.append(button("arrow.uturn.backward", "Desfazer (⌘Z)", #selector(undo)))
+        views.append(button("arrow.uturn.backward", L("Desfazer (⌘Z)"), #selector(undo)))
         views.append(separator())
-        views.append(button("sparkles", "Descrever com IA", #selector(doDescribe)))
-        views.append(button("text.viewfinder", "Extrair texto (OCR)", #selector(doOCR)))
-        views.append(button("link", "Compartilhar por link público", #selector(doShare)))
-        views.append(button("square.and.arrow.down", "Salvar (⌘S)", #selector(doSave)))
-        views.append(button("doc.on.doc", "Copiar (⌘C / Enter)", #selector(doCopy)))
-        views.append(button("rectangle.dashed", "Refazer seleção (botão direito)", #selector(doReselect)))
-        views.append(button("xmark", "Cancelar captura (Esc)", #selector(doCancel)))
+        views.append(button("sparkles", L("Descrever com IA"), #selector(doDescribe)))
+        views.append(button("text.viewfinder", L("Extrair texto (OCR)"), #selector(doOCR)))
+        views.append(button("link", L("Compartilhar por link público"), #selector(doShare)))
+        views.append(button("square.and.arrow.down", L("Salvar (⌘S)"), #selector(doSave)))
+        views.append(button("doc.on.doc", L("Copiar (⌘C / Enter)"), #selector(doCopy)))
+        views.append(button("rectangle.dashed", L("Refazer seleção (botão direito)"), #selector(doReselect)))
+        views.append(button("xmark", L("Cancelar captura (Esc)"), #selector(doCancel)))
 
         let stack = NSStackView(views: views)
         stack.spacing = 4
@@ -633,7 +633,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         annotations = [
             Annotation(tool: .rect, color: .systemRed, start: CGPoint(x: s.minX + 24, y: s.minY + 60), end: CGPoint(x: s.minX + 300, y: s.minY + 110)),
             Annotation(tool: .arrow, color: .systemOrange, start: CGPoint(x: s.maxX - 60, y: s.maxY - 40), end: CGPoint(x: s.minX + 310, y: s.minY + 90)),
-            Annotation(tool: .text, color: .systemOrange, start: CGPoint(x: s.maxX - 150, y: s.maxY - 36), end: .zero, text: "Revisar aqui"),
+            Annotation(tool: .text, color: .systemOrange, start: CGPoint(x: s.maxX - 150, y: s.maxY - 36), end: .zero, text: L("Revisar aqui")),
         ]
         tool = .arrow
         color = .systemOrange

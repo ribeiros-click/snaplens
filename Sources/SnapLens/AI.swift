@@ -38,7 +38,7 @@ enum Provider: String, CaseIterable, Identifiable {
         case .anthropic: return "Anthropic (Claude)"
         case .openai: return "OpenAI"
         case .deepseek: return "DeepSeek"
-        case .custom: return "Personalizado (compatível com OpenAI)"
+        case .custom: return L("Personalizado (compatível com OpenAI)")
         }
     }
     var shortName: String {
@@ -46,7 +46,7 @@ enum Provider: String, CaseIterable, Identifiable {
         case .anthropic: return "Claude"
         case .openai: return "OpenAI"
         case .deepseek: return "DeepSeek"
-        case .custom: return "Personalizado"
+        case .custom: return L("Personalizado")
         }
     }
     var defaultModel: String {
@@ -67,10 +67,10 @@ enum Provider: String, CaseIterable, Identifiable {
     }
     var hint: String {
         switch self {
-        case .anthropic: return "Suporta imagens."
-        case .openai: return "Suporta imagens (use um modelo com visão, ex.: gpt-4o)."
-        case .deepseek: return "Atenção: os modelos da API oficial do DeepSeek podem não aceitar imagens. Se der erro, use outro provedor ou um modelo com visão."
-        case .custom: return "Ollama (http://localhost:11434/v1), OpenRouter, Groq, Gemini (…/v1beta/openai) etc. A chave é opcional."
+        case .anthropic: return L("Suporta imagens.")
+        case .openai: return L("Suporta imagens (use um modelo com visão, ex.: gpt-4o).")
+        case .deepseek: return L("Atenção: os modelos da API oficial do DeepSeek podem não aceitar imagens. Se der erro, use outro provedor ou um modelo com visão.")
+        case .custom: return L("Ollama (http://localhost:11434/v1), OpenRouter, Groq, Gemini (…/v1beta/openai) etc. A chave é opcional.")
         }
     }
     var needsKey: Bool { self != .custom }
@@ -102,13 +102,12 @@ struct AIError: LocalizedError {
 }
 
 enum AIClient {
-    static let prompt = """
-    Descreva esta imagem de forma clara e objetiva, em português do Brasil. \
-    Se houver texto visível, transcreva-o fielmente em uma seção final chamada "Texto na imagem".
-    """
+    static var prompt: String {
+        L("Descreva esta imagem de forma clara e objetiva, em português do Brasil. Se houver texto visível, transcreva-o fielmente em uma seção final chamada \"Texto na imagem\".")
+    }
 
     static func describe(imageURL: URL, provider: Provider) async throws -> String {
-        guard let png = scaledPNG(imageURL, maxSize: 1568) else { throw AIError(message: "Não consegui ler a imagem.") }
+        guard let png = scaledPNG(imageURL, maxSize: 1568) else { throw AIError(message: L("Não consegui ler a imagem.")) }
         let b64 = png.base64EncodedString()
         let req: URLRequest
         switch provider {
@@ -119,7 +118,7 @@ enum AIClient {
     }
 
     static func translate(_ text: String, to language: String, provider: Provider) async throws -> String {
-        let instruction = "Traduza o texto a seguir para \(language). Responda apenas com a tradução, sem comentários.\n\n\(text)"
+        let instruction = L("Traduza o texto a seguir para %@. Responda apenas com a tradução, sem comentários.", language) + "\n\n" + text
         var req: URLRequest
         if provider == .anthropic {
             req = try makeRequest(provider.baseURL + "/v1/messages", body: [
@@ -145,7 +144,7 @@ enum AIClient {
         guard (200..<300).contains(status) else {
             let msg = ((json?["error"] as? [String: Any])?["message"] as? String)
                 ?? String(data: data, encoding: .utf8)?.prefix(200).description ?? ""
-            throw AIError(message: "\(provider.shortName) respondeu \(status): \(msg)")
+            throw AIError(message: L("%@ respondeu %@: %@", provider.shortName, String(status), msg))
         }
         let text: String?
         if provider == .anthropic {
@@ -154,7 +153,7 @@ enum AIClient {
             text = ((json?["choices"] as? [[String: Any]])?.first?["message"] as? [String: Any])?["content"] as? String
         }
         guard let t = text?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty else {
-            throw AIError(message: "Resposta vazia do provedor.")
+            throw AIError(message: L("Resposta vazia do provedor."))
         }
         return t
     }

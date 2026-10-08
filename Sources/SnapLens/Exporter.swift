@@ -15,21 +15,21 @@ enum Exporter {
         switch item.kind {
         case .video:
             panel.allowedContentTypes = [.mpeg4Movie]
-            panel.nameFieldStringValue = "Gravação \(stamp(item.date)).mp4"
+            panel.nameFieldStringValue = L("Gravação") + " \(stamp(item.date)).mp4"
         case .screenshot, .clipboardImage:
             panel.allowedContentTypes = [.png, .jpeg, .tiff]
             panel.nameFieldStringValue = "Screenshot \(stamp(item.date)).png"
         default:
             panel.allowedContentTypes = [.plainText]
-            panel.nameFieldStringValue = "Texto \(stamp(item.date)).txt"
+            panel.nameFieldStringValue = L("Texto") + " \(stamp(item.date)).txt"
         }
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let dest = panel.url else { return }
         do {
             try write(item, to: dest, store: store)
-            Toast.show("Exportado: \(dest.lastPathComponent)", symbol: "square.and.arrow.up")
+            Toast.show(L("Exportado: %@", dest.lastPathComponent), symbol: "square.and.arrow.up")
         } catch {
-            Toast.show("Falha ao exportar: \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("Falha ao exportar: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill")
         }
     }
 
@@ -54,15 +54,15 @@ enum Exporter {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
-        panel.prompt = "Exportar aqui"
-        panel.message = "Escolha onde salvar a exportação da biblioteca"
+        panel.prompt = L("Exportar aqui")
+        panel.message = L("Escolha onde salvar a exportação da biblioteca")
         NSApp.activate(ignoringOtherApps: true)
         guard panel.runModal() == .OK, let parent = panel.url else { return }
 
         let fm = FileManager.default
         let root = parent.appendingPathComponent("SnapLens Export \(stamp(Date()))", isDirectory: true)
         let shots = root.appendingPathComponent("Screenshots", isDirectory: true)
-        let vids = root.appendingPathComponent("Vídeos", isDirectory: true)
+        let vids = root.appendingPathComponent(L("Vídeos"), isDirectory: true)
         do {
             try fm.createDirectory(at: root, withIntermediateDirectories: true)
             var count = 0
@@ -70,23 +70,23 @@ enum Exporter {
             for item in store.items.reversed() {
                 if item.kind == .video {
                     try fm.createDirectory(at: vids, withIntermediateDirectories: true)
-                    try write(item, to: vids.appendingPathComponent("Gravação \(stamp(item.date)).mp4"), store: store)
+                    try write(item, to: vids.appendingPathComponent(L("Gravação") + " \(stamp(item.date)).mp4"), store: store)
                     count += 1
                 } else if item.kind.isImage {
                     try fm.createDirectory(at: shots, withIntermediateDirectories: true)
                     try write(item, to: shots.appendingPathComponent("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") \(stamp(item.date)).png"), store: store)
                     count += 1
                 } else if let t = item.text {
-                    let label = item.kind == .ocr ? "OCR" : item.kind == .ai ? "IA" : "Clipboard"
+                    let label = item.kind == .ocr ? "OCR" : item.kind == .ai ? L("IA") : "Clipboard"
                     texts += "[\(stamp(item.date)) · \(label)]\n\(t)\n\n----------------------------------------\n\n"
                     count += 1
                 }
             }
-            if !texts.isEmpty { try texts.write(to: root.appendingPathComponent("Textos.txt"), atomically: true, encoding: .utf8) }
-            Toast.show("\(count) itens exportados", symbol: "square.and.arrow.up")
+            if !texts.isEmpty { try texts.write(to: root.appendingPathComponent(L("Textos") + ".txt"), atomically: true, encoding: .utf8) }
+            Toast.show(L("%@ itens exportados", String(count)), symbol: "square.and.arrow.up")
             NSWorkspace.shared.activateFileViewerSelecting([root])
         } catch {
-            Toast.show("Falha ao exportar: \(error.localizedDescription)", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("Falha ao exportar: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill")
         }
     }
 }

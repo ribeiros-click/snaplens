@@ -28,6 +28,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(forName: Recorder.stateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.recordingStateChanged() }
         }
+        // Troca de idioma: refaz o menu e as janelas (que guardam textos já traduzidos).
+        NotificationCenter.default.addObserver(forName: L10n.changed, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.rebuildMenu()
+                self.historyWindow?.close(); self.historyWindow = nil
+                self.shareWindow?.close(); self.shareWindow = nil
+                let wasOpen = self.settingsWindow?.isVisible ?? false
+                self.settingsWindow?.close(); self.settingsWindow = nil
+                if wasOpen { self.showSettings() }
+            }
+        }
     }
 
     // MARK: Gravação
@@ -42,7 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Toast.dismiss()
                 do {
                     try await Recorder.shared.start(screen: Capture.screenUnderMouse())
-                    Toast.show("Gravando… use o atalho ou o menu para parar", symbol: "record.circle")
+                    Toast.show(L("Gravando… use o atalho ou o menu para parar"), symbol: "record.circle")
                 } catch {
                     let msg = (error as? Recorder.Failure)?.errorDescription ?? error.localizedDescription
                     Toast.show(msg, symbol: "exclamationmark.triangle.fill")
@@ -101,14 +113,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu() {
         let menu = NSMenu()
-        let about = NSMenuItem(title: "Sobre o SnapLens", action: #selector(showAbout), keyEquivalent: "")
+        let about = NSMenuItem(title: L("Sobre o SnapLens"), action: #selector(showAbout), keyEquivalent: "")
         about.target = self
         menu.addItem(about)
         menu.addItem(.separator())
         for action in ShortcutAction.allCases {
             let sc = action.shortcut
             let simple = sc.key.count == 1
-            let title = action == .record && Recorder.shared.isRecording ? "Parar gravação" : action.title
+            let title = action == .record && Recorder.shared.isRecording ? L("Parar gravação") : action.title
             let item = NSMenuItem(title: title + (action == .history ? "…" : ""),
                                   action: selector(for: action), keyEquivalent: simple ? sc.key.lowercased() : "")
             if simple { item.keyEquivalentModifierMask = sc.menuMask }
@@ -117,19 +129,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if action == .record { menu.addItem(.separator()) }
         }
         menu.addItem(.separator())
-        let cancelItem = NSMenuItem(title: "Cancelar captura em andamento", action: #selector(cancelCapture), keyEquivalent: "")
+        let cancelItem = NSMenuItem(title: L("Cancelar captura em andamento"), action: #selector(cancelCapture), keyEquivalent: "")
         cancelItem.target = self
         menu.addItem(cancelItem)
         let diag = NSMenu()
-        let d1 = NSMenuItem(title: "Revelar log no Finder", action: #selector(revealLog), keyEquivalent: ""); d1.target = self; diag.addItem(d1)
-        let d2 = NSMenuItem(title: "Copiar últimas 200 linhas do log", action: #selector(copyLog), keyEquivalent: ""); d2.target = self; diag.addItem(d2)
-        let diagItem = NSMenuItem(title: "Diagnóstico", action: nil, keyEquivalent: ""); diagItem.submenu = diag
+        let d1 = NSMenuItem(title: L("Revelar log no Finder"), action: #selector(revealLog), keyEquivalent: ""); d1.target = self; diag.addItem(d1)
+        let d2 = NSMenuItem(title: L("Copiar últimas 200 linhas do log"), action: #selector(copyLog), keyEquivalent: ""); d2.target = self; diag.addItem(d2)
+        let diagItem = NSMenuItem(title: L("Diagnóstico"), action: nil, keyEquivalent: ""); diagItem.submenu = diag
         menu.addItem(diagItem)
-        let prefs = NSMenuItem(title: "Ajustes…", action: #selector(showSettings), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: L("Ajustes…"), action: #selector(showSettings), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Sair do SnapLens", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: L("Sair do SnapLens"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
     }
 
@@ -158,7 +170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             if !ok {
-                Toast.show("Atalho \(sc.display) (\(action.title)) já está em uso por outro app", symbol: "exclamationmark.triangle.fill")
+                Toast.show(L("Atalho %@ (%@) já está em uso por outro app", sc.display, action.title), symbol: "exclamationmark.triangle.fill")
             }
         }
     }
@@ -171,11 +183,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         para.alignment = .center
         let base: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor, .paragraphStyle: para]
         let credits = NSMutableAttributedString(
-            string: "Captura de tela com anotações, OCR e descrição de imagens com IA, histórico de screenshots e área de transferência.\n\nCriado por\n",
+            string: L("Captura de tela com anotações, OCR e descrição de imagens com IA, histórico de screenshots e área de transferência.") + "\n\n" + L("Criado por") + "\n",
             attributes: base)
         credits.append(NSAttributedString(string: email, attributes: base.merging([
             .link: URL(string: "mailto:\(email)")!, .font: NSFont.systemFont(ofSize: 11, weight: .semibold)]) { $1 }))
-        credits.append(NSAttributedString(string: "\n\n© 2026 · Todos os direitos reservados", attributes: base))
+        credits.append(NSAttributedString(string: "\n\n© 2026 · " + L("Todos os direitos reservados"), attributes: base))
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "SnapLens",
@@ -186,7 +198,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func revealLog() { NSWorkspace.shared.activateFileViewerSelecting([Trace.fileURL]) }
-    @objc func copyLog() { copyText(Trace.tail(200)); Toast.show("Log copiado — cole no chat", symbol: "doc.on.doc") }
+    @objc func copyLog() { copyText(Trace.tail(200)); Toast.show(L("Log copiado — cole no chat"), symbol: "doc.on.doc") }
 
     @objc func cancelCapture() { overlay?.dismiss(); overlay = nil; OverlayWindow.closeAll() }
 
@@ -211,7 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Trace.log("screenImage: \(captured.map { "\($0.width)x\($0.height)" } ?? "nil") em \(Int(Date().timeIntervalSince(t0) * 1000))ms")
         guard let image = captured else {
             CGRequestScreenCaptureAccess()
-            Toast.show("Permita “Gravação de Tela” ao SnapLens em Ajustes e tente de novo", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("Permita “Gravação de Tela” ao SnapLens em Ajustes e tente de novo"), symbol: "exclamationmark.triangle.fill")
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
                 NSWorkspace.shared.open(url)
             }
@@ -236,7 +248,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .copy:
             copyImage(data: data)
             NSSound(named: "Tink")?.play()
-            Toast.show("Screenshot copiado e salvo no histórico", symbol: "camera.viewfinder")
+            Toast.show(L("Screenshot copiado e salvo no histórico"), symbol: "camera.viewfinder")
         case .save:
             // Dentro do sandbox, .picturesDirectory aponta para o container; usa a pasta Imagens real (entitlement assets.pictures).
             let home = getpwuid(getuid()).map { URL(fileURLWithPath: String(cString: $0.pointee.pw_dir)) } ?? FileManager.default.homeDirectoryForCurrentUser
@@ -247,7 +259,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             try? data.write(to: url)
             copyImage(data: data)
             NSSound(named: "Tink")?.play()
-            Toast.show("Salvo em Imagens/SnapLens e copiado", symbol: "square.and.arrow.down")
+            Toast.show(L("Salvo em Imagens/SnapLens e copiado"), symbol: "square.and.arrow.down")
         case .ocr:
             await runOCR(on: item)
         case .describe:
@@ -261,7 +273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func share(_ item: Item) async {
         guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
-        Toast.show("Enviando para \(ShareConfig.server.replacingOccurrences(of: "https://", with: ""))…", symbol: "link")
+        Toast.show(L("Enviando para %@…", ShareConfig.server.replacingOccurrences(of: "https://", with: "")), symbol: "link")
         do {
             let r = try await ShareClient.upload(data: data, expiry: ShareConfig.expiry, once: ShareConfig.once)
             var it = item
@@ -274,7 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             copyText(r.url)
             NSSound(named: "Pop")?.play()
             let once = r.once ?? false
-            Toast.show("Link copiado · \(expiryText(it.shareExpires))" + (once ? " · visualização única" : ""), symbol: "link")
+            Toast.show(L("Link copiado · %@", expiryText(it.shareExpires)) + (once ? " · " + L("visualização única") : ""), symbol: "link")
             showShareResult(url: r.url, expires: it.shareExpires, token: r.delete_token, once: once)
         } catch {
             Trace.log("share ERRO: \(error.localizedDescription)")
@@ -289,7 +301,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             var it = item
             it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil; it.shareOnce = nil
             store.update(it)
-            Toast.show("Link revogado", symbol: "link.badge.plus")
+            Toast.show(L("Link revogado"), symbol: "link.badge.plus")
         } catch {
             Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
         }
@@ -297,10 +309,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func runOCR(on item: Item) async {
         guard let url = store.url(for: item) else { return }
-        Toast.show("Reconhecendo texto…", symbol: "text.viewfinder")
+        Toast.show(L("Reconhecendo texto…"), symbol: "text.viewfinder")
         let text = await OCR.recognize(url: url).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else {
-            Toast.show("Nenhum texto encontrado", symbol: "exclamationmark.triangle.fill")
+            Toast.show(L("Nenhum texto encontrado"), symbol: "exclamationmark.triangle.fill")
             return
         }
         copyText(text)
@@ -309,22 +321,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Toast.dismiss()
         OCRResultWindow.show(text: text) { [weak self] t in
             self?.copyText(t)
-            Toast.show("Texto copiado")
+            Toast.show(L("Texto copiado"))
         }
     }
 
     func runDescribe(on item: Item) async {
         guard let url = store.url(for: item) else { return }
         let provider = Provider.active
-        Toast.show("Analisando com \(provider?.shortName ?? "Apple Vision")…", symbol: "sparkles")
+        Toast.show(L("Analisando com %@…", provider?.shortName ?? "Apple Vision"), symbol: "sparkles")
         do {
             let text: String
             if let provider { text = try await AIClient.describe(imageURL: url, provider: provider) }
             else { text = await OCR.nativeDescription(url: url) }
             copyText(text)
-            store.addText(text, kind: .ai, source: provider?.shortName ?? "Nativo")
+            store.addText(text, kind: .ai, source: provider?.shortName ?? L("Nativo"))
             NSSound(named: "Pop")?.play()
-            Toast.show("Descrição copiada: \(text.prefix(80))", symbol: "sparkles")
+            Toast.show(L("Descrição copiada: %@", String(text.prefix(80))), symbol: "sparkles")
         } catch {
             Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
         }
@@ -334,7 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if settingsWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 900),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "SnapLens — Ajustes"
+            w.title = "SnapLens — " + L("Ajustes")
             w.contentView = NSHostingView(rootView: SettingsView())
             w.isReleasedWhenClosed = false
             w.center()
@@ -348,7 +360,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if shareWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 260),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "SnapLens — Link compartilhado"
+            w.title = "SnapLens — " + L("Link compartilhado")
             w.isReleasedWhenClosed = false
             w.center()
             shareWindow = w
@@ -369,10 +381,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }, onCopyImage: { [weak self] item in
                 guard let self, let u = self.store.url(for: item), let d = try? Data(contentsOf: u) else { return }
                 self.copyImage(data: d)
-                Toast.show("Imagem copiada")
+                Toast.show(L("Imagem copiada"))
             }, onCopyText: { [weak self] text in
                 self?.copyText(text)
-                Toast.show("Texto copiado")
+                Toast.show(L("Texto copiado"))
             }, onPlay: { [weak self] item in
                 if let u = self?.store.url(for: item) { NSWorkspace.shared.open(u) }
             }, onShare: { [weak self] item in
@@ -383,7 +395,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable],
                              backing: .buffered, defer: false)
-            w.title = "SnapLens — Biblioteca"
+            w.title = "SnapLens — " + L("Biblioteca")
             w.contentView = NSHostingView(rootView: view)
             w.isReleasedWhenClosed = false
             w.center()

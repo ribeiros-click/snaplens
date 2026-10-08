@@ -32,12 +32,12 @@ enum ShortcutAction: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .region: return "Capturar seleção"
-        case .full: return "Capturar tela inteira"
-        case .ocr: return "OCR de uma seleção"
-        case .describe: return "Descrever seleção com IA"
-        case .record: return "Gravar tela (iniciar/parar)"
-        case .history: return "Abrir biblioteca"
+        case .region: return L("Capturar seleção")
+        case .full: return L("Capturar tela inteira")
+        case .ocr: return L("OCR de uma seleção")
+        case .describe: return L("Descrever seleção com IA")
+        case .record: return L("Gravar tela (iniciar/parar)")
+        case .history: return L("Abrir biblioteca")
         }
     }
 
@@ -102,10 +102,10 @@ struct ShortcutRow: View {
         HStack {
             Text(action.title)
             Spacer()
-            Button(recording ? "Pressione as teclas… (Esc cancela)" : shortcut.display) { recording ? stop() : start() }
+            Button(recording ? L("Pressione as teclas… (Esc cancela)") : shortcut.display) { recording ? stop() : start() }
                 .frame(minWidth: 140)
             Button { action.reset(); shortcut = action.shortcut } label: { Image(systemName: "arrow.counterclockwise") }
-                .help("Restaurar padrão").buttonStyle(.borderless)
+                .help(L("Restaurar padrão")).buttonStyle(.borderless)
         }
         .onDisappear { stop() }
     }
