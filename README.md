@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://lens.ribeiros.click/download/SnapLens.dmg"><strong>⬇️ Download SnapLens.dmg</strong></a> ·
-  <a href="https://github.com/joserribeiro26/snaplens/releases/latest">Releases</a> ·
+  <a href="https://github.com/ribeiros-click/snaplens/releases/latest">Releases</a> ·
   <a href="https://lens.ribeiros.click/">Project website</a>
 </p>
 
@@ -64,7 +64,7 @@ All of them are configurable in Settings. The app warns you if another program a
 
 ## Install
 
-1. Download [SnapLens.dmg](https://lens.ribeiros.click/download/SnapLens.dmg) (or grab it from [Releases](https://github.com/joserribeiro26/snaplens/releases/latest)).
+1. Download [SnapLens.dmg](https://lens.ribeiros.click/download/SnapLens.dmg) (or grab it from [Releases](https://github.com/ribeiros-click/snaplens/releases/latest)).
 2. Drag SnapLens to **Applications**.
 3. The build is not notarized yet: on first launch, right-click → **Open**.
 4. Allow **Screen Recording** (and Microphone, if you want it) in System Settings → Privacy & Security.
