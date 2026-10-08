@@ -9,62 +9,68 @@
 </head>
 <body>
 <header class="bar">
-  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28"> SnapLens</a>
-  <nav><a href="/#recursos">Recursos</a><a href="/#baixar">Baixar</a><a href="/politicas/">Políticas</a></nav>
+  <a class="brand" href="/"><img src="/assets/icon.png" alt=""> SnapLens</a>
+  <nav><a href="/#recursos">Recursos</a><a href="/politicas/">Políticas</a><a href="/contato">Contato</a><a class="btn primary small" href="/download/SnapLens.dmg">Baixar</a></nav>
 </header>
 <main class="doc">
   <h1>Política de Privacidade</h1>
-  <p class="updated">Versão 1.0 · vigente a partir de 6 de outubro de 2026</p>
+  <p class="updated">Versão 2.0 · vigente a partir de 8 de outubro de 2026 · substitui a versão 1.0</p>
 
   <p>Esta política descreve como o aplicativo <strong>SnapLens</strong> para macOS (“App”) e o serviço de links públicos em <strong>lens.ribeiros.click</strong> (“Serviço”) tratam dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, “LGPD”).</p>
 
   <h2>1. Quem é o responsável</h2>
-  <p>O App e o Serviço são mantidos por seu desenvolvedor, contatável em <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a>. Para fins da LGPD, o desenvolvedor atua como <strong>controlador</strong> dos dados do Serviço descritos na seção 3, e como <strong>operador</strong> em relação ao conteúdo das imagens que você decide publicar.</p>
+  <p>O App e o Serviço são mantidos por seu desenvolvedor, contatável em <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> ou pelo <a href="/contato">formulário de contato</a>. Para fins da LGPD, o desenvolvedor é o <strong>controlador</strong> dos dados operacionais do Serviço (seção 3) e <strong>operador</strong> em relação ao conteúdo das imagens que você decide publicar.</p>
 
   <h2>2. O App: tudo fica no seu Mac</h2>
   <p>O App não exige conta, não possui telemetria e não envia dados a terceiros por iniciativa própria. Localmente ele guarda:</p>
   <ul>
-    <li><strong>Screenshots, gravações e textos</strong> capturados ou copiados, na Biblioteca (<code>~/Library/Application Support/SnapLens</code>, ou o contêiner do app na versão com sandbox). Até 500 itens de imagem/texto; vídeos ficam até você apagar.</li>
+    <li><strong>Screenshots, gravações e textos</strong> capturados ou copiados, na Biblioteca (pasta de suporte do app). Até 500 itens de imagem/texto; vídeos ficam até você apagar.</li>
     <li><strong>Área de transferência</strong>: o App monitora o clipboard para montar o histórico. Conteúdo marcado como confidencial ou transitório (o padrão usado por gerenciadores de senha) é ignorado e nunca armazenado.</li>
-    <li><strong>Chaves de API e a chave de upload</strong>, no Keychain do macOS. Preferências (atalhos, modelos, validade padrão) nos ajustes do app.</li>
+    <li><strong>Chaves de provedores de IA</strong>, no Keychain do macOS. Preferências (atalhos, modelos, validade padrão dos links) nos ajustes do app.</li>
+    <li><strong>Links que você criou</strong>: URL, validade e token de exclusão de cada compartilhamento, para que a Biblioteca possa revogá-los.</li>
+    <li><strong>Log de diagnóstico</strong> opcional em <code>~/Library/Logs/SnapLens</code>, com eventos técnicos (abertura do overlay, cliques, teclas, erros). Não contém imagens nem textos capturados e nunca é enviado automaticamente.</li>
   </ul>
-  <p>Você pode apagar qualquer item ou limpar tudo pela Biblioteca. Desinstalar o App e remover a pasta acima elimina todos os dados locais.</p>
+  <p>Você pode apagar qualquer item pela Biblioteca. Desinstalar o App e remover suas pastas de suporte e de logs elimina todos os dados locais.</p>
 
   <h2>3. O Serviço de links públicos</h2>
-  <p>Uma imagem só é enviada ao Serviço quando você clica em <em>Compartilhar</em> (ícone de link) no App. Nesse momento o Serviço passa a tratar:</p>
+  <p>Uma imagem só é enviada ao Serviço quando você clica em <em>Compartilhar</em> (ícone de link) no App. <strong>Não há cadastro, conta, login nem cookie</strong>: o upload é anônimo. O Serviço trata:</p>
   <table>
     <tr><th>Dado</th><th>Finalidade</th><th>Retenção</th></tr>
-    <tr><td>Dados da conta: nome, e-mail, senha (armazenada apenas como hash), datas de criação e último acesso, chave de API (apenas hash e últimos 4 caracteres)</td><td>Identificar quem publica, autenticar o App, aplicar cotas e atender à Política de Uso Aceitável</td><td>Enquanto a conta existir; você pode excluí-la no painel a qualquer momento</td></tr>
-    <tr><td>A imagem enviada</td><td>Exibi-la a quem possuir o link</td><td>Até a validade escolhida (1 h a 30 dias) ou, em links permanentes, até a revogação</td></tr>
-    <tr><td>Metadados: identificador do link, formato, dimensões, tamanho, datas de criação e expiração, contador de visualizações, hash do token de revogação</td><td>Operar o link e permitir sua revogação</td><td>Mesmo prazo da imagem</td></tr>
-    <tr><td>Logs de acesso do servidor (endereço IP, data/hora, URL, navegador)</td><td>Segurança, prevenção de abuso e diagnóstico</td><td>Conforme a política padrão do provedor de hospedagem (Hostinger), tipicamente poucos dias</td></tr>
+    <tr><td>A imagem enviada</td><td>Exibi-la a quem possuir o link</td><td>Até a validade escolhida (1 h a 30 dias); em links “sem expirar”, até a revogação; em “visualização única”, até a primeira abertura</td></tr>
+    <tr><td>Metadados do link: identificador, formato, dimensões, tamanho, datas de criação e expiração, contador de visualizações, sinal de visualização única, <em>hash</em> do token de exclusão</td><td>Operar o link e permitir sua revogação</td><td>Mesmo prazo da imagem</td></tr>
+    <tr><td>Endereço IP de quem faz upload, usa a página de token ou envia o formulário de contato, com data/hora</td><td>Limitar abusos (rate limit por IP: 30 uploads, 30 consultas de token e 5 contatos por hora)</td><td>1 hora; registros mais antigos são apagados automaticamente a cada nova verificação</td></tr>
+    <tr><td>Mensagens do formulário de contato (nome, e-mail, assunto, texto, IP, data)</td><td>Responder você e tratar denúncias</td><td>Enviadas por e-mail para contato@ribeiros.click; se o envio falhar, ficam em um arquivo privado no servidor até serem tratadas (no máximo 2 anos)</td></tr>
+    <tr><td>Logs de acesso do servidor web (IP, data/hora, URL, navegador)</td><td>Segurança e diagnóstico</td><td>Conforme a política padrão do provedor de hospedagem (Hostinger), tipicamente poucos dias</td></tr>
   </table>
-  <p>O Serviço usa um único cookie, <code>lens_sess</code>, estritamente necessário para manter você conectado ao painel; ele não é usado para rastreamento nem compartilhado com terceiros, e as páginas de link público não dependem dele. Não há cookies de análise ou publicidade, não criamos perfis e não inserimos rastreadores de terceiros. As páginas de link incluem a tag <code>noindex</code> para desestimular indexação por buscadores, mas qualquer pessoa com a URL pode ver a imagem: trate o link como público.</p>
-  <p><strong>Base legal:</strong> execução do serviço solicitado por você (art. 7º, V) e legítimo interesse na segurança da infraestrutura (art. 7º, IX).</p>
+  <p>O Serviço não usa cookies, não cria perfis e não insere rastreadores ou scripts de terceiros. As páginas de link incluem a tag <code>noindex</code> para desestimular indexação por buscadores, mas <strong>qualquer pessoa com a URL pode ver a imagem</strong>: trate o link como público. A página de visualização registra uma contagem simples de aberturas, sem identificar quem abriu.</p>
+  <p><strong>Base legal:</strong> execução do serviço solicitado por você (art. 7º, V) e legítimo interesse na segurança da infraestrutura e na prevenção de abuso (art. 7º, IX).</p>
 
-  <h2>4. Provedores de IA (opcional)</h2>
-  <p>A função “Descrever com IA” só funciona se você configurar um provedor e clicar no botão. A imagem selecionada é então enviada diretamente do seu Mac ao provedor escolhido (Anthropic, OpenAI, DeepSeek ou um endpoint personalizado, inclusive local como Ollama), sob a política de privacidade desse provedor. O Serviço lens.ribeiros.click não participa dessa transmissão. Sem provedor configurado, a análise é feita offline pelo framework Vision da Apple. O OCR de texto sempre roda localmente.</p>
+  <h2>4. Token de exclusão</h2>
+  <p>Cada link vem com um token de exclusão, mostrado uma única vez no App. O Serviço guarda apenas o <em>hash</em> SHA-256 do token; por isso não é possível recuperá-lo depois. Com o token, qualquer pessoa pode localizar e apagar a imagem pela página <a href="/token">/token</a> — guarde-o como uma senha. Sem o token e sem o link, o desenvolvedor só consegue remover uma imagem a partir de uma denúncia que identifique a URL.</p>
 
-  <h2>5. Compartilhamento com terceiros</h2>
-  <p>Não vendemos nem cedemos dados. Os únicos terceiros envolvidos são o provedor de hospedagem (Hostinger, que armazena o Serviço) e, se você optar, o provedor de IA que você mesmo configurou.</p>
+  <h2>5. Provedores de IA (opcional)</h2>
+  <p>A função “Descrever com IA” só funciona se você configurar um provedor e clicar no botão. A imagem selecionada é então enviada diretamente do seu Mac ao provedor escolhido (Anthropic, OpenAI, DeepSeek ou um endpoint personalizado, inclusive local como Ollama), sob a política de privacidade desse provedor. O Serviço lens.ribeiros.click não participa dessa transmissão. Sem provedor configurado, a análise é feita offline pelo framework Vision da Apple. O OCR de texto e a tradução nativa sempre rodam localmente.</p>
 
-  <h2>6. Transferência internacional</h2>
+  <h2>6. Compartilhamento com terceiros</h2>
+  <p>Não vendemos nem cedemos dados. Os únicos terceiros envolvidos são o provedor de hospedagem (Hostinger, que armazena o Serviço e entrega os e-mails de contato) e, se você optar, o provedor de IA que você mesmo configurou.</p>
+
+  <h2>7. Transferência internacional</h2>
   <p>O Serviço é hospedado em infraestrutura da Hostinger, que pode estar localizada fora do Brasil. Provedores de IA configurados por você também podem processar dados no exterior. Tais transferências ocorrem com base no art. 33 da LGPD, para a execução do serviço solicitado.</p>
 
-  <h2>7. Seus direitos</h2>
-  <p>Você pode, a qualquer momento: revogar um link pela Biblioteca do App ou pelo painel (a imagem é apagada imediatamente); excluir sua conta no painel, o que apaga seus dados cadastrais, sua chave e todos os seus links; solicitar confirmação, acesso, correção ou eliminação de dados; e obter informações sobre o tratamento. Escreva para <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> informando a URL do link. Respondemos em até 15 dias.</p>
-  <p>Se uma imagem publicada por outra pessoa contiver dados seus, use o link “Denunciar conteúdo” na própria página ou o mesmo e-mail.</p>
+  <h2>8. Seus direitos</h2>
+  <p>Você pode, a qualquer momento: revogar um link pela Biblioteca do App ou pela página <a href="/token">/token</a> (a imagem é apagada imediatamente); solicitar confirmação, acesso, correção ou eliminação de dados; e obter informações sobre o tratamento. Use o <a href="/contato">formulário de contato</a> ou escreva para <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a>, informando a URL do link quando houver. Respondemos em até 15 dias.</p>
+  <p>Se uma imagem publicada por outra pessoa contiver dados seus, use o link “Denunciar conteúdo” na própria página do link.</p>
 
-  <h2>8. Menores de idade</h2>
+  <h2>9. Menores de idade</h2>
   <p>O Serviço não é direcionado a menores de 18 anos e não coleta conscientemente dados de crianças ou adolescentes.</p>
 
-  <h2>9. Segurança</h2>
-  <p>Tráfego cifrado com HTTPS; upload autenticado por chave; arquivos e metadados fora do alcance direto do navegador; tokens de revogação armazenados apenas como hash. Detalhes na <a href="/politicas/seguranca.html">Política de Segurança</a>.</p>
+  <h2>10. Segurança</h2>
+  <p>Tráfego cifrado com HTTPS; arquivos e metadados fora do alcance direto do navegador; tokens de exclusão armazenados apenas como hash; limites por IP contra abuso. Detalhes na <a href="/politicas/seguranca.html">Política de Segurança</a>.</p>
 
-  <h2>10. Alterações</h2>
-  <p>Mudanças nesta política serão publicadas nesta página com nova data de vigência. Mudanças relevantes serão destacadas no site por ao menos 30 dias.</p>
+  <h2>11. Alterações</h2>
+  <p>Mudanças nesta política serão publicadas nesta página com nova data de vigência. Mudanças relevantes serão destacadas no site por ao menos 30 dias. Histórico: v1.0 (06/10/2026) previa contas de usuário e cookie de sessão, recursos removidos em 08/10/2026.</p>
 </main>
-<footer class="foot">SnapLens · contato: <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> · © 2026
+<footer class="foot simple">SnapLens · <a href="/contato">Contato</a> · <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> · © 2026
   <nav><a href="/politicas/">Todas as políticas</a></nav>
 </footer>
 </body>

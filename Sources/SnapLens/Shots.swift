@@ -38,10 +38,14 @@ enum Shots {
             write(img, dir.appendingPathComponent("biblioteca.png"))
         }
 
-        // 3. Ajustes.
+        // 3. Ajustes — com valores neutros (não expõe as preferências reais do usuário).
+        let ud = UserDefaults.standard
+        let savedProvider = ud.string(forKey: "activeProvider")
+        ud.set("", forKey: "activeProvider")
         if let img = snapshot(NSHostingView(rootView: SettingsView()), size: CGSize(width: 520, height: 900)) {
             write(img, dir.appendingPathComponent("ajustes.png"))
         }
+        if let savedProvider { ud.set(savedProvider, forKey: "activeProvider") } else { ud.removeObject(forKey: "activeProvider") }
         try? FileManager.default.removeItem(at: tmp)
     }
 

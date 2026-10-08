@@ -14,7 +14,7 @@
 </header>
 <main class="doc">
   <h1>Política de Segurança e Divulgação Responsável</h1>
-  <p class="updated">Versão 1.0 · vigente a partir de 6 de outubro de 2026</p>
+  <p class="updated">Versão 1.1 · vigente a partir de 8 de outubro de 2026</p>
 
   <h2>1. Medidas em vigor</h2>
   <h3>No App</h3>
@@ -27,9 +27,10 @@
   <h3>No Serviço</h3>
   <ul>
     <li>HTTPS obrigatório, com redirecionamento de HTTP.</li>
-    <li>Upload e exclusão autenticados por chave secreta enviada em cabeçalho, comparada em tempo constante.</li>
+    <li>Upload anônimo com limite por IP (30/h), consultas de token (30/h) e contatos (5/h); os registros de IP vivem por 1 hora.</li>
+    <li>Exclusão autenticada pelo token do link; página de administração protegida por token secreto comparado em tempo constante.</li>
     <li>Identificadores de link com 10 caracteres aleatórios (≈ 57 bits), gerados com fonte criptográfica.</li>
-    <li>Tokens de revogação armazenados apenas como hash SHA-256.</li>
+    <li>Tokens de exclusão armazenados apenas como hash SHA-256; links de visualização única são apagados na primeira abertura.</li>
     <li>Arquivos e metadados fora do alcance direto do servidor web; servidos apenas pelo código do Serviço após validação de existência e prazo.</li>
     <li>Validação do tipo real da imagem (não apenas da extensão); limite de 25 MB.</li>
     <li>Cabeçalhos <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: SAMEORIGIN</code>, <code>Referrer-Policy: no-referrer</code>, <code>noindex</code> nas páginas de link.</li>
@@ -37,7 +38,7 @@
   </ul>
 
   <h2>2. O que o Serviço não oferece</h2>
-  <p>Para transparência: não há proteção por senha nos links, não há autenticação de quem visualiza, e não há criptografia do arquivo em repouso além da aplicada pelo provedor de hospedagem. Qualquer pessoa com a URL pode ver a imagem enquanto o link estiver ativo.</p>
+  <p>Para transparência: não há proteção por senha nos links, não há autenticação de quem visualiza, não há contas, e não há criptografia do arquivo em repouso além da aplicada pelo provedor de hospedagem. O formulário de contato usa honeypot e limite por IP, mas não CAPTCHA. Qualquer pessoa com a URL pode ver a imagem enquanto o link estiver ativo.</p>
 
   <h2>3. Divulgação responsável</h2>
   <p>Se você encontrar uma vulnerabilidade no App ou no Serviço, pedimos que:</p>
