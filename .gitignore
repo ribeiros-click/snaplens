@@ -11,3 +11,6 @@ server/public_html/_data/
 server/public_html/download/
 server/public_html/assets/icon.png
 server/public_html/assets/icon-musgo.png
+server/public_html/favicon.ico
+server/public_html/favicon-32.png
+server/public_html/apple-touch-icon.png
