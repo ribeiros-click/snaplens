@@ -37,12 +37,12 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 <meta property="og:image:height" content="<?= (int) $m['height'] ?>">
 <meta name="twitter:card" content="summary_large_image">
 <?php endif; ?>
-<link rel="icon" href="/assets/icon.png">
-<link rel="stylesheet" href="/assets/site.css?v=5">
+<link rel="icon" href="/assets/icon.png?v=6">
+<link rel="stylesheet" href="/assets/site.css?v=6">
 </head>
 <body class="share">
 <header class="bar">
-  <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28"> SnapLens</a>
+  <a class="brand" href="/"><img src="/assets/icon.png?v=6" alt="" width="28" height="28"> SnapLens</a>
   <?php if (!$gone): ?>
   <div class="meta">
     <span><?= (int) $m['width'] ?> × <?= (int) $m['height'] ?></span>

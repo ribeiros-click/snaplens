@@ -11,7 +11,7 @@ rm -rf "$APP" .build/icon && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resou
 cp "$BIN" "$APP/Contents/MacOS/SnapLens"
 
 swiftc -O Tools/make_icon.swift -o .build/icon/make_icon
-.build/icon/make_icon .build/icon/icon_1024.png "${ICON:-1}"
+.build/icon/make_icon .build/icon/icon_1024.png "${ICON:-4}"
 for s in 16 32 128 256 512; do
   sips -z $s $s .build/icon/icon_1024.png --out .build/icon/AppIcon.iconset/icon_${s}x${s}.png >/dev/null
   sips -z $((s*2)) $((s*2)) .build/icon/icon_1024.png --out .build/icon/AppIcon.iconset/icon_${s}x${s}@2x.png >/dev/null

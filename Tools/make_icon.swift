@@ -4,6 +4,7 @@ import AppKit
 //   1 = Lente   (anel de lente + ponto de gravação, azul/ciano)
 //   2 = Foco    (moldura de captura + play, laranja/magenta)
 //   3 = Grafite (moldura menta + botão REC, escuro)
+//   4 = Musgo   (identidade do site: musgo chapado, moldura areia, lente marrom)
 let S: CGFloat = 1024
 let variant = CommandLine.arguments.count > 2 ? Int(CommandLine.arguments[2]) ?? 1 : 1
 let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(S), pixelsHigh: Int(S), bitsPerSample: 8,
@@ -68,6 +69,18 @@ case 3:
     NSGradient(colors: [c(1, 0.45, 0.42), c(0.92, 0.12, 0.2)])!.draw(in: circle(118), angle: -90)
     c(1, 1, 1, 0.9).setStroke()
     let ring = circle(158); ring.lineWidth = 16; ring.stroke()
+case 4:
+    // Fundo musgo chapado (sem degradê), coerente com os botões do site
+    c(0.373, 0.478, 0.208).setFill(); rect.fill()
+    // leve vinheta para dar volume sem parecer degradê
+    NSGradient(colors: [c(1, 1, 1, 0.07), c(0, 0, 0, 0.10)])!.draw(in: rect, angle: -90)
+    let frame = rect.insetBy(dx: 150, dy: 150)
+    brackets(in: frame, len: 140, width: 50, color: c(0.953, 0.933, 0.894))
+    // lente: anel marrom + vidro areia + pupila musgo escuro
+    c(0.541, 0.416, 0.235).setFill(); circle(190).fill()
+    c(0.953, 0.933, 0.894).setFill(); circle(140).fill()
+    c(0.235, 0.302, 0.129).setFill(); circle(78).fill()
+    c(1, 1, 1, 0.85).setFill(); circle(22, at: NSPoint(x: center.x - 32, y: center.y + 34)).fill()
 default:
     NSGradient(colors: [c(0.10, 0.62, 0.95), c(0.30, 0.25, 0.85), c(0.12, 0.08, 0.40)])!.draw(in: rect, angle: -60)
     // anel externo da lente
