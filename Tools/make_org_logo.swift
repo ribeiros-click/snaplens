@@ -10,15 +10,15 @@ let moss = c(0.373, 0.478, 0.208), sand = c(0.953, 0.933, 0.894), brown = c(0.54
 // fundo: círculo musgo (avatares do GitHub são recortados em círculo)
 moss.setFill(); NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: S, height: S)).fill()
 NSGradient(colors: [c(1, 1, 1, 0.08), c(0, 0, 0, 0.10)])!.draw(in: NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: S, height: S)), angle: -90)
-// "r" minúsculo geométrico: haste + arco
+// "r" minúsculo geométrico: haste + ombro (arco por cima, abrindo para a direita)
 let stroke: CGFloat = 118
 sand.setStroke()
 let stem = NSBezierPath(); stem.lineWidth = stroke; stem.lineCapStyle = .round
-stem.move(to: NSPoint(x: 372, y: 300)); stem.line(to: NSPoint(x: 372, y: 640)); stem.stroke()
+stem.move(to: NSPoint(x: 400, y: 290)); stem.line(to: NSPoint(x: 400, y: 560)); stem.stroke()
 let arc = NSBezierPath(); arc.lineWidth = stroke; arc.lineCapStyle = .round
-arc.appendArc(withCenter: NSPoint(x: 540, y: 520), radius: 168, startAngle: 180, endAngle: 55, clockwise: false); arc.stroke()
+arc.appendArc(withCenter: NSPoint(x: 540, y: 560), radius: 140, startAngle: 180, endAngle: 15, clockwise: true); arc.stroke()
 // ponto do ".click"
-brown.setFill(); NSBezierPath(ovalIn: NSRect(x: 676, y: 240, width: 128, height: 128)).fill()
-dark.setFill(); NSBezierPath(ovalIn: NSRect(x: 712, y: 276, width: 56, height: 56)).fill()
+brown.setFill(); NSBezierPath(ovalIn: NSRect(x: 640, y: 232, width: 128, height: 128)).fill()
+dark.setFill(); NSBezierPath(ovalIn: NSRect(x: 676, y: 268, width: 56, height: 56)).fill()
 NSGraphicsContext.restoreGraphicsState()
 try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: out))
