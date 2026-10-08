@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://lens.ribeiros.click/assets/icon.png" width="128" alt="SnapLens">
+  <img src="https://lens.ribeiros.click/assets/icon-musgo.png" width="128" alt="SnapLens">
 </p>
 
 <h1 align="center">SnapLens</h1>

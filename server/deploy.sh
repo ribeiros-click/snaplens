@@ -41,7 +41,7 @@ fi
 # 4. Prints + DMG mais recente dentro do pacote
 mkdir -p server/public_html/assets/img server/public_html/download
 [ -f SnapLens.dmg ] && cp SnapLens.dmg server/public_html/download/SnapLens.dmg
-[ -f .build/icon/icon_1024.png ] && sips -z 256 256 .build/icon/icon_1024.png --out server/public_html/assets/icon.png >/dev/null
+[ -f .build/icon/icon_1024.png ] && sips -z 256 256 .build/icon/icon_1024.png --out server/public_html/assets/icon.png >/dev/null && cp server/public_html/assets/icon.png server/public_html/assets/icon-musgo.png
 
 # 5. Zip (inclui .htaccess) e upload via TUS
 STAMP=$(date +%Y%m%d_%H%M%S); ZIP=$ROOT/.build/site_$STAMP.zip
