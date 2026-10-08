@@ -38,7 +38,7 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 <meta name="twitter:card" content="summary_large_image">
 <?php endif; ?>
 <link rel="icon" href="/assets/icon.png">
-<link rel="stylesheet" href="/assets/site.css?v=4">
+<link rel="stylesheet" href="/assets/site.css?v=5">
 </head>
 <body class="share">
 <header class="bar">

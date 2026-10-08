@@ -77,9 +77,9 @@ enum Shots {
 
     private static func makeDesktop(size: CGSize) -> NSImage {
         NSImage(size: size, flipped: true) { r in
-            NSGradient(colors: [NSColor(red: 0.16, green: 0.27, blue: 0.62, alpha: 1),
-                                NSColor(red: 0.55, green: 0.30, blue: 0.70, alpha: 1),
-                                NSColor(red: 0.95, green: 0.55, blue: 0.45, alpha: 1)])!.draw(in: r, angle: -35)
+            NSGradient(colors: [NSColor(red: 0.27, green: 0.33, blue: 0.19, alpha: 1),
+                                NSColor(red: 0.50, green: 0.42, blue: 0.28, alpha: 1),
+                                NSColor(red: 0.84, green: 0.76, blue: 0.58, alpha: 1)])!.draw(in: r, angle: -35)
             // barra de menus
             NSColor(white: 1, alpha: 0.75).setFill(); NSRect(x: 0, y: 0, width: r.width, height: 26).fill()
             text("  Finder   Arquivo   Editar   Visualizar   Ir   Janela   Ajuda", at: CGPoint(x: 8, y: 5), size: 13, weight: .semibold, color: .black)
@@ -115,7 +115,7 @@ enum Shots {
             let dock = NSRect(x: r.midX - 260, y: r.height - 74, width: 520, height: 62)
             NSColor(white: 1, alpha: 0.35).setFill(); NSBezierPath(roundedRect: dock, xRadius: 18, yRadius: 18).fill()
             for i in 0..<9 {
-                NSColor(hue: CGFloat(i) / 9, saturation: 0.55, brightness: 0.95, alpha: 1).setFill()
+                NSColor(hue: 0.08 + CGFloat(i) * 0.035, saturation: 0.35, brightness: 0.78, alpha: 1).setFill()
                 NSBezierPath(roundedRect: NSRect(x: dock.minX + 14 + CGFloat(i) * 56, y: dock.minY + 10, width: 42, height: 42), xRadius: 10, yRadius: 10).fill()
             }
             return true
