@@ -6,28 +6,35 @@
 <title>SnapLens — screenshots, OCR e IA para macOS</title>
 <meta name="description" content="SnapLens: app nativo de barra de menu para macOS com captura anotada, OCR local, descrição por IA, gravação de tela, biblioteca e links públicos que expiram sozinhos.">
 <meta name="theme-color" content="#f3eee4">
-<meta property="og:title" content="SnapLens para macOS">
+<meta property="og:title" content="SnapLens — macOS">
 <meta property="og:description" content="Capture, anote, extraia texto e compartilhe com link que expira. Grátis, nativo, sem conta.">
 <meta property="og:image" content="https://lens.ribeiros.click/assets/img/overlay.png">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="pt-BR" href="https://lens.ribeiros.click/">
+<link rel="alternate" hreflang="en" href="https://lens.ribeiros.click/en/">
+<link rel="alternate" hreflang="es" href="https://lens.ribeiros.click/es/">
+<link rel="alternate" hreflang="it" href="https://lens.ribeiros.click/it/">
+<link rel="alternate" hreflang="zh-Hans" href="https://lens.ribeiros.click/zh/">
+<link rel="alternate" hreflang="x-default" href="https://lens.ribeiros.click/">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
-<link rel="stylesheet" href="/assets/site.css?v=6">
+<link rel="stylesheet" href="/assets/site.css?v=7">
 </head>
 <body>
 <header class="bar">
   <a class="brand" href="/"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a>
   <nav>
     <a href="#recursos">Recursos</a>
+    <a href="#video">Vídeo</a>
     <a href="#prints">Prints</a>
     <a href="#atalhos">Atalhos</a>
     <a href="#compartilhar">Links</a>
     <a href="#faq">Dúvidas</a>
+    <span class="langs" aria-label="Idioma"><a href="/" class=on>Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/">中文</a></span>
     <a class="btn primary small" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a>
   </nav>
 </header>
 
 <main>
-  <!-- Hero -->
   <section class="hero">
     <div class="wrap">
       <div class="eyebrow"><b>Grátis</b> macOS 15+ · Apple Silicon · sem conta</div>
@@ -38,18 +45,17 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
           Baixar para macOS
         </a>
-        <a class="btn big" href="#prints">Ver em ação</a>
+        <a class="btn big" href="#video">▶ Ver o vídeo</a>
         <p class="hint">Depois de instalar, pressione <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> para capturar.</p>
       </div>
       <div class="window">
         <div class="tb"><i></i><i></i><i></i><span>Overlay de captura — SnapLens</span></div>
-        <img src="/assets/img/overlay.png" alt="Overlay de captura do SnapLens com seleção, seta, retângulo e texto" width="1440" height="900" fetchpriority="high">
+        <img src="/assets/img/overlay.png" alt="SnapLens" width="1440" height="900" fetchpriority="high">
       </div>
     </div>
     <div class="hero-fade"></div>
   </section>
 
-  <!-- Passos -->
   <section class="wrap" style="padding-top:24px">
     <div class="steps">
       <div class="step"><div class="n">1</div><h3>Capture</h3><p>⌥⌘P congela a tela. Arraste para selecionar, ajuste pelas alças ou nudge com as setas.</p></div>
@@ -58,98 +64,52 @@
     </div>
   </section>
 
-  <!-- Recursos -->
   <section id="recursos" class="wrap">
-    <div class="sec-head">
-      <h2>Tudo que um screenshot precisa</h2>
-      <p>Rápido como o Lightshot, nativo como o macOS. Sem Electron, sem assinatura, sem telemetria.</p>
-    </div>
+    <div class="sec-head"><h2>Tudo que um screenshot precisa</h2><p>Rápido como o Lightshot, nativo como o macOS. Sem Electron, sem assinatura, sem telemetria.</p></div>
     <div class="bento">
-      <div class="tile wide">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg></div>
-        <h3>Overlay de captura completo</h3>
-        <p>Seleção com alças, movimentação, nudge por teclado, dimensões ao vivo e uma barra de ferramentas com tudo que você precisa. Esc, botão direito ou o botão Cancelar saem a qualquer momento — e se você não mexer em 10 s, ele se fecha sozinho.</p>
-        <div class="chips"><span>Retângulo</span><span>Elipse</span><span>Linha</span><span>Seta</span><span>Caneta</span><span>Texto</span><span>7 cores</span><span>⌘Z</span></div>
-      </div>
-      <div class="tile wide violet">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div>
-        <h3>OCR 100% local</h3>
-        <p>Extraia o texto de qualquer região com o Vision da Apple, offline. O resultado abre numa janela editável, já copiado, com tradução para 9 idiomas pelo tradutor do próprio macOS.</p>
-        <div class="chips"><span>Português e inglês</span><span>Detecção automática de idioma</span><span>Tradução offline</span></div>
-      </div>
-      <div class="tile pink">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM5 17l.9 2.1L8 20l-2.1.9L5 23l-.9-2.1L2 20l2.1-.9zM19 15l.7 1.6 1.6.7-1.6.7L19 19.5l-.7-1.5-1.6-.7 1.6-.7z"/></svg></div>
-        <h3>Descrição por IA</h3>
-        <p>Claude, OpenAI, DeepSeek ou qualquer API compatível, inclusive Ollama local. Sem chave, usa o modo nativo.</p>
-      </div>
-      <div class="tile green">
-        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></div>
-        <h3>Gravação de tela</h3>
-        <p>MP4 H.264 com áudio do sistema e/ou microfone, com cronômetro na barra de menu.</p>
-      </div>
-      <div class="tile amber">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h8"/></svg></div>
-        <h3>Biblioteca</h3>
-        <p>Screenshots, vídeos, textos copiados, OCR e descrições num só lugar, com busca e exportação.</p>
-      </div>
-      <div class="tile">
-        <div class="ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1L11 4.9"/><path d="M14 11a5 5 0 0 0-7.1 0L4.1 13.8a5 5 0 0 0 7.1 7.1L13 19.1"/></svg></div>
-        <h3>Links que expiram</h3>
-        <p>1 hora a 30 dias, ou sem expirar. Visualização única opcional: a imagem se autodestrói na primeira abertura.</p>
-      </div>
-      <div class="tile violet">
-        <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></div>
-        <h3>Atalhos configuráveis</h3>
-        <p>Grave qualquer combinação em Ajustes. O app avisa se outro programa já usa o atalho.</p>
-      </div>
-      <div class="tile green">
-        <div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-        <h3>Privado por padrão</h3>
-        <p>Chaves no Keychain. Senhas copiadas são ignoradas. Nenhuma telemetria. Código auditável.</p>
-      </div>
+      <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg></div><h3>Overlay de captura completo</h3><p>Seleção com alças, movimentação, nudge por teclado, dimensões ao vivo e uma barra de ferramentas com tudo que você precisa. Esc, botão direito ou o botão Cancelar saem a qualquer momento — e se você não mexer em 10 s, ele se fecha sozinho.</p><div class="chips"><span>Retângulo</span><span>Elipse</span><span>Linha</span><span>Seta</span><span>Caneta</span><span>Texto</span><span>7 cores</span><span>⌘Z</span></div></div>
+      <div class="tile wide violet"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div><h3>OCR 100% local</h3><p>Extraia o texto de qualquer região com o Vision da Apple, offline. O resultado abre numa janela editável, já copiado, com tradução para 9 idiomas pelo tradutor do próprio macOS.</p><div class="chips"><span>Português e inglês</span><span>Detecção automática de idioma</span><span>Tradução offline</span></div></div>
+      <div class="tile pink"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM5 17l.9 2.1L8 20l-2.1.9L5 23l-.9-2.1L2 20l2.1-.9zM19 15l.7 1.6 1.6.7-1.6.7L19 19.5l-.7-1.5-1.6-.7 1.6-.7z"/></svg></div><h3>Descrição por IA</h3><p>Claude, OpenAI, DeepSeek ou qualquer API compatível, inclusive Ollama local. Sem chave, usa o modo nativo.</p></div>
+      <div class="tile green"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></div><h3>Gravação de tela</h3><p>MP4 H.264 com áudio do sistema e/ou microfone, com cronômetro na barra de menu.</p></div>
+      <div class="tile amber"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h8"/></svg></div><h3>Biblioteca</h3><p>Screenshots, vídeos, textos copiados, OCR e descrições num só lugar, com busca e exportação.</p></div>
+      <div class="tile "><div class="ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1L11 4.9"/><path d="M14 11a5 5 0 0 0-7.1 0L4.1 13.8a5 5 0 0 0 7.1 7.1L13 19.1"/></svg></div><h3>Links que expiram</h3><p>1 hora a 30 dias, ou sem expirar. Visualização única opcional: a imagem se autodestrói na primeira abertura.</p></div>
+      <div class="tile violet"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></div><h3>Atalhos configuráveis</h3><p>Grave qualquer combinação em Ajustes. O app avisa se outro programa já usa o atalho.</p></div>
+      <div class="tile green"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Privado por padrão</h3><p>Chaves no Keychain. Senhas copiadas são ignoradas. Nenhuma telemetria. Código auditável.</p></div>
     </div>
   </section>
 
-  <!-- Prints -->
-  <section id="prints" class="wrap">
-    <div class="sec-head">
-      <h2>Veja em ação</h2>
-      <p>Interface real do app, renderizada sobre um desktop de demonstração.</p>
+  <section id="video" class="wrap">
+    <div class="sec-head"><h2>Veja o SnapLens em 77 segundos</h2><p>Narração em inglês com legendas em português, inglês, espanhol, italiano e chinês. Interface real do app, renderizada sobre um desktop de demonstração.</p></div>
+    <div class="window video-frame">
+      <div class="tb"><i></i><i></i><i></i><span>SnapLens — demo</span></div>
+      <video controls preload="metadata" playsinline poster="/assets/video/snaplens-demo-poster.jpg" width="1920" height="1200">
+        <source src="/assets/video/snaplens-demo.mp4" type="video/mp4">
+        <track kind="subtitles" src="/assets/video/snaplens-demo.pt-BR.vtt" srclang="pt-BR" label="Português" default><track kind="subtitles" src="/assets/video/snaplens-demo.en.vtt" srclang="en" label="English"><track kind="subtitles" src="/assets/video/snaplens-demo.es.vtt" srclang="es" label="Español"><track kind="subtitles" src="/assets/video/snaplens-demo.it.vtt" srclang="it" label="Italiano"><track kind="subtitles" src="/assets/video/snaplens-demo.zh-Hans.vtt" srclang="zh-Hans" label="中文">
+      </video>
     </div>
+    <p class="video-links"><a class="btn" href="/assets/video/snaplens-demo.mp4" download>Baixar o vídeo (MP4, 11 MB)</a> <a class="btn" href="/assets/video/snaplens-demo.pt-BR.vtt">Transcrição (.vtt)</a></p>
+  </section>
+
+  <section id="prints" class="wrap">
+    <div class="sec-head"><h2>Veja em ação</h2><p>Interface real do app, renderizada sobre um desktop de demonstração.</p></div>
     <div class="showcase">
       <div class="show">
-        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Captura de seleção</span></div><img src="/assets/img/overlay.png" alt="Overlay de captura com seleção, seta, retângulo e texto" loading="lazy"></div>
-        <div>
-          <h3>Overlay de captura</h3>
-          <p>A tela congela, você seleciona e decide o destino sem trocar de janela.</p>
-          <ul><li>Alças para redimensionar, arraste para mover, setas para ajustar 1 px</li><li>Anotações vetoriais com desfazer</li><li>Copiar, salvar, OCR, IA ou link — um clique cada</li><li>Cancelar sempre visível; Esc funciona mesmo sem foco</li></ul>
-        </div>
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Captura de seleção</span></div><img src="/assets/img/overlay.png" alt="Overlay de captura" loading="lazy"></div>
+        <div><h3>Overlay de captura</h3><p>A tela congela, você seleciona e decide o destino sem trocar de janela.</p><ul><li>Alças para redimensionar, arraste para mover, setas para ajustar 1 px</li><li>Anotações vetoriais com desfazer</li><li>Copiar, salvar, OCR, IA ou link — um clique cada</li><li>Cancelar sempre visível; Esc funciona mesmo sem foco</li></ul></div>
       </div>
       <div class="show">
-        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Biblioteca</span></div><img src="/assets/img/biblioteca.png" alt="Janela Biblioteca com screenshots e um link compartilhado" loading="lazy"></div>
-        <div>
-          <h3>Biblioteca</h3>
-          <p>Tudo que você capturou ou copiou, pesquisável e exportável.</p>
-          <ul><li>Imagens, vídeos e textos em abas</li><li>Itens compartilhados mostram link, validade e botão de revogar</li><li>OCR e descrição por IA de qualquer item antigo</li><li>Até 500 itens; vídeos ficam até você apagar</li></ul>
-        </div>
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Biblioteca</span></div><img src="/assets/img/biblioteca.png" alt="Biblioteca" loading="lazy"></div>
+        <div><h3>Biblioteca</h3><p>Tudo que você capturou ou copiou, pesquisável e exportável.</p><ul><li>Imagens, vídeos e textos em abas</li><li>Itens compartilhados mostram link, validade e botão de revogar</li><li>OCR e descrição por IA de qualquer item antigo</li><li>Até 500 itens; vídeos ficam até você apagar</li></ul></div>
       </div>
       <div class="show">
-        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Ajustes</span></div><img src="/assets/img/ajustes.png" alt="Janela de Ajustes com atalhos, compartilhamento e provedores de IA" loading="lazy"></div>
-        <div>
-          <h3>Ajustes</h3>
-          <p>Tudo configurável, nada obrigatório.</p>
-          <ul><li>Atalhos globais regraváveis</li><li>Iniciar com o macOS</li><li>Validade padrão e visualização única dos links</li><li>Provedores de IA com chave, modelo e URL próprios</li></ul>
-        </div>
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>Ajustes</span></div><img src="/assets/img/ajustes.png" alt="Ajustes" loading="lazy"></div>
+        <div><h3>Ajustes</h3><p>Tudo configurável, nada obrigatório.</p><ul><li>Idioma do app em 5 opções</li><li>Atalhos globais regraváveis</li><li>Iniciar com o macOS</li><li>Validade padrão e visualização única dos links</li><li>Provedores de IA com chave, modelo e URL próprios</li></ul></div>
       </div>
     </div>
   </section>
 
-  <!-- Atalhos -->
   <section id="atalhos" class="wrap">
-    <div class="sec-head">
-      <h2>Atalhos padrão</h2>
-      <p>Troque qualquer um em Ajustes → Atalhos globais.</p>
-    </div>
+    <div class="sec-head"><h2>Atalhos padrão</h2><p>Troque qualquer um em Ajustes → Atalhos globais.</p></div>
     <div class="keys">
       <div class="key"><span>Capturar seleção</span><span class="ks"><kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd></span></div>
       <div class="key"><span>Capturar tela inteira</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>F</kbd></span></div>
@@ -162,12 +122,8 @@
     </div>
   </section>
 
-  <!-- Links públicos -->
   <section id="compartilhar" class="wrap">
-    <div class="sec-head">
-      <h2>Links públicos com validade</h2>
-      <p>Sem conta, sem cadastro, sem chave. O 🔗 envia a imagem para este servidor e copia a URL na hora.</p>
-    </div>
+    <div class="sec-head"><h2>Links públicos com validade</h2><p>Sem conta, sem cadastro, sem chave. O 🔗 envia a imagem para este servidor e copia a URL na hora.</p></div>
     <div class="split">
       <div class="timeline">
         <div class="tl"><div class="dot">1</div><h4>Escolha a validade</h4><p>1 hora, 1 dia, 7 dias, 30 dias ou sem expirar. Ative “visualização única” para autodestruir na primeira abertura.</p></div>
@@ -176,20 +132,13 @@
         <div class="tl"><div class="dot">4</div><h4>Expira ou revogue</h4><p>Passado o prazo, o arquivo é apagado do servidor. Antes disso, revogue pela Biblioteca ou pela página de token.</p></div>
       </div>
       <div class="panel">
-        <h3>Perdeu o link?</h3>
-        <p>Com o token de exclusão você localiza a imagem, vê quanto tempo falta e apaga quando quiser — sem precisar do app.</p>
-        <div class="row"><a class="btn primary" href="/token">Acessar por token</a><a class="btn" href="/politicas/retencao.html">Política de retenção</a></div>
-        <div class="badges">
-          <div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>HTTPS obrigatório</div>
-          <div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Sem cookies nem conta</div>
-          <div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Exclusão automática</div>
-          <div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Token só como hash</div>
-        </div>
+        <h3>Perdeu o link?</h3><p>Com o token de exclusão você localiza a imagem, vê quanto tempo falta e apaga quando quiser — sem precisar do app.</p>
+        <div class="row"><a class="btn primary" href="/token?lang=pt-BR">Acessar por token</a><a class="btn" href="/politicas/retencao.html">Política de retenção</a></div>
+        <div class="badges"><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>HTTPS obrigatório</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Sem cookies nem conta</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Exclusão automática</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Token só como hash</div></div>
       </div>
     </div>
   </section>
 
-  <!-- FAQ -->
   <section id="faq" class="wrap">
     <div class="sec-head"><h2>Dúvidas frequentes</h2></div>
     <div class="faq">
@@ -202,12 +151,10 @@
     </div>
   </section>
 
-  <!-- CTA -->
   <section id="baixar" class="wrap">
     <div class="cta-band">
       <img src="/assets/icon-musgo.png" alt="">
-      <h2>Pronto para capturar melhor?</h2>
-      <p>Arraste para Aplicativos e pressione ⌥⌘P.</p>
+      <h2>Pronto para capturar melhor?</h2><p>Arraste para Aplicativos e pressione ⌥⌘P.</p>
       <a class="btn primary big" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar SnapLens.dmg</a>
       <div class="meta">macOS 15+ · Apple Silicon · gratuito · <a href="https://github.com/ribeiros-click/snaplens/releases/latest" rel="noopener">notas de versão</a></div>
     </div>
@@ -216,16 +163,12 @@
 
 <footer class="foot">
   <div class="cols">
-    <div>
-      <a class="brand" href="/" style="margin-bottom:10px"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a>
-      <p style="margin:0;max-width:300px">Screenshots, OCR e IA para macOS. Feito para quem vive no teclado.</p>
-    </div>
-    <div><h5>Produto</h5><ul><li><a href="#recursos">Recursos</a></li><li><a href="#atalhos">Atalhos</a></li><li><a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a></li><li><a href="/token">Acessar por token</a></li></ul></div>
+    <div><a class="brand" href="/" style="margin-bottom:10px"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a><p style="margin:0;max-width:300px">Screenshots, OCR e IA para macOS. Feito para quem vive no teclado.</p><p class="langs" style="margin-top:12px"><a href="/" class=on>Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/">中文</a></p></div>
+    <div><h5>Produto</h5><ul><li><a href="#recursos">Recursos</a></li><li><a href="#video">Vídeo</a></li><li><a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a></li><li><a href="/token?lang=pt-BR">Acessar por token</a></li></ul></div>
     <div><h5>Políticas</h5><ul><li><a href="/politicas/privacidade.html">Privacidade</a></li><li><a href="/politicas/termos.html">Termos de uso</a></li><li><a href="/politicas/uso-aceitavel.html">Uso aceitável</a></li><li><a href="/politicas/seguranca.html">Segurança</a></li><li><a href="/politicas/retencao.html">Retenção de dados</a></li></ul></div>
-    <div><h5>Contato</h5><ul><li><a href="/contato">Formulário de contato</a></li><li><a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a></li><li><a href="/contato?assunto=denuncia">Denunciar conteúdo</a></li></ul></div>
+    <div><h5>Contato</h5><ul><li><a href="/contato?lang=pt-BR">Formulário de contato</a></li><li><a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a></li><li><a href="/contato?assunto=denuncia&amp;lang=pt-BR">Denunciar conteúdo</a></li></ul></div>
   </div>
   <div class="copy"><span>© 2026 SnapLens · Brasil</span><span>Nenhum cookie de rastreamento nesta página.</span></div>
 </footer>
-
 </body>
 </html>

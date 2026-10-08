@@ -131,9 +131,9 @@ final class CaptureOverlay {
     }
 
     /// Render offscreen do overlay (usado por `--render-shots` para os prints do site).
-    static func preview(background: CGImage, size: CGSize, selection: CGRect) -> NSView {
+    static func preview(background: CGImage, size: CGSize, selection: CGRect?, annotated: Bool = true) -> NSView {
         let v = OverlayView(frame: CGRect(origin: .zero, size: size), image: background, autoAction: nil)
-        v.installPreview(selection: selection)
+        v.installPreview(selection: selection, annotated: annotated)
         return v
     }
 
@@ -628,15 +628,19 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     @objc private func doShare() { finish(.share) }
 
     /// Estado de demonstração (prints do site): seleção, anotações e barra visíveis.
-    func installPreview(selection s: CGRect) {
+    func installPreview(selection s: CGRect?, annotated: Bool = true) {
+        idleCountdown = s == nil ? 10 : nil
+        guard let s else { selection = nil; return }
         selection = s
-        annotations = [
-            Annotation(tool: .rect, color: .systemRed, start: CGPoint(x: s.minX + 24, y: s.minY + 60), end: CGPoint(x: s.minX + 300, y: s.minY + 110)),
-            Annotation(tool: .arrow, color: .systemOrange, start: CGPoint(x: s.maxX - 60, y: s.maxY - 40), end: CGPoint(x: s.minX + 310, y: s.minY + 90)),
-            Annotation(tool: .text, color: .systemOrange, start: CGPoint(x: s.maxX - 150, y: s.maxY - 36), end: .zero, text: L("Revisar aqui")),
-        ]
-        tool = .arrow
-        color = .systemOrange
+        if annotated {
+            annotations = [
+                Annotation(tool: .rect, color: .systemRed, start: CGPoint(x: s.minX + 24, y: s.minY + 60), end: CGPoint(x: s.minX + 300, y: s.minY + 110)),
+                Annotation(tool: .arrow, color: .systemOrange, start: CGPoint(x: s.maxX - 60, y: s.maxY - 40), end: CGPoint(x: s.minX + 310, y: s.minY + 90)),
+                Annotation(tool: .text, color: .systemOrange, start: CGPoint(x: s.maxX - 150, y: s.maxY - 36), end: .zero, text: L("Revisar aqui")),
+            ]
+            tool = .arrow
+            color = .systemOrange
+        }
         showToolbar()
     }
     @objc private func doCancel() { onFinish?(.copy, nil) }

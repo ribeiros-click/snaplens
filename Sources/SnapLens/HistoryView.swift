@@ -145,7 +145,7 @@ private struct ImageCard: View {
                 .padding(.horizontal, 2)
             }
             HStack {
-                Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(date: .omitted, time: .shortened))")
+                Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(L10n.locale)))")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button { onCopy(item) } label: { Image(systemName: "doc.on.doc") }.help(L("Copiar imagem"))
@@ -197,7 +197,7 @@ private struct TextRow: View {
             Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 20)
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.text ?? "").lineLimit(expanded ? nil : 4).textSelection(.enabled)
-                Text("\(label) · \(item.date.formatted(date: .abbreviated, time: .shortened))")
+                Text("\(label) · \(item.date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(L10n.locale)))")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .onTapGesture { expanded.toggle() }
@@ -236,7 +236,7 @@ private struct VideoCard: View {
             .onTapGesture { onPlay(item) }
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(L("Gravação · %@", item.date.formatted(date: .abbreviated, time: .shortened)))
+                    Text(L("Gravação · %@", item.date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(L10n.locale))))
                     Text(item.source ?? "").foregroundStyle(.tertiary)
                 }
                 .font(.caption).foregroundStyle(.secondary)

@@ -14,3 +14,4 @@ server/public_html/assets/icon-musgo.png
 server/public_html/favicon.ico
 server/public_html/favicon-32.png
 server/public_html/apple-touch-icon.png
+.secrets/

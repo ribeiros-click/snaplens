@@ -1,0 +1,39 @@
+1
+00:00:00,150 --> 00:00:07,860
+SnapLens. Capture, annotate and share, without leaving the keyboard. A native menu bar app for macOS.
+
+2
+00:00:08,210 --> 00:00:13,770
+It lives in your menu bar. Press Option, Command, P, and the screen freezes.
+
+3
+00:00:14,120 --> 00:00:20,420
+Drag to select any region. Handles let you resize, and the arrow keys nudge pixel by pixel.
+
+4
+00:00:20,770 --> 00:00:27,770
+A toolbar appears with everything you need: annotations, OCR, AI, save, copy and share.
+
+5
+00:00:28,120 --> 00:00:33,120
+Draw rectangles, arrows, text and more, in seven colors, with undo.
+
+6
+00:00:33,470 --> 00:00:40,790
+Extract text from any region with on-device OCR. Nothing leaves your Mac, and you can translate it offline.
+
+7
+00:00:41,140 --> 00:00:53,800
+One click uploads the image and copies a public link. Choose how long it lives, from one hour to never, or make it self-destruct after the first view. You get a delete token to remove it anytime.
+
+8
+00:00:54,150 --> 00:01:02,820
+Everything you capture lands in the Library: screenshots, recordings, copied text and OCR results, searchable and exportable.
+
+9
+00:01:03,170 --> 00:01:12,260
+Configure shortcuts, screen recording with audio, and your favorite AI provider: Claude, OpenAI, DeepSeek, or a local model.
+
+10
+00:01:12,610 --> 00:01:19,050
+SnapLens is free and open source. Download it at lens dot ribeiros dot click.

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $CONFIG = require __DIR__ . '/config.php';
+require_once __DIR__ . '/i18n.php';
 define('DATA_DIR', __DIR__ . '/_data');
 define('FILES_DIR', DATA_DIR . '/files');
 define('DB_PATH', DATA_DIR . '/lens.sqlite');
@@ -164,11 +165,11 @@ function human_size(int $b): string {
     return round($b / 1048576, 1) . ' MB';
 }
 function human_expiry(?int $ts): string {
-    if (!$ts) { return 'não expira'; }
+    if (!$ts) { return t('não expira'); }
     $s = $ts - time();
-    if ($s <= 0) { return 'expirado'; }
-    if ($s < 3600) { return 'expira em ' . max(1, intdiv($s, 60)) . ' min'; }
-    if ($s < 2 * 86400) { return 'expira em ' . (int) round($s / 3600) . ' h'; }
-    return 'expira em ' . (int) round($s / 86400) . ' dias';
+    if ($s <= 0) { return t('expirado'); }
+    if ($s < 3600) { return sprintf(t('expira em %d min'), max(1, intdiv($s, 60))); }
+    if ($s < 2 * 86400) { return sprintf(t('expira em %d h'), (int) round($s / 3600)); }
+    return sprintf(t('expira em %d dias'), (int) round($s / 86400));
 }
 function fmt_date(?int $ts): string { return $ts ? date('d/m/Y H:i', $ts) : '—'; }

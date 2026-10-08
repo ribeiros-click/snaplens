@@ -24,37 +24,37 @@ $base = base_url();
 $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 ?>
 <!doctype html>
-<html lang="pt-BR">
+<html lang="<?= html_lang() ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= $gone ? 'Link indisponível' : 'Screenshot' ?> · SnapLens</title>
+<title><?= $gone ? t('Link indisponível') : t('Screenshot') ?> · SnapLens</title>
 <meta name="robots" content="noindex">
 <?php if (!$gone): ?>
-<meta property="og:title" content="Screenshot compartilhado com SnapLens">
+<meta property="og:title" content="<?= $h(t('Compartilhado com') . ' SnapLens') ?>">
 <meta property="og:image" content="<?= $h("$base/i/$id") ?>">
 <meta property="og:image:width" content="<?= (int) $m['width'] ?>">
 <meta property="og:image:height" content="<?= (int) $m['height'] ?>">
 <meta name="twitter:card" content="summary_large_image">
 <?php endif; ?>
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
-<link rel="stylesheet" href="/assets/site.css?v=6">
+<link rel="stylesheet" href="/assets/site.css?v=7">
 </head>
 <body class="share">
 <header class="bar">
-  <a class="brand" href="/"><img src="/assets/icon-musgo.png" alt="" width="28" height="28"> SnapLens</a>
+  <a class="brand" href="<?= home_path() ?>"><img src="/assets/icon-musgo.png" alt="" width="28" height="28"> SnapLens</a>
   <?php if (!$gone): ?>
   <div class="meta">
     <span><?= (int) $m['width'] ?> × <?= (int) $m['height'] ?></span>
     <span><?= $h(human_size((int) $m['size'])) ?></span>
     <span class="exp <?= $m['expires_at'] ? '' : 'never' ?>"><?= $h(human_expiry($m['expires_at'])) ?></span>
-    <?php if ($once): ?><span>⏱ Esta imagem se autodestrói após a primeira visualização.</span>
-    <?php else: ?><span><?= (int) $m['views'] ?> visualiz.</span><?php endif; ?>
+    <?php if ($once): ?><span>⏱ <?= t('Esta imagem se autodestrói após a primeira visualização.') ?></span>
+    <?php else: ?><span><?= (int) $m['views'] ?> <?= t('visualiz.') ?></span><?php endif; ?>
   </div>
   <div class="actions">
-    <button class="btn" id="copy" data-url="<?= $h("$base/s/$id") ?>">Copiar link</button>
-    <a class="btn" href="/i/<?= $h($id) ?>" target="_blank" rel="noopener">Abrir original</a>
-    <a class="btn primary" href="/i/<?= $h($id) ?>?dl=1">Baixar</a>
+    <button class="btn" id="copy" data-url="<?= $h("$base/s/$id") ?>"><?= t('Copiar link') ?></button>
+    <a class="btn" href="/i/<?= $h($id) ?>" target="_blank" rel="noopener"><?= t('Abrir original') ?></a>
+    <a class="btn primary" href="/i/<?= $h($id) ?>?dl=1"><?= t('Baixar') ?></a>
   </div>
   <?php endif; ?>
 </header>
@@ -63,13 +63,13 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
   <div class="gone">
     <div class="gone-icon">⌛</div>
     <?php if ($burned): ?>
-    <h1>Esta imagem já foi visualizada e se autodestruiu.</h1>
-    <p>Ela foi compartilhada no modo “ver apenas uma vez”: depois da primeira exibição, o arquivo é apagado do servidor.</p>
+    <h1><?= t('Esta imagem já foi visualizada e se autodestruiu.') ?></h1>
+    <p><?= t('Ela foi compartilhada no modo “ver apenas uma vez”: depois da primeira exibição, o arquivo é apagado do servidor.') ?></p>
     <?php else: ?>
-    <h1>Este link não está mais disponível</h1>
-    <p>Ele expirou ou foi revogado por quem o criou. Links do SnapLens têm validade definida na hora do compartilhamento.</p>
+    <h1><?= t('Este link não está mais disponível') ?></h1>
+    <p><?= t('Ele expirou ou foi revogado por quem o criou. Links do SnapLens têm validade definida na hora do compartilhamento.') ?></p>
     <?php endif; ?>
-    <a class="btn primary" href="/">Conheça o SnapLens</a>
+    <a class="btn primary" href="<?= home_path() ?>"><?= t('Conheça o SnapLens') ?></a>
   </div>
 <?php else: ?>
   <a href="/i/<?= $h($id) ?>" target="_blank" rel="noopener">
@@ -77,14 +77,14 @@ $h = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
   </a>
 <?php endif; ?>
 </main>
-<footer class="foot">Compartilhado com <a href="/">SnapLens</a> para macOS
-  <nav><a href="/politicas/privacidade.html">Privacidade</a><a href="/politicas/termos.html">Termos</a><a href="/contato?assunto=denuncia">Denunciar conteúdo</a></nav>
+<footer class="foot"><?= t('Compartilhado com') ?> <a href="<?= home_path() ?>">SnapLens</a> <?= t('para macOS') ?>
+  <nav><a href="/politicas/privacidade.html"><?= t('Privacidade') ?></a><a href="/politicas/termos.html"><?= t('Termos') ?></a><a href="/contato?assunto=denuncia&amp;<?= lang_query() ?>"><?= t('Denunciar conteúdo') ?></a><span class="langs"><?= lang_switcher() ?></span></nav>
 </footer>
 <script>
 document.getElementById('copy')?.addEventListener('click', async (e) => {
   const b = e.currentTarget;
-  try { await navigator.clipboard.writeText(b.dataset.url); b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = 'Copiar link', 1500); }
-  catch { prompt('Copie o link:', b.dataset.url); }
+  try { await navigator.clipboard.writeText(b.dataset.url); b.textContent = <?= json_encode(t('Copiado ✓')) ?>; setTimeout(() => b.textContent = <?= json_encode(t('Copiar link')) ?>, 1500); }
+  catch { prompt(<?= json_encode(t('Copie o link:')) ?>, b.dataset.url); }
 });
 </script>
 </body>

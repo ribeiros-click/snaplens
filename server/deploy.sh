@@ -43,6 +43,9 @@ mkdir -p server/public_html/assets/img
 rm -rf server/public_html/download  # o DMG é distribuído pelas releases do GitHub
 [ -f .build/icon/icon_1024.png ] && sips -z 256 256 .build/icon/icon_1024.png --out server/public_html/assets/icon.png >/dev/null && cp server/public_html/assets/icon.png server/public_html/assets/icon-musgo.png && python3 Tools/make_favicon.py .build/icon/icon_1024.png server/public_html
 
+# 4b. Páginas da landing em 5 idiomas
+python3 Tools/build_site.py
+
 # 5. Zip (inclui .htaccess) e upload via TUS
 STAMP=$(date +%Y%m%d_%H%M%S); ZIP=$ROOT/.build/site_$STAMP.zip
 ( cd server/public_html && rm -f "$ZIP" && zip -qr "$ZIP" . -x "_data/*" -x "config.example.php" )

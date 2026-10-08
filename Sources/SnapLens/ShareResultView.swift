@@ -86,7 +86,7 @@ struct ShareResultView: View {
 
     private var expiresText: String {
         guard let expires else { return L("Sem expiração definida") }
-        let base = L("Expira em %@", expires.formatted(date: .abbreviated, time: .shortened))
+        let base = L("Expira em %@", expires.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(L10n.locale)))
         return once ? base + L(" ou na primeira visualização, o que ocorrer primeiro") : base
     }
 

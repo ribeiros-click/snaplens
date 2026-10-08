@@ -193,6 +193,8 @@ T = [
 ("Norte", "North", "Norte", "Nord", "北部"),
 ("Centro-Oeste", "Midwest", "Centro-Oeste", "Centro-Ovest", "中西部"),
 ("Imagens", "Images", "Imágenes", "Immagini", "图片"),
+("Capture, anote e compartilhe sem sair do teclado.", "Capture, annotate and share without leaving the keyboard.", "Captura, anota y comparte sin salir del teclado.", "Cattura, annota e condividi senza lasciare la tastiera.", "截图、标注、分享，手不离键盘。"),
+("Grátis e de código aberto. Baixe para macOS 15 ou mais recente.", "Free and open source. Download for macOS 15 or later.", "Gratis y de código abierto. Descárgalo para macOS 15 o posterior.", "Gratuito e open source. Scaricalo per macOS 15 o successivo.", "免费开源。支持 macOS 15 及更高版本。"),
 ]
 langs = ["en", "es", "it", "zh-Hans"]
 def esc(v): return v.replace('"', '\\"')

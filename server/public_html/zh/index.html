@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnapLens — macOS 截图、OCR 与 AI</title>
+<meta name="description" content="SnapLens：macOS 原生菜单栏应用，支持标注截图、本地 OCR、AI 描述、屏幕录制、资料库和自动过期的公开链接。">
+<meta name="theme-color" content="#f3eee4">
+<meta property="og:title" content="SnapLens — macOS">
+<meta property="og:description" content="截图、标注、提取文字，并通过会过期的链接分享。免费、原生、无需账户。">
+<meta property="og:image" content="https://lens.ribeiros.click/assets/img/overlay.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="pt-BR" href="https://lens.ribeiros.click/">
+<link rel="alternate" hreflang="en" href="https://lens.ribeiros.click/en/">
+<link rel="alternate" hreflang="es" href="https://lens.ribeiros.click/es/">
+<link rel="alternate" hreflang="it" href="https://lens.ribeiros.click/it/">
+<link rel="alternate" hreflang="zh-Hans" href="https://lens.ribeiros.click/zh/">
+<link rel="alternate" hreflang="x-default" href="https://lens.ribeiros.click/">
+<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
+<link rel="stylesheet" href="/assets/site.css?v=7">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/zh/"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a>
+  <nav>
+    <a href="#recursos">功能</a>
+    <a href="#video">视频</a>
+    <a href="#prints">截图</a>
+    <a href="#atalhos">快捷键</a>
+    <a href="#compartilhar">链接</a>
+    <a href="#faq">常见问题</a>
+    <span class="langs" aria-label="语言"><a href="/">Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/" class=on>中文</a></span>
+    <a class="btn primary small" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">下载</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow"><b>免费</b> macOS 15+ · Apple Silicon · 无需账户</div>
+      <h1>截图、标注、<span class="g">分享</span>，手不离键盘。</h1>
+      <p class="sub">SnapLens 常驻于 Mac 菜单栏。一个快捷键冻结屏幕；你可以选择区域、标注、提取文字，或生成会自动过期的链接。未经你允许，任何数据都不会离开 Mac。</p>
+      <div class="cta">
+        <a class="btn primary big" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg" id="dl">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          下载 macOS 版
+        </a>
+        <a class="btn big" href="#video">▶ 观看视频</a>
+        <p class="hint">安装后按 <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> 开始截图。</p>
+      </div>
+      <div class="window">
+        <div class="tb"><i></i><i></i><i></i><span>截图浮层 — SnapLens</span></div>
+        <img src="/assets/img/overlay.png" alt="SnapLens" width="1440" height="900" fetchpriority="high">
+      </div>
+    </div>
+    <div class="hero-fade"></div>
+  </section>
+
+  <section class="wrap" style="padding-top:24px">
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>截取</h3><p>⌥⌘P 冻结屏幕。拖动选择，用控制点调整，或用方向键微调。</p></div>
+      <div class="step"><div class="n">2</div><h3>标注或提取</h3><p>箭头、矩形、文字和画笔。或使用本地 OCR 和 AI 描述。</p></div>
+      <div class="step"><div class="n">3</div><h3>复制、保存或分享</h3><p>回车复制，⌘S 保存。🔗 生成带有效期和删除令牌的匿名链接。</p></div>
+    </div>
+  </section>
+
+  <section id="recursos" class="wrap">
+    <div class="sec-head"><h2>截图所需的一切</h2><p>像 Lightshot 一样快，像 macOS 一样原生。无 Electron、无订阅、无遥测。</p></div>
+    <div class="bento">
+      <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg></div><h3>完整的截图浮层</h3><p>带控制点的选区、拖动、键盘微调、实时尺寸，以及一应俱全的工具栏。Esc、右键或“取消”按钮随时退出；10 秒无操作会自动关闭。</p><div class="chips"><span>矩形</span><span>椭圆</span><span>直线</span><span>箭头</span><span>画笔</span><span>文字</span><span>7 种颜色</span><span>⌘Z</span></div></div>
+      <div class="tile wide violet"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></div><h3>100% 本地 OCR</h3><p>通过 Apple Vision 离线提取任意区域的文字。结果在可编辑窗口中打开并已复制，可用 macOS 自带翻译器译成 9 种语言。</p><div class="chips"><span>葡萄牙语和英语</span><span>自动语言检测</span><span>离线翻译</span></div></div>
+      <div class="tile pink"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM5 17l.9 2.1L8 20l-2.1.9L5 23l-.9-2.1L2 20l2.1-.9zM19 15l.7 1.6 1.6.7-1.6.7L19 19.5l-.7-1.5-1.6-.7 1.6-.7z"/></svg></div><h3>AI 描述</h3><p>Claude、OpenAI、DeepSeek 或任何兼容 API，包括本地 Ollama。无密钥时使用原生模式。</p></div>
+      <div class="tile green"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg></div><h3>屏幕录制</h3><p>H.264 MP4，支持系统音频和/或麦克风，菜单栏显示计时器。</p></div>
+      <div class="tile amber"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13h8"/></svg></div><h3>资料库</h3><p>截图、视频、复制的文字、OCR 和描述集中一处，支持搜索与导出。</p></div>
+      <div class="tile "><div class="ic"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1L11 4.9"/><path d="M14 11a5 5 0 0 0-7.1 0L4.1 13.8a5 5 0 0 0 7.1 7.1L13 19.1"/></svg></div><h3>会过期的链接</h3><p>1 小时到 30 天，或永不过期。可选阅后即焚：图片在首次打开后自毁。</p></div>
+      <div class="tile violet"><div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg></div><h3>可自定义快捷键</h3><p>在设置中录入任意组合。若其他程序已占用该快捷键，应用会提示。</p></div>
+      <div class="tile green"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>默认私密</h3><p>密钥存于钥匙串。忽略复制的密码。无遥测。代码可审计。</p></div>
+    </div>
+  </section>
+
+  <section id="video" class="wrap">
+    <div class="sec-head"><h2>77 秒了解 SnapLens</h2><p>英文旁白，配有葡萄牙语、英语、西班牙语、意大利语和中文字幕。真实应用界面，渲染于演示桌面之上。</p></div>
+    <div class="window video-frame">
+      <div class="tb"><i></i><i></i><i></i><span>SnapLens — demo</span></div>
+      <video controls preload="metadata" playsinline poster="/assets/video/snaplens-demo-poster.jpg" width="1920" height="1200">
+        <source src="/assets/video/snaplens-demo.mp4" type="video/mp4">
+        <track kind="subtitles" src="/assets/video/snaplens-demo.pt-BR.vtt" srclang="pt-BR" label="Português"><track kind="subtitles" src="/assets/video/snaplens-demo.en.vtt" srclang="en" label="English"><track kind="subtitles" src="/assets/video/snaplens-demo.es.vtt" srclang="es" label="Español"><track kind="subtitles" src="/assets/video/snaplens-demo.it.vtt" srclang="it" label="Italiano"><track kind="subtitles" src="/assets/video/snaplens-demo.zh-Hans.vtt" srclang="zh-Hans" label="中文" default>
+      </video>
+    </div>
+    <p class="video-links"><a class="btn" href="/assets/video/snaplens-demo.mp4" download>下载视频（MP4，11 MB）</a> <a class="btn" href="/assets/video/snaplens-demo.zh-Hans.vtt">文字稿 (.vtt)</a></p>
+  </section>
+
+  <section id="prints" class="wrap">
+    <div class="sec-head"><h2>实际效果</h2><p>真实应用界面，渲染于演示桌面之上。</p></div>
+    <div class="showcase">
+      <div class="show">
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>区域截图</span></div><img src="/assets/img/overlay.png" alt="截图浮层" loading="lazy"></div>
+        <div><h3>截图浮层</h3><p>屏幕冻结，选择区域并决定去向，无需切换窗口。</p><ul><li>控制点调整大小，拖动移动，方向键 1 像素微调</li><li>矢量标注，支持撤销</li><li>复制、保存、OCR、AI 或链接，各一键</li><li>“取消”始终可见；Esc 无焦点也有效</li></ul></div>
+      </div>
+      <div class="show">
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>资料库</span></div><img src="/assets/img/biblioteca.png" alt="资料库" loading="lazy"></div>
+        <div><h3>资料库</h3><p>你截取或复制的一切，可搜索、可导出。</p><ul><li>图片、视频和文字分标签页</li><li>已分享项目显示链接、有效期和撤销按钮</li><li>可对任意旧项目进行 OCR 和 AI 描述</li><li>最多 500 项；视频保留至你删除</li></ul></div>
+      </div>
+      <div class="show">
+        <div class="window"><div class="tb"><i></i><i></i><i></i><span>设置</span></div><img src="/assets/img/ajustes.png" alt="设置" loading="lazy"></div>
+        <div><h3>设置</h3><p>一切可配置，没有强制项。</p><ul><li>5 种应用语言</li><li>可重新录入的全局快捷键</li><li>登录时启动</li><li>链接默认有效期和阅后即焚</li><li>各 AI 提供商独立的密钥、模型和 URL</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="atalhos" class="wrap">
+    <div class="sec-head"><h2>默认快捷键</h2><p>可在“设置 → 全局快捷键”中更改。</p></div>
+    <div class="keys">
+      <div class="key"><span>截取区域</span><span class="ks"><kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd></span></div>
+      <div class="key"><span>截取全屏</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>F</kbd></span></div>
+      <div class="key"><span>区域 OCR</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>T</kbd></span></div>
+      <div class="key"><span>AI 描述区域</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>D</kbd></span></div>
+      <div class="key"><span>开始 / 停止录制</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>R</kbd></span></div>
+      <div class="key"><span>资料库</span><span class="ks"><kbd>⌃</kbd><kbd>⌥</kbd><kbd>H</kbd></span></div>
+      <div class="key"><span>浮层中：复制 · 保存 · 撤销</span><span class="ks"><kbd>⏎</kbd><kbd>⌘S</kbd><kbd>⌘Z</kbd></span></div>
+      <div class="key"><span>浮层中：取消 · 重新选择</span><span class="ks"><kbd>Esc</kbd><kbd>右键</kbd></span></div>
+    </div>
+  </section>
+
+  <section id="compartilhar" class="wrap">
+    <div class="sec-head"><h2>带有效期的公开链接</h2><p>无需账户、无需注册、无需密钥。🔗 将图片上传到此服务器并立即复制网址。</p></div>
+    <div class="split">
+      <div class="timeline">
+        <div class="tl"><div class="dot">1</div><h4>选择有效期</h4><p>1 小时、1 天、7 天、30 天或永不过期。开启“阅后即焚”，首次打开后自毁。</p></div>
+        <div class="tl"><div class="dot">2</div><h4>获取链接和令牌</h4><p>链接进入剪贴板。删除令牌只显示一次，请保存以便随时随地删除图片。</p></div>
+        <div class="tl"><div class="dot">3</div><h4>分享</h4><p>打开者看到简洁页面：图片、大小、期限以及下载/复制按钮。无跟踪器。</p></div>
+        <div class="tl"><div class="dot">4</div><h4>过期或撤销</h4><p>到期后文件从服务器删除。在此之前，可通过资料库或令牌页面撤销。</p></div>
+      </div>
+      <div class="panel">
+        <h3>丢失链接？</h3><p>使用删除令牌可找到图片、查看剩余时间并随时删除，无需应用。</p>
+        <div class="row"><a class="btn primary" href="/token?lang=zh">通过令牌访问</a><a class="btn" href="/politicas/retencao.html">数据保留政策</a></div>
+        <div class="badges"><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>强制 HTTPS</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>无 Cookie、无账户</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>自动删除</div><div class="badge"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>令牌仅存哈希</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="wrap">
+    <div class="sec-head"><h2>常见问题</h2></div>
+    <div class="faq">
+      <details><summary>macOS 提示无法打开应用，怎么办？</summary><p>当前版本未经 Apple 公证。右键点击 SnapLens → <strong>打开</strong> → 打开。仅首次需要。然后在“系统设置 → 隐私与安全性”中允许“屏幕录制”。</p></details>
+      <details><summary>哪些数据会离开我的 Mac？</summary><p>除非你主动操作，否则什么都不会：OCR 和标注都在本地运行。只有分享按钮会把图片上传到 lens.ribeiros.click，只有“AI 描述”会把图片发送给你配置的提供商。参见<a href="/politicas/privacidade.html">隐私政策</a>（葡萄牙语）。</p></details>
+      <details><summary>分享需要账户吗？</summary><p>不需要。上传是匿名的，按 IP 限流以防滥用。你会获得删除令牌，可随时删除图片。</p></details>
+      <details><summary>可以使用自己的链接服务器吗？</summary><p>可以。后端是纯 PHP，可自行托管，服务器地址可在“设置 → 分享”中配置。</p></details>
+      <details><summary>价格多少？</summary><p>免费。应用免费、无订阅、无广告。外部 AI 提供商按用量在你自己的账户计费。</p></details>
+      <details><summary>支持 Intel Mac 或旧版 macOS 吗？</summary><p>该版本面向 Apple Silicon，需要 macOS 15（Sequoia）或更高版本，因依赖 ScreenCaptureKit 和系统翻译器。</p></details>
+    </div>
+  </section>
+
+  <section id="baixar" class="wrap">
+    <div class="cta-band">
+      <img src="/assets/icon-musgo.png" alt="">
+      <h2>准备好更好地截图了吗？</h2><p>拖入“应用程序”并按 ⌥⌘P。</p>
+      <a class="btn primary big" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">下载 SnapLens.dmg</a>
+      <div class="meta">macOS 15+ · Apple Silicon · 免费 · <a href="https://github.com/ribeiros-click/snaplens/releases/latest" rel="noopener">更新说明</a></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="cols">
+    <div><a class="brand" href="/zh/" style="margin-bottom:10px"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a><p style="margin:0;max-width:300px">macOS 截图、OCR 与 AI。为键盘党而生。</p><p class="langs" style="margin-top:12px"><a href="/">Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/" class=on>中文</a></p></div>
+    <div><h5>产品</h5><ul><li><a href="#recursos">功能</a></li><li><a href="#video">视频</a></li><li><a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">下载</a></li><li><a href="/token?lang=zh">通过令牌访问</a></li></ul></div>
+    <div><h5>政策（葡萄牙语）</h5><ul><li><a href="/politicas/privacidade.html">隐私</a></li><li><a href="/politicas/termos.html">使用条款</a></li><li><a href="/politicas/uso-aceitavel.html">可接受使用</a></li><li><a href="/politicas/seguranca.html">安全</a></li><li><a href="/politicas/retencao.html">数据保留</a></li></ul></div>
+    <div><h5>联系</h5><ul><li><a href="/contato?lang=zh">联系表单</a></li><li><a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a></li><li><a href="/contato?assunto=denuncia&amp;lang=zh">举报内容</a></li></ul></div>
+  </div>
+  <div class="copy"><span>© 2026 SnapLens · 巴西</span><span>本页无跟踪 Cookie。</span></div>
+</footer>
+</body>
+</html>
