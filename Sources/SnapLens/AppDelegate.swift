@@ -391,6 +391,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { await self?.share(item) }
             }, onRevoke: { [weak self] item in
                 Task { await self?.revoke(item) }
+            }, onCopyImageData: { [weak self] data in
+                self?.copyImage(data: data)
             })
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable],

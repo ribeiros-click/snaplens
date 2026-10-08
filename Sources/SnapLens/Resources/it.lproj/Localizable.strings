@@ -190,5 +190,12 @@
 "Norte" = "Nord";
 "Centro-Oeste" = "Centro-Ovest";
 "Imagens" = "Immagini";
+"%@ selecionada(s)" = "%@ selezionate";
+"Copiar juntas" = "Copia unite";
+"Baixar juntas" = "Salva unite";
+"Limpar seleção" = "Annulla selezione";
+"Selecionar para montagem" = "Seleziona per l'immagine unita";
+"%@ imagens combinadas e copiadas" = "%@ immagini unite e copiate";
+"Montagem" = "Immagine unita";
 "Capture, anote e compartilhe sem sair do teclado." = "Cattura, annota e condividi senza lasciare la tastiera.";
 "Grátis e de código aberto. Baixe para macOS 15 ou mais recente." = "Gratuito e open source. Scaricalo per macOS 15 o successivo.";

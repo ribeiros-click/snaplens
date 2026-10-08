@@ -190,5 +190,12 @@
 "Norte" = "北部";
 "Centro-Oeste" = "中西部";
 "Imagens" = "图片";
+"%@ selecionada(s)" = "已选 %@ 张";
+"Copiar juntas" = "合并复制";
+"Baixar juntas" = "合并保存";
+"Limpar seleção" = "清除选择";
+"Selecionar para montagem" = "选择以合并";
+"%@ imagens combinadas e copiadas" = "已合并并复制 %@ 张图片";
+"Montagem" = "合并图片";
 "Capture, anote e compartilhe sem sair do teclado." = "截图、标注、分享，手不离键盘。";
 "Grátis e de código aberto. Baixe para macOS 15 ou mais recente." = "免费开源。支持 macOS 15 及更高版本。";

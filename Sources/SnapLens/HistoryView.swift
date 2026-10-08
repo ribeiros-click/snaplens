@@ -10,10 +10,12 @@ struct HistoryView: View {
     var onPlay: (Item) -> Void
     var onShare: (Item) -> Void
     var onRevoke: (Item) -> Void
+    var onCopyImageData: (Data) -> Void
 
     enum Tab: String, CaseIterable { case images = "Imagens", videos = "Vídeos", texts = "Texto" }
     @State private var tab: Tab = .images
     @State private var query = ""
+    @State private var selected: [UUID] = []   // ordem de seleção = ordem na montagem
 
     private var images: [Item] { store.items.filter { $0.kind.isImage } }
     private var videos: [Item] { store.items.filter { $0.kind == .video } }
@@ -31,6 +33,12 @@ struct HistoryView: View {
                 .frame(width: 280)
                 if tab == .texts {
                     TextField(L("Buscar…"), text: $query).textFieldStyle(.roundedBorder)
+                }
+                if tab == .images, !selected.isEmpty {
+                    Text(L("%@ selecionada(s)", String(selected.count))).font(.callout).foregroundStyle(.secondary)
+                    Button { combine(copy: true) } label: { Label(L("Copiar juntas"), systemImage: "doc.on.doc") }
+                    Button { combine(copy: false) } label: { Label(L("Baixar juntas"), systemImage: "square.and.arrow.down") }
+                    Button { selected.removeAll() } label: { Label(L("Limpar seleção"), systemImage: "xmark.circle") }
                 }
                 Spacer()
                 Button { Exporter.exportAll(store: store) } label: {
@@ -65,7 +73,9 @@ struct HistoryView: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
                         ForEach(images) { item in
                             ImageCard(item: item, store: store, onDescribe: onDescribe, onOCR: onOCR, onCopy: onCopyImage,
-                                      onShare: onShare, onRevoke: onRevoke, onCopyText: onCopyText)
+                                      onShare: onShare, onRevoke: onRevoke, onCopyText: onCopyText,
+                                      selectionIndex: selected.firstIndex(of: item.id),
+                                      onToggleSelect: { toggle(item) })
                         }
                     }
                     .padding(14)
@@ -99,6 +109,29 @@ struct HistoryView: View {
         }
     }
 
+    private func toggle(_ item: Item) {
+        if let i = selected.firstIndex(of: item.id) { selected.remove(at: i) } else { selected.append(item.id) }
+    }
+
+    /// Junta as imagens selecionadas (ordem de seleção) em um PNG: copia para o clipboard ou salva.
+    private func combine(copy: Bool) {
+        let urls = selected.compactMap { id in store.items.first { $0.id == id } }.compactMap { store.url(for: $0) }
+        guard let data = Composer.stack(urls) else { return }
+        if copy {
+            onCopyImageData(data)
+            Toast.show(L("%@ imagens combinadas e copiadas", String(urls.count)), symbol: "doc.on.doc")
+        } else {
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.png]
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd HH.mm.ss"
+            panel.nameFieldStringValue = L("Montagem") + " \(f.string(from: Date())).png"
+            NSApp.activate(ignoringOtherApps: true)
+            guard panel.runModal() == .OK, let dest = panel.url else { return }
+            do { try data.write(to: dest); Toast.show(L("Exportado: %@", dest.lastPathComponent), symbol: "square.and.arrow.down") }
+            catch { Toast.show(L("Falha ao exportar: %@", error.localizedDescription), symbol: "exclamationmark.triangle.fill") }
+        }
+    }
+
     private func empty(_ msg: String) -> some View {
         Text(msg).multilineTextAlignment(.center).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,17 +147,33 @@ private struct ImageCard: View {
     var onShare: (Item) -> Void
     var onRevoke: (Item) -> Void
     var onCopyText: (String) -> Void
+    var selectionIndex: Int?
+    var onToggleSelect: () -> Void
     @State private var thumb: NSImage?
 
     var body: some View {
         VStack(spacing: 6) {
-            ZStack {
+            ZStack(alignment: .topLeading) {
                 Color.secondary.opacity(0.12)
                 if let thumb { Image(nsImage: thumb).resizable().scaledToFit() }
+                // Círculo de seleção: clique marca/desmarca; o número mostra a ordem na montagem.
+                Button(action: onToggleSelect) {
+                    ZStack {
+                        Circle().fill(selectionIndex == nil ? Color.black.opacity(0.35) : Color.accentColor)
+                        Circle().strokeBorder(.white, lineWidth: 1.5)
+                        if let i = selectionIndex { Text("\(i + 1)").font(.caption2.bold()).foregroundStyle(.white) }
+                    }
+                    .frame(width: 22, height: 22)
+                }
+                .buttonStyle(.plain)
+                .padding(6)
+                .help(L("Selecionar para montagem"))
             }
             .frame(height: 140)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.accentColor, lineWidth: selectionIndex == nil ? 0 : 2.5))
             .onTapGesture(count: 2) { if let u = store.url(for: item) { NSWorkspace.shared.open(u) } }
+            .onTapGesture(count: 1) { onToggleSelect() }
             if let link = item.shareURL {
                 HStack(spacing: 6) {
                     Image(systemName: "link").foregroundStyle(.tint)

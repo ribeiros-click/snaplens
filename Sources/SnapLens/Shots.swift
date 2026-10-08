@@ -36,7 +36,7 @@ enum Shots {
         store.addText(L("A imagem mostra uma tabela de vendas por região com três colunas (Região, Receita, Variação)…"), kind: .ai, source: "Claude")
         store.addText("https://developer.apple.com/documentation/vision", kind: .clipboardText)
         let history = HistoryView(store: store, onDescribe: { _ in }, onOCR: { _ in }, onCopyImage: { _ in }, onCopyText: { _ in },
-                                  onPlay: { _ in }, onShare: { _ in }, onRevoke: { _ in })
+                                  onPlay: { _ in }, onShare: { _ in }, onRevoke: { _ in }, onCopyImageData: { _ in })
         if let img = snapshot(NSHostingView(rootView: history), size: CGSize(width: 860, height: 560)) {
             write(img, dir.appendingPathComponent("biblioteca.png"))
         }
@@ -90,7 +90,7 @@ enum Shots {
         }
         store.addText(ocrText, kind: .ocr)
         store.addText(L("A imagem mostra uma tabela de vendas por região com três colunas (Região, Receita, Variação)…"), kind: .ai, source: "Claude")
-        let history = HistoryView(store: store, onDescribe: { _ in }, onOCR: { _ in }, onCopyImage: { _ in }, onCopyText: { _ in }, onPlay: { _ in }, onShare: { _ in }, onRevoke: { _ in })
+        let history = HistoryView(store: store, onDescribe: { _ in }, onOCR: { _ in }, onCopyImage: { _ in }, onCopyText: { _ in }, onPlay: { _ in }, onShare: { _ in }, onRevoke: { _ in }, onCopyImageData: { _ in })
         if let w = snapshot(NSHostingView(rootView: history), size: CGSize(width: 900, height: 560)) {
             write(window(w, title: "SnapLens — " + L("Biblioteca"), over: desktop), dir.appendingPathComponent("08_library.png"))
         }

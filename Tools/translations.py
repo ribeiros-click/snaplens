@@ -193,6 +193,13 @@ T = [
 ("Norte", "North", "Norte", "Nord", "北部"),
 ("Centro-Oeste", "Midwest", "Centro-Oeste", "Centro-Ovest", "中西部"),
 ("Imagens", "Images", "Imágenes", "Immagini", "图片"),
+("%@ selecionada(s)", "%@ selected", "%@ seleccionada(s)", "%@ selezionate", "已选 %@ 张"),
+("Copiar juntas", "Copy combined", "Copiar juntas", "Copia unite", "合并复制"),
+("Baixar juntas", "Save combined", "Guardar juntas", "Salva unite", "合并保存"),
+("Limpar seleção", "Clear selection", "Limpiar selección", "Annulla selezione", "清除选择"),
+("Selecionar para montagem", "Select for the combined image", "Seleccionar para el montaje", "Seleziona per l'immagine unita", "选择以合并"),
+("%@ imagens combinadas e copiadas", "%@ images combined and copied", "%@ imágenes combinadas y copiadas", "%@ immagini unite e copiate", "已合并并复制 %@ 张图片"),
+("Montagem", "Combined", "Montaje", "Immagine unita", "合并图片"),
 ("Capture, anote e compartilhe sem sair do teclado.", "Capture, annotate and share without leaving the keyboard.", "Captura, anota y comparte sin salir del teclado.", "Cattura, annota e condividi senza lasciare la tastiera.", "截图、标注、分享，手不离键盘。"),
 ("Grátis e de código aberto. Baixe para macOS 15 ou mais recente.", "Free and open source. Download for macOS 15 or later.", "Gratis y de código abierto. Descárgalo para macOS 15 o posterior.", "Gratuito e open source. Scaricalo per macOS 15 o successivo.", "免费开源。支持 macOS 15 及更高版本。"),
 ]
