@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var clipTimer: Timer?
     private var overlay: CaptureOverlay?
     private var settingsWindow: NSWindow?
+    private var shareWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Trace.log("=== SnapLens iniciado · macOS \(ProcessInfo.processInfo.operatingSystemVersionString) · telas=\(NSScreen.screens.count)")
@@ -20,41 +21,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         NSApp.applicationIconImage = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
+        Keychain.set("", account: "share.key") // limpa chave de API legada; compartilhar não exige mais conta
         setupMenu()
         setupHotKeys()
         startClipboardMonitor()
         NotificationCenter.default.addObserver(forName: Recorder.stateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.recordingStateChanged() }
-        }
-    }
-
-    // MARK: URL scheme (snaplens://auth?key=…&server=…) — vindo do painel web
-
-    func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls {
-            Trace.log("open url: \(url.scheme ?? "")://\(url.host ?? "")")
-            guard url.scheme == "snaplens", url.host == "auth",
-                  let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
-                  let key = items.first(where: { $0.name == "key" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  key.hasPrefix("lens_"), key.count > 20 else {
-                Toast.show("Link de autenticação inválido", symbol: "exclamationmark.triangle.fill")
-                continue
-            }
-            if let server = items.first(where: { $0.name == "server" })?.value, server.hasPrefix("https://") {
-                UserDefaults.standard.set(server, forKey: "share.server")
-            }
-            Keychain.set(key, account: "share.key")
-            NotificationCenter.default.post(name: ShareConfig.changed, object: nil)
-            Toast.show("Chave recebida, testando conexão…", symbol: "link")
-            Task {
-                do {
-                    let msg = try await ShareClient.ping()
-                    NSSound(named: "Pop")?.play()
-                    Toast.show("SnapLens conectado · \(msg)", symbol: "checkmark.circle.fill")
-                } catch {
-                    Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
-                }
-            }
         }
     }
 
@@ -288,11 +260,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: Link público
 
     func share(_ item: Item) async {
-        guard ShareConfig.isConfigured else {
-            Toast.show("Crie sua conta e cole a chave de API em Ajustes → Compartilhar", symbol: "link.badge.plus")
-            showSettings()
-            return
-        }
         guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
         Toast.show("Enviando para \(ShareConfig.server.replacingOccurrences(of: "https://", with: ""))…", symbol: "link")
         do {
@@ -300,12 +267,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             var it = item
             it.shareID = r.id
             it.shareURL = r.url
-            it.shareExpires = r.expires_at.map { Date(timeIntervalSince1970: $0) }
+            it.shareExpires = r.expires_at.flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
             it.shareToken = r.delete_token
             store.update(it)
             copyText(r.url)
             NSSound(named: "Pop")?.play()
             Toast.show("Link copiado · \(expiryText(it.shareExpires))", symbol: "link")
+            showShareResult(url: r.url, expires: it.shareExpires, token: r.delete_token)
         } catch {
             Trace.log("share ERRO: \(error.localizedDescription)")
             Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
@@ -372,6 +340,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    func showShareResult(url: String, expires: Date?, token: String) {
+        if shareWindow == nil {
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 260),
+                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            w.title = "SnapLens — Link compartilhado"
+            w.isReleasedWhenClosed = false
+            w.center()
+            shareWindow = w
+        }
+        shareWindow?.contentView = NSHostingView(rootView: ShareResultView(url: url, expires: expires, token: token) { [weak self] in
+            self?.shareWindow?.close()
+        })
+        NSApp.activate(ignoringOtherApps: true)
+        shareWindow?.makeKeyAndOrderFront(nil)
     }
 
     @objc func showHistory() {

@@ -59,41 +59,15 @@ struct SettingsView: View {
 private struct ShareSection: View {
     @AppStorage("share.server") private var server = ""
     @AppStorage("share.expiry") private var expiry = ShareExpiry.d7.rawValue
-    @State private var key = ""
-    @State private var status: String?
-    @State private var testing = false
 
     var body: some View {
         Section("Compartilhar por link público") {
             TextField("Servidor", text: $server, prompt: Text(ShareConfig.defaultServer))
-            SecureField("Chave de API (do seu painel)", text: $key)
-                .onChange(of: key) { _, v in Keychain.set(v.trimmingCharacters(in: .whitespacesAndNewlines), account: "share.key") }
             Picker("Validade padrão do link", selection: $expiry) {
                 ForEach(ShareExpiry.allCases) { Text($0.title).tag($0.rawValue) }
             }
-            HStack {
-                Button(testing ? "Testando…" : "Testar conexão") {
-                    testing = true
-                    Task {
-                        do { status = "✓ " + (try await ShareClient.ping()) }
-                        catch { status = "✗ " + error.localizedDescription }
-                        testing = false
-                    }
-                }
-                .disabled(testing || key.isEmpty)
-                Button("Criar conta / Painel") {
-                    if let u = URL(string: ShareConfig.server + (key.isEmpty ? "/cadastro" : "/painel")) { NSWorkspace.shared.open(u) }
-                }
-                if let status { Text(status).font(.caption).foregroundStyle(status.hasPrefix("✓") ? .green : .red) }
-            }
-            Text("Crie uma conta gratuita no servidor e cole aqui a chave de API mostrada no painel. O botão “link” no overlay e na Biblioteca envia a imagem e copia a URL. Links expiram sozinhos e podem ser revogados na Biblioteca ou no painel. A chave fica no Keychain.")
+            Text("O botão “link” no overlay e na Biblioteca envia a imagem e copia a URL. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.")
                 .font(.caption).foregroundStyle(.secondary)
-        }
-        .onAppear { key = ShareConfig.key }
-        .onReceive(NotificationCenter.default.publisher(for: ShareConfig.changed)) { _ in
-            key = ShareConfig.key
-            server = UserDefaults.standard.string(forKey: "share.server") ?? ""
-            status = "✓ chave recebida do painel"
         }
     }
 }

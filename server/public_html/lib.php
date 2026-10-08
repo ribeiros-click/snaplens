@@ -1,5 +1,5 @@
 <?php
-// SnapLens — biblioteca comum: banco (SQLite), contas, sessão, chaves de API e links.
+// SnapLens — biblioteca comum: banco (SQLite), limite por IP, token de admin e links anônimos.
 declare(strict_types=1);
 
 $CONFIG = require __DIR__ . '/config.php';
@@ -27,17 +27,32 @@ function db(): SQLite3 {
         $db = new SQLite3(DB_PATH);
         $db->busyTimeout(5000);
         $db->exec('PRAGMA journal_mode=WAL');
-        $db->exec('PRAGMA foreign_keys=ON');
-        $db->exec('CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, pass_hash TEXT NOT NULL,
-            api_key_hash TEXT UNIQUE, api_key_hint TEXT, is_admin INTEGER DEFAULT 0, is_blocked INTEGER DEFAULT 0,
-            created_at INTEGER, last_login_at INTEGER, failed_logins INTEGER DEFAULT 0, locked_until INTEGER DEFAULT 0)');
+        $db->exec('PRAGMA foreign_keys=OFF');
+
+        // Migração: links deixam de pertencer a contas (coluna user_id).
+        $hasUserId = false;
+        $info = $db->query('PRAGMA table_info(links)');
+        while ($info && ($col = $info->fetchArray(SQLITE3_ASSOC))) {
+            if ($col['name'] === 'user_id') { $hasUserId = true; }
+        }
+        if ($hasUserId) {
+            $db->exec('BEGIN');
+            $db->exec('CREATE TABLE links_new (
+                id TEXT PRIMARY KEY, ext TEXT, mime TEXT, width INTEGER, height INTEGER, size INTEGER,
+                created_at INTEGER, expires_at INTEGER, views INTEGER DEFAULT 0, token_hash TEXT)');
+            $db->exec('INSERT INTO links_new SELECT id, ext, mime, width, height, size, created_at, expires_at, views, token_hash FROM links');
+            $db->exec('DROP TABLE links');
+            $db->exec('ALTER TABLE links_new RENAME TO links');
+            $db->exec('COMMIT');
+        }
+        $db->exec('DROP TABLE IF EXISTS users');
         $db->exec('CREATE TABLE IF NOT EXISTS links (
-            id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            ext TEXT, mime TEXT, width INTEGER, height INTEGER, size INTEGER,
+            id TEXT PRIMARY KEY, ext TEXT, mime TEXT, width INTEGER, height INTEGER, size INTEGER,
             created_at INTEGER, expires_at INTEGER, views INTEGER DEFAULT 0, token_hash TEXT)');
-        $db->exec('CREATE INDEX IF NOT EXISTS links_user ON links(user_id)');
         $db->exec('CREATE INDEX IF NOT EXISTS links_exp ON links(expires_at)');
+        $db->exec('CREATE TABLE IF NOT EXISTS rate (ip TEXT NOT NULL, created_at INTEGER NOT NULL)');
+        $db->exec('CREATE INDEX IF NOT EXISTS rate_ip ON rate(ip, created_at)');
+        $db->exec('PRAGMA foreign_keys=ON');
     }
     return $db;
 }
@@ -73,77 +88,29 @@ function json_out(int $status, array $body): never {
 function redirect(string $to): never { header("Location: $to"); exit; }
 function h(?string $s): string { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 
-// ---------- Sessão e autenticação web ----------
+// ---------- Limite de requisições por IP ----------
 
-function session(): void {
-    if (session_status() === PHP_SESSION_ACTIVE) { return; }
-    session_name('lens_sess');
-    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => is_https(), 'httponly' => true, 'samesite' => 'Lax']);
-    session_start();
-}
-function is_https(): bool {
-    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
-}
-function current_user(): ?array {
-    session();
-    if (empty($_SESSION['uid'])) { return null; }
-    $u = row('SELECT * FROM users WHERE id = ?', [(int) $_SESSION['uid']]);
-    if (!$u || $u['is_blocked']) { unset($_SESSION['uid']); return null; }
-    return $u;
-}
-function require_login(): array {
-    $u = current_user();
-    if (!$u) { flash('Entre para continuar.'); redirect('/entrar?next=' . urlencode($_SERVER['REQUEST_URI'] ?? '/painel')); }
-    return $u;
-}
-function require_admin(): array {
-    $u = require_login();
-    if (!$u['is_admin']) { http_response_code(403); exit('Acesso restrito.'); }
-    return $u;
-}
-function login_user(int $id): void {
-    session();
-    session_regenerate_id(true);
-    $_SESSION['uid'] = $id;
-    run('UPDATE users SET last_login_at = ?, failed_logins = 0, locked_until = 0 WHERE id = ?', [time(), $id]);
-}
-function logout_user(): void {
-    session();
-    $_SESSION = [];
-    if (ini_get('session.use_cookies')) { setcookie(session_name(), '', time() - 3600, '/'); }
-    session_destroy();
-}
-function flash(?string $msg = null, string $kind = 'info'): ?array {
-    session();
-    if ($msg !== null) { $_SESSION['flash'] = ['msg' => $msg, 'kind' => $kind]; return null; }
-    $f = $_SESSION['flash'] ?? null; unset($_SESSION['flash']); return $f;
-}
-function csrf_token(): string {
-    session();
-    if (empty($_SESSION['csrf'])) { $_SESSION['csrf'] = bin2hex(random_bytes(16)); }
-    return $_SESSION['csrf'];
-}
-function csrf_check(): void {
-    session();
-    if (!hash_equals($_SESSION['csrf'] ?? '', (string) ($_POST['csrf'] ?? ''))) { http_response_code(400); exit('Sessão expirada. Volte e tente de novo.'); }
+/** Permite no máximo $max ações por IP dentro de $window segundos. */
+function rate_limit_ok(string $ip, int $max, int $window): bool {
+    $now = time();
+    run('DELETE FROM rate WHERE created_at < ?', [$now - $window]);
+    $n = (int) (row('SELECT COUNT(*) AS n FROM rate WHERE ip = ? AND created_at >= ?', [$ip, $now - $window])['n'] ?? 0);
+    if ($n >= $max) { return false; }
+    run('INSERT INTO rate (ip, created_at) VALUES (?,?)', [$ip, $now]);
+    return true;
 }
 
-// ---------- Chaves de API ----------
+// ---------- Administração ----------
 
-function new_api_key(): string { return 'lens_' . bin2hex(random_bytes(20)); }
-function set_api_key(int $uid): string {
-    $k = new_api_key();
-    run('UPDATE users SET api_key_hash = ?, api_key_hint = ? WHERE id = ?', [hash('sha256', $k), substr($k, -4), $uid]);
-    return $k;
-}
-/** Autentica uma chamada de API pelo header X-Lens-Key. Devolve o usuário. */
-function require_key(): array {
-    $given = trim((string) ($_SERVER['HTTP_X_LENS_KEY'] ?? ''));
-    if ($given === '') { json_out(401, ['error' => 'chave de API ausente — crie sua conta em ' . base_url() . '/cadastro']); }
-    $u = row('SELECT * FROM users WHERE api_key_hash = ?', [hash('sha256', $given)]);
-    if (!$u) { json_out(401, ['error' => 'chave de API inválida — confira no seu painel em ' . base_url() . '/painel']); }
-    if ($u['is_blocked']) { json_out(403, ['error' => 'conta bloqueada — fale com ' . cfg('contact_email', 'contato@ribeiros.click')]); }
-    return $u;
+/** Exige o token de administração (config admin_token) passado em ?key=. */
+function require_admin_token(): void {
+    $expected = (string) cfg('admin_token', '');
+    $given = (string) ($_REQUEST['key'] ?? '');
+    if ($expected !== '' && hash_equals($expected, $given)) { return; }
+    $script = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($script === 'cleanup.php') { json_out(403, ['error' => 'token de administração inválido']); }
+    http_response_code(403);
+    exit('Acesso restrito: token de administração ausente ou inválido.');
 }
 
 // ---------- Links ----------
@@ -172,13 +139,12 @@ function prune(): int {
     foreach (rows('SELECT id FROM links WHERE expires_at IS NOT NULL AND expires_at <= ?', [time()]) as $r) { delete_share($r['id']); $n++; }
     return $n;
 }
-function user_usage(int $uid): array {
-    $r = row('SELECT COUNT(*) AS n, COALESCE(SUM(size),0) AS bytes FROM links WHERE user_id = ?', [$uid]);
-    return ['links' => (int) $r['n'], 'bytes' => (int) $r['bytes']];
-}
 
 // ---------- Utilidades ----------
 
+function is_https(): bool {
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+}
 function base_url(): string {
     $b = cfg('base_url', '');
     if ($b) { return rtrim($b, '/'); }

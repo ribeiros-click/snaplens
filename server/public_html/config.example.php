@@ -5,14 +5,13 @@ return [
     'base_url'           => 'https://lens.ribeiros.click',
     // E-mail de contato exibido nas páginas e usado para suporte.
     'contact_email'      => 'contato@ribeiros.click',
-    // Quem se cadastrar com este e-mail vira administrador (o primeiro cadastro também é admin).
-    'admin_email'        => 'contato@ribeiros.click',
-    // Permitir novos cadastros.
-    'allow_registration' => true,
-    // Cotas por conta.
-    'max_bytes'          => 25 * 1024 * 1024,   // por imagem
-    'max_active_links'   => 100,
-    'max_total_bytes'    => 200 * 1024 * 1024,  // soma das imagens ativas
+    // Token de administração (página /admin.php e limpeza via HTTP): defina um segredo longo.
+    'admin_token'        => '',
+    // Limite de uploads por IP.
+    'rate_limit_uploads' => 30,     // uploads
+    'rate_limit_window'  => 3600,   // por janela de segundos
+    // Tamanho máximo por imagem.
+    'max_bytes'          => 25 * 1024 * 1024,
     // Validade máxima permitida, em segundos (0 = permitir "sem expirar").
     'max_ttl'            => 0,
 ];

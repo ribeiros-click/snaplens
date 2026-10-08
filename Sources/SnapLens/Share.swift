@@ -18,19 +18,16 @@ enum ShareExpiry: Int, CaseIterable, Identifiable {
 
 enum ShareConfig {
     static let defaultServer = "https://lens.ribeiros.click"
-    static let changed = Notification.Name("SnapLensShareConfigChanged")
 
     static var server: String {
         let s = UserDefaults.standard.string(forKey: "share.server") ?? ""
         return (s.isEmpty ? defaultServer : s).trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
     }
-    static var key: String { Keychain.get("share.key") ?? "" }
     static var expiry: ShareExpiry {
         guard UserDefaults.standard.object(forKey: "share.expiry") != nil,
               let e = ShareExpiry(rawValue: UserDefaults.standard.integer(forKey: "share.expiry")) else { return .d7 }
         return e
     }
-    static var isConfigured: Bool { !key.isEmpty }
 }
 
 struct ShareResult: Decodable {
@@ -66,17 +63,9 @@ enum ShareClient {
         _ = try await send(req)
     }
 
-    /// Testa URL + chave. Retorna a mensagem do servidor.
-    static func ping() async throws -> String {
-        let json = try await send(request(path: "/api/ping"))
-        let obj = (try? JSONSerialization.jsonObject(with: json)) as? [String: Any]
-        return obj?["message"] as? String ?? "OK"
-    }
-
     private static func request(path: String) -> URLRequest {
         var r = URLRequest(url: URL(string: ShareConfig.server + path)!, timeoutInterval: 60)
         r.httpMethod = "POST"
-        r.setValue(ShareConfig.key, forHTTPHeaderField: "X-Lens-Key")
         return r
     }
 

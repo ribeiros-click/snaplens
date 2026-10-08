@@ -17,7 +17,7 @@ api() { curl -sS "${auth[@]}" -H "Content-Type: application/json" "$@"; }
 CFG=server/public_html/config.php
 if [ ! -f "$CFG" ]; then
   cp server/public_html/config.example.php "$CFG" && chmod 600 "$CFG"
-  echo "config.php criado a partir do exemplo — ajuste admin_email/cotas se quiser."
+  echo "config.php criado a partir do exemplo — ajuste admin_token se quiser."
 fi
 
 # 2. Site existe?
