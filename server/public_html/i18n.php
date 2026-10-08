@@ -30,7 +30,8 @@ function lang_switcher(): string {
     $q = $_GET; $out = '';
     foreach (I18N_LANGS as $code => $name) {
         $q['lang'] = $code;
-        $out .= '<a href="' . htmlspecialchars($path . '?' . http_build_query($q), ENT_QUOTES) . '"' . ($code === lang() ? ' class="on"' : '') . '>' . $name . '</a>';
+        $flags = ['pt-BR' => '🇧🇷', 'en' => '🇺🇸', 'es' => '🇪🇸', 'it' => '🇮🇹', 'zh' => '🇨🇳'];
+        $out .= '<a href="' . htmlspecialchars($path . '?' . http_build_query($q), ENT_QUOTES) . '" class="flag' . ($code === lang() ? ' on' : '') . '" title="' . $name . '" aria-label="' . $name . '">' . $flags[$code] . '</a>';
     }
     return $out;
 }

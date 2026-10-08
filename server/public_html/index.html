@@ -17,7 +17,7 @@
 <link rel="alternate" hreflang="zh-Hans" href="https://lens.ribeiros.click/zh/">
 <link rel="alternate" hreflang="x-default" href="https://lens.ribeiros.click/">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
-<link rel="stylesheet" href="/assets/site.css?v=7">
+<link rel="stylesheet" href="/assets/site.css?v=8">
 </head>
 <body>
 <header class="bar">
@@ -29,7 +29,7 @@
     <a href="#atalhos">Atalhos</a>
     <a href="#compartilhar">Links</a>
     <a href="#faq">Dúvidas</a>
-    <span class="langs" aria-label="Idioma"><a href="/" class=on>Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/">中文</a></span>
+    <span class="langs" aria-label="Idioma"><a href="/" class="flag on" title="Português" aria-label="Português" lang="pt-BR">🇧🇷</a><a href="/en/" class="flag" title="English" aria-label="English" lang="en">🇺🇸</a><a href="/es/" class="flag" title="Español" aria-label="Español" lang="es">🇪🇸</a><a href="/it/" class="flag" title="Italiano" aria-label="Italiano" lang="it">🇮🇹</a><a href="/zh/" class="flag" title="中文" aria-label="中文" lang="zh-Hans">🇨🇳</a></span>
     <a class="btn primary small" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a>
   </nav>
 </header>
@@ -48,9 +48,12 @@
         <a class="btn big" href="#video">▶ Ver o vídeo</a>
         <p class="hint">Depois de instalar, pressione <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> para capturar.</p>
       </div>
-      <div class="window">
-        <div class="tb"><i></i><i></i><i></i><span>Overlay de captura — SnapLens</span></div>
-        <img src="/assets/img/overlay.png" alt="SnapLens" width="1440" height="900" fetchpriority="high">
+      <div class="window hero-video" id="heroVideo" title="Passe o mouse para assistir · sem som">
+        <div class="tb"><i></i><i></i><i></i><span>SnapLens — demo</span></div>
+        <video muted loop playsinline preload="metadata" poster="/assets/img/overlay.png" width="1440" height="900" aria-label="SnapLens demo">
+          <source src="/assets/video/snaplens-demo.mp4" type="video/mp4">
+        </video>
+        <div class="hv-hint"><b>▶</b> Passe o mouse para assistir · sem som</div>
       </div>
     </div>
     <div class="hero-fade"></div>
@@ -163,12 +166,24 @@
 
 <footer class="foot">
   <div class="cols">
-    <div><a class="brand" href="/" style="margin-bottom:10px"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a><p style="margin:0;max-width:300px">Screenshots, OCR e IA para macOS. Feito para quem vive no teclado.</p><p class="langs" style="margin-top:12px"><a href="/" class=on>Português</a> <a href="/en/">English</a> <a href="/es/">Español</a> <a href="/it/">Italiano</a> <a href="/zh/">中文</a></p></div>
+    <div><a class="brand" href="/" style="margin-bottom:10px"><img src="/assets/icon-musgo.png" alt=""> SnapLens</a><p style="margin:0;max-width:300px">Screenshots, OCR e IA para macOS. Feito para quem vive no teclado.</p><p class="langs" style="margin-top:12px"><a href="/" class="flag on" title="Português" aria-label="Português" lang="pt-BR">🇧🇷</a><a href="/en/" class="flag" title="English" aria-label="English" lang="en">🇺🇸</a><a href="/es/" class="flag" title="Español" aria-label="Español" lang="es">🇪🇸</a><a href="/it/" class="flag" title="Italiano" aria-label="Italiano" lang="it">🇮🇹</a><a href="/zh/" class="flag" title="中文" aria-label="中文" lang="zh-Hans">🇨🇳</a></p></div>
     <div><h5>Produto</h5><ul><li><a href="#recursos">Recursos</a></li><li><a href="#video">Vídeo</a></li><li><a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a></li><li><a href="/token?lang=pt-BR">Acessar por token</a></li></ul></div>
     <div><h5>Políticas</h5><ul><li><a href="/politicas/privacidade.html">Privacidade</a></li><li><a href="/politicas/termos.html">Termos de uso</a></li><li><a href="/politicas/uso-aceitavel.html">Uso aceitável</a></li><li><a href="/politicas/seguranca.html">Segurança</a></li><li><a href="/politicas/retencao.html">Retenção de dados</a></li></ul></div>
     <div><h5>Contato</h5><ul><li><a href="/contato?lang=pt-BR">Formulário de contato</a></li><li><a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a></li><li><a href="/contato?assunto=denuncia&amp;lang=pt-BR">Denunciar conteúdo</a></li></ul></div>
   </div>
   <div class="copy"><span>© 2026 SnapLens · Brasil</span><span>Nenhum cookie de rastreamento nesta página.</span></div>
 </footer>
+<script>
+(() => {
+  const box = document.getElementById('heroVideo'); if (!box) return;
+  const v = box.querySelector('video');
+  const play = () => v.play().then(() => box.classList.add('playing')).catch(() => {});
+  const pause = () => { v.pause(); box.classList.remove('playing'); };
+  const hoverable = matchMedia('(hover: hover)').matches;
+  if (hoverable) { box.addEventListener('mouseenter', play); box.addEventListener('mouseleave', pause); }
+  box.addEventListener('click', () => v.paused ? play() : pause());
+  v.addEventListener('ended', pause);
+})();
+</script>
 </body>
 </html>

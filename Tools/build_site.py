@@ -5,6 +5,7 @@ import os, html
 ROOT = "server/public_html"
 LANGS = {"pt-BR": "", "en": "en/", "es": "es/", "it": "it/", "zh": "zh/"}
 NAMES = {"pt-BR": "Português", "en": "English", "es": "Español", "it": "Italiano", "zh": "中文"}
+FLAGS = {"pt-BR": "🇧🇷", "en": "🇺🇸", "es": "🇪🇸", "it": "🇮🇹", "zh": "🇨🇳"}
 VTT = {"pt-BR": "pt-BR", "en": "en", "es": "es", "it": "it", "zh": "zh-Hans"}
 HTMLLANG = {"pt-BR": "pt-BR", "en": "en", "es": "es", "it": "it", "zh": "zh-Hans"}
 S = {}
@@ -28,6 +29,7 @@ add("sub", "SnapLens vive na barra de menu do seu Mac. Um atalho congela a tela;
 add("cta_download", "Baixar para macOS", "Download for macOS", "Descargar para macOS", "Scarica per macOS", "下载 macOS 版")
 add("cta_video", "Ver o vídeo", "Watch the video", "Ver el vídeo", "Guarda il video", "观看视频")
 add("hint", "Depois de instalar, pressione <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> para capturar.", "After installing, press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> to capture.", "Después de instalar, pulsa <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> para capturar.", "Dopo l'installazione premi <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> per catturare.", "安装后按 <kbd>⌥</kbd><kbd>⌘</kbd><kbd>P</kbd> 开始截图。")
+add("hover_hint", "Passe o mouse para assistir · sem som", "Hover to play · muted", "Pasa el ratón para reproducir · sin sonido", "Passa il mouse per riprodurre · senza audio", "悬停播放 · 静音")
 add("win_overlay", "Overlay de captura — SnapLens", "Capture overlay — SnapLens", "Superposición de captura — SnapLens", "Overlay di cattura — SnapLens", "截图浮层 — SnapLens")
 add("step1_t", "Capture", "Capture", "Captura", "Cattura", "截取")
 add("step1", "⌥⌘P congela a tela. Arraste para selecionar, ajuste pelas alças ou nudge com as setas.", "⌥⌘P freezes the screen. Drag to select, resize with handles or nudge with the arrow keys.", "⌥⌘P congela la pantalla. Arrastra para seleccionar, ajusta con las asas o mueve con las flechas.", "⌥⌘P blocca lo schermo. Trascina per selezionare, regola con le maniglie o sposta con le frecce.", "⌥⌘P 冻结屏幕。拖动选择，用控制点调整，或用方向键微调。")
@@ -150,7 +152,7 @@ CHECK = '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>'
 def page(lang):
     t = S[lang]; here = LANGS[lang]
     alts = "\n".join(f'<link rel="alternate" hreflang="{HTMLLANG[l]}" href="https://lens.ribeiros.click/{p}">' for l, p in LANGS.items()) + '\n<link rel="alternate" hreflang="x-default" href="https://lens.ribeiros.click/">'
-    switcher = " ".join(f'<a href="/{p}"{" class=on" if l == lang else ""}>{NAMES[l]}</a>' for l, p in LANGS.items())
+    switcher = "".join(f'<a href="/{p}" class="flag{" on" if l == lang else ""}" title="{NAMES[l]}" aria-label="{NAMES[l]}" lang="{HTMLLANG[l]}">{FLAGS[l]}</a>' for l, p in LANGS.items())
     chips = lambda key: "".join(f"<span>{c}</span>" for c in t[key].split("|"))
     lis = lambda key: "".join(f"<li>{c}</li>" for c in t[key].split("|"))
     badges = "".join(f'<div class="badge">{CHECK}{b}</div>' for b in t["badges"].split("|"))
@@ -170,7 +172,7 @@ def page(lang):
 <meta name="twitter:card" content="summary_large_image">
 {alts}
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
-<link rel="stylesheet" href="/assets/site.css?v=7">
+<link rel="stylesheet" href="/assets/site.css?v=8">
 </head>
 <body>
 <header class="bar">
@@ -201,9 +203,12 @@ def page(lang):
         <a class="btn big" href="#video">▶ {t["cta_video"]}</a>
         <p class="hint">{t["hint"]}</p>
       </div>
-      <div class="window">
-        <div class="tb"><i></i><i></i><i></i><span>{t["win_overlay"]}</span></div>
-        <img src="/assets/img/overlay.png" alt="SnapLens" width="1440" height="900" fetchpriority="high">
+      <div class="window hero-video" id="heroVideo" title="{t["hover_hint"]}">
+        <div class="tb"><i></i><i></i><i></i><span>SnapLens — demo</span></div>
+        <video muted loop playsinline preload="metadata" poster="/assets/img/overlay.png" width="1440" height="900" aria-label="SnapLens demo">
+          <source src="/assets/video/snaplens-demo.mp4" type="video/mp4">
+        </video>
+        <div class="hv-hint"><b>▶</b> {t["hover_hint"]}</div>
       </div>
     </div>
     <div class="hero-fade"></div>
@@ -323,6 +328,18 @@ def page(lang):
   </div>
   <div class="copy"><span>{t["foot_copy"]}</span><span>{t["foot_cookie"]}</span></div>
 </footer>
+<script>
+(() => {{
+  const box = document.getElementById('heroVideo'); if (!box) return;
+  const v = box.querySelector('video');
+  const play = () => v.play().then(() => box.classList.add('playing')).catch(() => {{}});
+  const pause = () => {{ v.pause(); box.classList.remove('playing'); }};
+  const hoverable = matchMedia('(hover: hover)').matches;
+  if (hoverable) {{ box.addEventListener('mouseenter', play); box.addEventListener('mouseleave', pause); }}
+  box.addEventListener('click', () => v.paused ? play() : pause());
+  v.addEventListener('ended', pause);
+}})();
+</script>
 </body>
 </html>
 '''

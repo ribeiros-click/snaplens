@@ -220,3 +220,20 @@ body.share { display: flex; flex-direction: column; min-height: 100vh; }
 @media (max-width: 700px) { .share .bar { flex-wrap: wrap; } .share .bar .actions { margin-left: 0; width: 100%; } }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }
+
+/* Seletor de idioma (bandeiras) */
+.langs { display: inline-flex; gap: 2px; margin-left: 6px; align-items: center; }
+.langs a.flag { font-size: 19px; line-height: 1; padding: 4px 5px !important; border-radius: 8px; opacity: .55; filter: saturate(.7); transition: opacity .15s, transform .15s, filter .15s; text-decoration: none; }
+.langs a.flag:hover { opacity: 1; filter: none; transform: translateY(-1px); background: var(--card2); }
+.langs a.flag.on { opacity: 1; filter: none; background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.foot .langs a.flag { font-size: 22px; }
+@media (max-width: 760px) { .bar nav .langs { display: inline-flex; } .bar nav .langs a.flag { display: inline-block; } }
+
+/* Vídeo: seção com controles e banner do hero com autoplay no hover */
+.video-frame video { width: 100%; height: auto; display: block; background: #000; }
+.video-links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 18px 0 0; }
+.hero-video { cursor: pointer; }
+.hero-video video { width: 100%; height: auto; aspect-ratio: 1440 / 900; display: block; background: var(--card2); }
+.hero-video .hv-hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; background: rgba(20,16,10,.72); color: #fff; font-size: 14px; font-weight: 600; backdrop-filter: blur(8px); transition: opacity .25s; pointer-events: none; white-space: nowrap; }
+.hero-video .hv-hint b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); font-size: 11px; }
+.hero-video.playing .hv-hint { opacity: 0; }

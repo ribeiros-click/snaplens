@@ -6,7 +6,7 @@ function page_header(string $title): void {
     header('Cache-Control: no-store');
     $lq = lang_query();
     echo '<!doctype html><html lang="' . html_lang() . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
-    echo '<title>' . h($title) . ' · SnapLens</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6"><link rel="stylesheet" href="/assets/site.css?v=7"></head><body>';
+    echo '<title>' . h($title) . ' · SnapLens</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6"><link rel="stylesheet" href="/assets/site.css?v=8"></head><body>';
     echo '<header class="bar"><a class="brand" href="' . home_path() . '"><img src="/assets/icon-musgo.png" alt="" width="28" height="28"> SnapLens</a><nav>';
     echo '<a href="' . home_path() . '#recursos">' . t('Recursos') . '</a><a href="/token?' . $lq . '">' . t('Acessar por token') . '</a><a href="/politicas/">' . t('Políticas') . '</a><a href="/contato?' . $lq . '">' . t('Contato') . '</a>';
     echo '<span class="langs">' . lang_switcher() . '</span>';
