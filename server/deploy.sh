@@ -39,8 +39,8 @@ if [ -z "$(dig +short "$DOMAIN" A)" ]; then
 fi
 
 # 4. Prints + DMG mais recente dentro do pacote
-mkdir -p server/public_html/assets/img server/public_html/download
-[ -f SnapLens.dmg ] && cp SnapLens.dmg server/public_html/download/SnapLens.dmg
+mkdir -p server/public_html/assets/img
+rm -rf server/public_html/download  # o DMG é distribuído pelas releases do GitHub
 [ -f .build/icon/icon_1024.png ] && sips -z 256 256 .build/icon/icon_1024.png --out server/public_html/assets/icon.png >/dev/null && cp server/public_html/assets/icon.png server/public_html/assets/icon-musgo.png && python3 Tools/make_favicon.py .build/icon/icon_1024.png server/public_html
 
 # 5. Zip (inclui .htaccess) e upload via TUS

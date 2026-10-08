@@ -5,6 +5,6 @@ let package = Package(
     name: "SnapLens",
     platforms: [.macOS("15.0")],
     targets: [
-        .executableTarget(name: "SnapLens", path: "Sources/SnapLens")
+        .executableTarget(name: "SnapLens", path: "Sources/SnapLens", exclude: ["Resources"])
     ]
 )

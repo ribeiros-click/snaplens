@@ -7,7 +7,7 @@ function page_header(string $title): void {
     echo '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
     echo '<title>' . h($title) . ' · SnapLens</title><meta name="robots" content="noindex"><link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6"><link rel="stylesheet" href="/assets/site.css?v=6"></head><body>';
     echo '<header class="bar"><a class="brand" href="/"><img src="/assets/icon-musgo.png" alt="" width="28" height="28"> SnapLens</a><nav>';
-    echo '<a href="/#recursos">Recursos</a><a href="/token">Acessar por token</a><a href="/politicas/">Políticas</a><a href="/contato">Contato</a><a class="btn primary small" href="/download/SnapLens.dmg">Baixar</a>';
+    echo '<a href="/#recursos">Recursos</a><a href="/token">Acessar por token</a><a href="/politicas/">Políticas</a><a href="/contato">Contato</a><a class="btn primary small" href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg">Baixar</a>';
     echo '</nav></header><main class="doc">';
 }
 

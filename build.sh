@@ -9,6 +9,7 @@ BIN="$(swift build -c release --show-bin-path)/SnapLens"
 
 rm -rf "$APP" .build/icon && mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" .build/icon/AppIcon.iconset
 cp "$BIN" "$APP/Contents/MacOS/SnapLens"
+cp -R Sources/SnapLens/Resources/*.lproj "$APP/Contents/Resources/"
 
 swiftc -O Tools/make_icon.swift -o .build/icon/make_icon
 .build/icon/make_icon .build/icon/icon_1024.png "${ICON:-4}"
@@ -23,6 +24,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleName</key><string>SnapLens</string>
+  <key>CFBundleDevelopmentRegion</key><string>pt-BR</string>
+  <key>CFBundleLocalizations</key><array><string>pt-BR</string><string>en</string><string>es</string><string>it</string><string>zh-Hans</string></array>
   <key>CFBundleDisplayName</key><string>SnapLens</string>
   <key>CFBundleIdentifier</key><string>com.jjunior.snaplens</string>
   <key>CFBundleExecutable</key><string>SnapLens</string>

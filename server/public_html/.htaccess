@@ -8,6 +8,7 @@ RewriteEngine On
 RewriteRule ^_data/ - [F,L]
 
 # Rotas
+RedirectMatch 301 ^/download/SnapLens\.dmg$ https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg
 RewriteRule ^s/([A-Za-z0-9]{10})/?$ view.php?id=$1 [L,QSA]
 RewriteRule ^i/([A-Za-z0-9]{10})/?$ image.php?id=$1 [L,QSA]
 RewriteRule ^api/(upload|delete)/?$ api/$1.php [L,QSA]
