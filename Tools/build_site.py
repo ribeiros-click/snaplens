@@ -172,7 +172,7 @@ def page(lang):
 <meta name="twitter:card" content="summary_large_image">
 {alts}
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=6"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6">
-<link rel="stylesheet" href="/assets/site.css?v=8">
+<link rel="stylesheet" href="/assets/site.css?v=9">
 </head>
 <body>
 <header class="bar">

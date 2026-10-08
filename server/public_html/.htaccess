@@ -18,6 +18,16 @@ RewriteRule ^(admin|token|contato)/?$ $1.php [L,QSA]
 php_value upload_max_filesize 32M
 php_value post_max_size 34M
 
+# HTML sempre revalidado (a CDN guardava páginas por 7 dias e servia CSS antigo)
+<IfModule mod_headers.c>
+<FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+</FilesMatch>
+<FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=86400"
+</FilesMatch>
+</IfModule>
+
 # Cabeçalhos
 <IfModule mod_headers.c>
     Header set X-Frame-Options "SAMEORIGIN"
