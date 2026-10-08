@@ -48,6 +48,14 @@ Hosted at [lens.ribeiros.click](https://lens.ribeiros.click/) — or point the a
   <img src="https://lens.ribeiros.click/assets/img/biblioteca.png" width="720" alt="Library window">
 </p>
 
+## Languages
+
+The app, the website and the demo video subtitles are available in **Portuguese (Brazil), English, Spanish, Italian and Simplified Chinese**. The app follows the system language by default; pick another one in Settings → Language. Website: [/](https://lens.ribeiros.click/) · [/en/](https://lens.ribeiros.click/en/) · [/es/](https://lens.ribeiros.click/es/) · [/it/](https://lens.ribeiros.click/it/) · [/zh/](https://lens.ribeiros.click/zh/).
+
+## Demo video
+
+A 79-second walkthrough with English narration and subtitles in the five languages: [watch on the website](https://lens.ribeiros.click/en/#video) · [MP4](https://lens.ribeiros.click/assets/video/snaplens-demo.mp4). It is assembled from the real UI with `Tools/make_video.sh` (frames via `SnapLens --video-frames`, narration via ElevenLabs or macOS `say`, subtitles generated from `Tools/narration.json`).
+
 ## Default shortcuts
 
 | Action | Shortcut |
