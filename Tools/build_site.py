@@ -205,7 +205,7 @@ def page(lang):
       </div>
       <div class="window hero-video" id="heroVideo" title="{t["hover_hint"]}">
         <div class="tb"><i></i><i></i><i></i><span>SnapLens — demo</span></div>
-        <video muted loop playsinline preload="metadata" poster="/assets/img/overlay.png" width="1440" height="900" aria-label="SnapLens demo">
+        <video muted loop playsinline preload="metadata" poster="/assets/video/snaplens-demo-poster.jpg" width="1440" height="900" aria-label="SnapLens demo">
           <source src="/assets/video/snaplens-demo.mp4" type="video/mp4">
         </video>
         <div class="hv-hint"><b>▶</b> {t["hover_hint"]}</div>
