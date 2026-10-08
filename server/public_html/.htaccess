@@ -23,3 +23,11 @@ php_value post_max_size 34M
     Header set Referrer-Policy "no-referrer"
     Header set X-Content-Type-Options "nosniff"
 </IfModule>
+
+# Downloads: tipo correto e força "salvar como" em vez de exibir no navegador
+AddType application/x-apple-diskimage .dmg
+AddType application/octet-stream .pkg .zip
+<FilesMatch "\.(dmg|pkg|zip)$">
+    Header set Content-Disposition "attachment"
+    Header set X-Content-Type-Options "nosniff"
+</FilesMatch>
