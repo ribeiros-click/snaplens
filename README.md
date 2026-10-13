@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg"><strong>⬇️ Download SnapLens.dmg</strong></a> ·
+  <a href="https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens-Setup.exe"><strong>⬇️ Windows (SnapLens-Setup.exe)</strong></a> ·
   <a href="https://github.com/ribeiros-click/snaplens/releases/latest">Releases</a> ·
   <a href="https://lens.ribeiros.click/">Project website</a>
 </p>
@@ -70,7 +71,26 @@ A 79-second walkthrough with English narration and subtitles in the five languag
 
 All of them are configurable in Settings. The app warns you if another program already owns a shortcut.
 
-## Install
+## Windows
+
+SnapLens also runs on **Windows 10 (2004+) and 11, x64** — same features, same link server, same five languages. It lives in the system tray (next to the clock); left-click opens the menu, double-click opens the Library.
+
+1. Download **SnapLens-Setup.exe** (or the portable **SnapLens-windows-x64.zip**) from [Releases](https://github.com/ribeiros-click/snaplens/releases/latest).
+2. The installer is per-user (no administrator needed). The build isn't code-signed yet: if SmartScreen warns, click **More info → Run anyway**.
+
+| Action | Windows shortcut |
+|---|---|
+| Capture region | Ctrl+Alt+P |
+| Capture full screen | Ctrl+Alt+F |
+| OCR a region | Ctrl+Alt+T |
+| Describe with AI | Ctrl+Alt+D |
+| Start / stop recording | Ctrl+Alt+R |
+| Library | Ctrl+Alt+H |
+| In the overlay: copy · save · undo · cancel | Enter / Ctrl+C · Ctrl+S · Ctrl+Z · Esc |
+
+Differences from the Mac version: OCR uses the built-in **Windows OCR** engine (offline; it recognizes the languages installed in Windows); without an AI provider, “Describe” returns the OCR text; translation in the OCR window uses the configured AI provider (Windows has no offline translation API). API keys are stored in the Windows Credential Manager; data lives in `%APPDATA%\SnapLens` and the log in `%LOCALAPPDATA%\SnapLens\Logs`.
+
+## Install (macOS)
 
 1. Download [SnapLens.dmg](https://github.com/ribeiros-click/snaplens/releases/latest/download/SnapLens.dmg) (or grab it from [Releases](https://github.com/ribeiros-click/snaplens/releases/latest)).
 2. Drag SnapLens to **Applications**.
@@ -93,6 +113,16 @@ Pure Swift (AppKit + SwiftUI), no third-party dependencies. ScreenCaptureKit for
 ./make_appstore.sh  # builds SnapLens.pkg for the Mac App Store (needs certificates + profile)
 SnapLens.app/Contents/MacOS/SnapLens --render-shots <dir>   # renders the website screenshots from the real UI
 ```
+
+**Windows** (`windows/`): C# / .NET 8 WinForms, one dependency ([ScreenRecorderLib](https://github.com/sskodje/ScreenRecorderLib), Media Foundation, for recording). GDI capture, `Windows.Media.Ocr` for OCR, `RegisterHotKey` for global shortcuts. It reuses the app's `Localizable.strings` (embedded at build time).
+
+```powershell
+windows\build.ps1                 # self-contained build in windows\dist (+ SnapLens-Setup.exe if Inno Setup 6 is installed)
+SnapLens.exe --render-ui <dir> en # renders the Settings, Library and Share windows to PNG
+SnapLens.exe --ocr image.png      # OCR test (writes image.png.txt)
+```
+
+Pushing a `v*` tag runs `.github/workflows/windows.yml`, which builds on GitHub Actions and attaches the installer and zip to the release.
 
 Diagnostics: the app writes a trace to `~/Library/Logs/SnapLens/snaplens.log` (menu → Diagnóstico).
 
