@@ -243,14 +243,18 @@ public sealed class TrayApp : ApplicationContext
 
     // MARK: Link público
 
+    /// Abre a caixa de validade e, ao confirmar, faz o upload.
     public async Task Share(Item item)
     {
         var path = store.PathFor(item);
         if (path == null || !File.Exists(path)) return;
+        using var options = new ShareOptionsForm();
+        if (options.ShowDialog() != DialogResult.OK) return;
+        var (seconds, onceWanted) = options.Choice.Resolve(options.CustomDays);
         Toast.Show(L("Enviando para %@…", ShareConfig.Server.Replace("https://", "")), Icons.Link);
         try
         {
-            var r = await ShareClient.Upload(await File.ReadAllBytesAsync(path), ShareConfig.Expiry, ShareConfig.Once);
+            var r = await ShareClient.Upload(await File.ReadAllBytesAsync(path), seconds, onceWanted);
             item.ShareID = r.Id;
             item.ShareURL = r.Url;
             item.ShareExpires = r.ExpiresAt is double e && e > 0 ? DateTimeOffset.FromUnixTimeSeconds((long)e).LocalDateTime : null;

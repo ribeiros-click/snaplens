@@ -62,20 +62,7 @@ public sealed class SettingsForm : Form
         var server = new TextBox { Width = 290, Text = Settings.Data.ShareServer, PlaceholderText = ShareConfig.DefaultServer };
         server.TextChanged += (_, _) => { Settings.Data.ShareServer = server.Text.Trim(); Settings.Save(); };
         Row(share, L("Servidor"), server);
-        var expiry = Combo();
-        foreach (var e in ShareConfig.AllExpiries) expiry.Items.Add(e.Title());
-        expiry.SelectedIndex = Array.IndexOf(ShareConfig.AllExpiries, ShareConfig.Expiry);
-        expiry.SelectedIndexChanged += (_, _) => { Settings.Data.ShareExpiry = (int)ShareConfig.AllExpiries[expiry.SelectedIndex]; Settings.Save(); };
-        Row(share, L("Validade padrão do link"), expiry);
-        var once = Check(L("Visualização única"), Settings.Data.ShareOnce);
-        var shareNote = Note("");
-        void UpdateShareNote() => shareNote.Text = once.Checked
-            ? L("O link se apaga automaticamente após a primeira abertura. A validade continua valendo como tempo máximo de vida do link — vale o que ocorrer primeiro.")
-            : L("O botão “link” no overlay e na Biblioteca envia a imagem e copia a URL. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.");
-        once.CheckedChanged += (_, _) => { Settings.Data.ShareOnce = once.Checked; Settings.Save(); UpdateShareNote(); };
-        UpdateShareNote();
-        share.Controls.Add(once);
-        share.Controls.Add(shareNote);
+        share.Controls.Add(Note(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.")));
 
         // Provedor de IA
         var ai = Section(L("Provedor de IA"));

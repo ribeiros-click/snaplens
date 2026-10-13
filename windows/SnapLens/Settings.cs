@@ -13,8 +13,8 @@ public sealed class AppSettings
     public bool RecSystem { get; set; } = true;
     public bool RecMic { get; set; }
     public string ShareServer { get; set; } = "";
-    public int ShareExpiry { get; set; } = (int)SnapLens.ShareExpiry.D7;
-    public bool ShareOnce { get; set; }
+    public string ShareChoice { get; set; } = "D1";   // última validade escolhida ao compartilhar
+    public int ShareCustomDays { get; set; } = 7;
     public Dictionary<string, string> Models { get; set; } = new();
     public Dictionary<string, string> Bases { get; set; } = new();
     public Dictionary<string, Shortcut> Shortcuts { get; set; } = new();
