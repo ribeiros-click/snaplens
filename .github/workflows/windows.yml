@@ -1,0 +1,44 @@
+# Compila o SnapLens para Windows (instalador + zip). Em tags v*, anexa os arquivos à release do GitHub.
+name: Windows build
+
+on:
+  push:
+    tags: ["v*"]
+    paths-ignore: ["server/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "1.0.0" }
+          ./windows/build.ps1 -Version $version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SnapLens-windows
+          path: |
+            windows/dist/SnapLens-Setup.exe
+            windows/dist/SnapLens-windows-x64.zip
+
+      - name: Attach to release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view $env:GITHUB_REF_NAME 2>$null
+          if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
+          gh release upload $env:GITHUB_REF_NAME windows/dist/SnapLens-Setup.exe windows/dist/SnapLens-windows-x64.zip --clobber

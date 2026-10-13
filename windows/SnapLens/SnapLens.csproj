@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- 10.0.19041 = Windows 10 2004: habilita as APIs WinRT (Windows.Media.Ocr, Windows.Storage). -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>SnapLens</RootNamespace>
+    <AssemblyName>SnapLens</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\SnapLens.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <Platform Condition="'$(Platform)' == '' or '$(Platform)' == 'AnyCPU'">x64</Platform>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Version>1.0.0</Version>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
+    <Product>SnapLens</Product>
+    <Company>ribeiros.click</Company>
+    <Copyright>© 2026 José Ribeiro Junior</Copyright>
+    <Description>SnapLens — capture, annotate, share</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ScreenRecorderLib" Version="6.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Mesmas traduções do app macOS (chave = texto em pt-BR). -->
+    <EmbeddedResource Include="..\..\Sources\SnapLens\Resources\**\Localizable.strings" LogicalName="l10n.%(RecursiveDir)strings" />
+    <EmbeddedResource Include="Assets\SnapLens.ico" LogicalName="SnapLens.ico" />
+  </ItemGroup>
+
+  <!-- A ScreenRecorderLib é C++/CLI (assembly misto): não carrega de dentro do .exe single-file.
+       Fica ao lado do SnapLens.exe, junto com o Ijwhost.dll de que ela precisa. -->
+  <Target Name="KeepScreenRecorderLibOutside" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)" Condition="'%(Filename)' == 'ScreenRecorderLib' or '%(Filename)' == 'Ijwhost'" ExcludeFromSingleFile="true" />
+    </ItemGroup>
+  </Target>
+
+</Project>
