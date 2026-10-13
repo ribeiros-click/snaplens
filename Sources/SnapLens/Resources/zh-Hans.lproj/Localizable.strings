@@ -190,6 +190,17 @@
 "Norte" = "北部";
 "Centro-Oeste" = "中西部";
 "Imagens" = "图片";
+"Ver uma vez" = "阅后即焚";
+"Durante 1 dia" = "保留 1 天";
+"Durante 5 dias" = "保留 5 天";
+"Durante…" = "保留…";
+"dias" = "天";
+"Nunca expirar" = "永不过期";
+"Compartilhar" = "分享";
+"O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro)." = "链接在首次打开后删除（或 30 天后，以先到者为准）。";
+"O link fica no ar até você revogá-lo na Biblioteca ou pela página de token." = "链接会一直有效，直到你在资料库或令牌页面撤销。";
+"Passado o prazo, a imagem é apagada do servidor. Você pode revogar antes." = "到期后图片将从服务器删除。你可以提前撤销。";
+"Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app." = "点击浮层或资料库中的“链接”时，你会在上传前选择有效期（阅后即焚、1 天、5 天、X 天或永不）。链接是匿名的，无需账户。请保存删除令牌，以便在应用外删除链接。";
 "%@ selecionada(s)" = "已选 %@ 张";
 "Copiar juntas" = "合并复制";
 "Baixar juntas" = "合并保存";

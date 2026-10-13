@@ -3,6 +3,12 @@ import AppKit
 MainActor.assumeIsolated {
     let app = NSApplication.shared
     let args = CommandLine.arguments
+    if let i = args.firstIndex(of: "--render-share-options"), i + 1 < args.count {
+        // Prévia da caixa de validade: SnapLens --render-share-options saida.png [idioma]
+        app.setActivationPolicy(.prohibited)
+        Shots.renderShareOptions(to: URL(fileURLWithPath: args[i + 1]), language: i + 2 < args.count ? args[i + 2] : nil)
+        exit(0)
+    }
     if let i = args.firstIndex(of: "--stack"), i + 2 < args.count {
         // Teste da montagem: SnapLens --stack saida.png a.png b.png …
         let urls = args[(i + 2)...].map { URL(fileURLWithPath: $0) }

@@ -190,6 +190,17 @@
 "Norte" = "Norte";
 "Centro-Oeste" = "Centro-Oeste";
 "Imagens" = "Imágenes";
+"Ver uma vez" = "Ver una vez";
+"Durante 1 dia" = "Durante 1 día";
+"Durante 5 dias" = "Durante 5 días";
+"Durante…" = "Durante…";
+"dias" = "días";
+"Nunca expirar" = "Nunca caducar";
+"Compartilhar" = "Compartir";
+"O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro)." = "El enlace se borra en la primera apertura (o a los 30 días, lo que ocurra primero).";
+"O link fica no ar até você revogá-lo na Biblioteca ou pela página de token." = "El enlace sigue activo hasta que lo revoques en la Biblioteca o en la página de token.";
+"Passado o prazo, a imagem é apagada do servidor. Você pode revogar antes." = "Pasado el plazo, la imagen se borra del servidor. Puedes revocarla antes.";
+"Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app." = "Al pulsar “enlace” en la superposición o en la Biblioteca eliges la validez (ver una vez, 1 día, 5 días, X días o nunca) antes de subir. Los enlaces son anónimos: no hace falta cuenta. Guarda el token de eliminación para borrar un enlace fuera de la app.";
 "%@ selecionada(s)" = "%@ seleccionada(s)";
 "Copiar juntas" = "Copiar juntas";
 "Baixar juntas" = "Guardar juntas";

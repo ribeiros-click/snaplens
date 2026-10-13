@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlay: CaptureOverlay?
     private var settingsWindow: NSWindow?
     private var shareWindow: NSWindow?
+    private var shareOptionsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Trace.log("=== SnapLens iniciado · macOS \(ProcessInfo.processInfo.operatingSystemVersionString) · telas=\(NSScreen.screens.count)")
@@ -271,11 +272,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Link público
 
+    /// Abre a caixa de validade e, ao confirmar, faz o upload.
     func share(_ item: Item) async {
+        guard store.url(for: item) != nil else { return }
+        shareOptionsWindow?.close()
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 360, height: 260), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        w.title = "SnapLens — " + L("Compartilhar")
+        w.isReleasedWhenClosed = false
+        w.level = .floating
+        w.contentView = NSHostingView(rootView: ShareOptionsView(onShare: { [weak self] choice, days in
+            self?.shareOptionsWindow?.close(); self?.shareOptionsWindow = nil
+            let r = choice.resolve(customDays: days)
+            Task { await self?.upload(item, expirySeconds: r.seconds, once: r.once) }
+        }, onCancel: { [weak self] in
+            self?.shareOptionsWindow?.close(); self?.shareOptionsWindow = nil
+        }))
+        w.center()
+        shareOptionsWindow = w
+        NSApp.activate(ignoringOtherApps: true)
+        w.makeKeyAndOrderFront(nil)
+    }
+
+    private func upload(_ item: Item, expirySeconds: Int, once: Bool) async {
         guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
         Toast.show(L("Enviando para %@…", ShareConfig.server.replacingOccurrences(of: "https://", with: "")), symbol: "link")
         do {
-            let r = try await ShareClient.upload(data: data, expiry: ShareConfig.expiry, once: ShareConfig.once)
+            let r = try await ShareClient.upload(data: data, expirySeconds: expirySeconds, once: once)
             var it = item
             it.shareID = r.id
             it.shareURL = r.url

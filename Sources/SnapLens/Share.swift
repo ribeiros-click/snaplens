@@ -40,13 +40,13 @@ struct ShareResult: Decodable {
 }
 
 enum ShareClient {
-    static func upload(data: Data, expiry: ShareExpiry, once: Bool) async throws -> ShareResult {
+    static func upload(data: Data, expirySeconds: Int, once: Bool) async throws -> ShareResult {
         let boundary = "SnapLens-\(UUID().uuidString)"
         var body = Data()
         func field(_ name: String, _ value: String) {
             body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
         }
-        field("expires", String(expiry.rawValue))
+        field("expires", String(expirySeconds))
         field("once", once ? "1" : "0")
         body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"screenshot.png\"\r\nContent-Type: image/png\r\n\r\n".data(using: .utf8)!)
         body.append(data)

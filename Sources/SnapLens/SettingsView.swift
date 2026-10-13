@@ -64,19 +64,11 @@ struct SettingsView: View {
 
 private struct ShareSection: View {
     @AppStorage("share.server") private var server = ""
-    @AppStorage("share.expiry") private var expiry = ShareExpiry.d7.rawValue
-    @AppStorage("share.once") private var once = false
 
     var body: some View {
         Section(L("Compartilhar por link público")) {
             TextField(L("Servidor"), text: $server, prompt: Text(ShareConfig.defaultServer))
-            Picker(L("Validade padrão do link"), selection: $expiry) {
-                ForEach(ShareExpiry.allCases) { Text($0.title).tag($0.rawValue) }
-            }
-            Toggle(L("Visualização única"), isOn: $once)
-            Text(once
-                 ? L("O link se apaga automaticamente após a primeira abertura. A validade continua valendo como tempo máximo de vida do link — vale o que ocorrer primeiro.")
-                 : L("O botão “link” no overlay e na Biblioteca envia a imagem e copia a URL. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app."))
+            Text(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app."))
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

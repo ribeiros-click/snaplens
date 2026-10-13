@@ -190,6 +190,17 @@
 "Norte" = "Nord";
 "Centro-Oeste" = "Centro-Ovest";
 "Imagens" = "Immagini";
+"Ver uma vez" = "Visualizzazione singola";
+"Durante 1 dia" = "Per 1 giorno";
+"Durante 5 dias" = "Per 5 giorni";
+"Durante…" = "Per…";
+"dias" = "giorni";
+"Nunca expirar" = "Mai scadere";
+"Compartilhar" = "Condividi";
+"O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro)." = "Il link viene eliminato alla prima apertura (o dopo 30 giorni, a seconda di cosa accade prima).";
+"O link fica no ar até você revogá-lo na Biblioteca ou pela página de token." = "Il link resta attivo finché non lo revochi nella Libreria o nella pagina del token.";
+"Passado o prazo, a imagem é apagada do servidor. Você pode revogar antes." = "Scaduto il termine, l'immagine viene eliminata dal server. Puoi revocarla prima.";
+"Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app." = "Quando fai clic su “link” nell'overlay o nella Libreria scegli la scadenza (visualizzazione singola, 1 giorno, 5 giorni, X giorni o mai) prima del caricamento. I link sono anonimi: nessun account necessario. Conserva il token di eliminazione per rimuovere un link fuori dall'app.";
 "%@ selecionada(s)" = "%@ selezionate";
 "Copiar juntas" = "Copia unite";
 "Baixar juntas" = "Salva unite";

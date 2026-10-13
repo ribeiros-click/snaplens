@@ -190,6 +190,17 @@
 "Norte" = "North";
 "Centro-Oeste" = "Midwest";
 "Imagens" = "Images";
+"Ver uma vez" = "View once";
+"Durante 1 dia" = "For 1 day";
+"Durante 5 dias" = "For 5 days";
+"Durante…" = "For…";
+"dias" = "days";
+"Nunca expirar" = "Never expire";
+"Compartilhar" = "Share";
+"O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro)." = "The link is deleted on first open (or after 30 days, whichever comes first).";
+"O link fica no ar até você revogá-lo na Biblioteca ou pela página de token." = "The link stays up until you revoke it in the Library or on the token page.";
+"Passado o prazo, a imagem é apagada do servidor. Você pode revogar antes." = "After the deadline, the image is deleted from the server. You can revoke it earlier.";
+"Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app." = "When you click “link” in the overlay or the Library, you choose the expiry (view once, 1 day, 5 days, X days or never) before uploading. Links are anonymous — no account needed. Keep the delete token to remove a link outside the app.";
 "%@ selecionada(s)" = "%@ selected";
 "Copiar juntas" = "Copy combined";
 "Baixar juntas" = "Save combined";
