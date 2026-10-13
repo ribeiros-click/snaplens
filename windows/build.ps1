@@ -25,8 +25,11 @@ if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path (Join-Path $out "*") -DestinationPath $zip
 
 $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
-if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
-if (Test-Path $iscc) {
+if (-not $iscc) {
+    $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") |
+        Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+if ($iscc -and (Test-Path $iscc)) {
     & $iscc "/DAppVersion=$Version" (Join-Path $root "installer.iss")
     if ($LASTEXITCODE -ne 0) { throw "Inno Setup falhou" }
 } else {
