@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.applicationIconImage = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
         Keychain.set("", account: "share.key") // limpa chave de API legada; compartilhar não exige mais conta
+        HangWatchdog.start()
         setupMenu()
         setupHotKeys()
         startClipboardMonitor()
@@ -451,21 +452,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private var clipboardReading = false
+
     private func pollClipboard() {
         let pb = NSPasteboard.general
-        guard pb.changeCount != lastChangeCount else { return }
+        guard pb.changeCount != lastChangeCount, !clipboardReading else { return }
         lastChangeCount = pb.changeCount
         // Ignora conteúdo marcado como oculto/transitório (ex.: gerenciadores de senha).
         let types = pb.types?.map(\.rawValue) ?? []
         if types.contains("org.nspasteboard.ConcealedType") || types.contains("org.nspasteboard.TransientType") { return }
 
-        if let text = pb.string(forType: .string), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            if store.items.first(where: { $0.kind == .clipboardText || $0.kind == .ocr })?.text != text {
-                store.addText(text, kind: .clipboardText)
+        // A leitura do conteúdo pode bloquear: dados "prometidos" por outro app só chegam quando esse app
+        // responde, e após o sleep ele pode estar congelado. Por isso roda fora da thread principal.
+        clipboardReading = true
+        let lastText = store.items.first(where: { $0.kind == .clipboardText || $0.kind == .ocr })?.text
+        Task.detached(priority: .utility) { [weak self] in
+            let pb = NSPasteboard.general
+            var text: String?
+            var image: Data?
+            if let t = pb.string(forType: .string), !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                text = t
+            } else if let d = pb.data(forType: .png) {
+                image = d
+            } else if let tiff = pb.data(forType: .tiff), tiff.count < 64 * 1024 * 1024,
+                      let img = NSImage(data: tiff), let d = pngData(from: img) {
+                image = d
             }
-        } else if let data = pb.data(forType: .png)
-                    ?? pb.data(forType: .tiff).flatMap({ NSImage(data: $0) }).flatMap(pngData(from:)) {
-            store.addImage(data: data, kind: .clipboardImage)
+            await MainActor.run {
+                guard let self else { return }
+                self.clipboardReading = false
+                if let text, text != lastText { self.store.addText(text, kind: .clipboardText) }
+                else if let image { self.store.addImage(data: image, kind: .clipboardImage) }
+            }
         }
     }
 }
