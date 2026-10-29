@@ -206,7 +206,7 @@ public sealed class LibraryForm : Form
     private FlowLayoutPanel ButtonRow(params (string glyph, string tip, Action action)[] buttons)
     {
         var row = new FlowLayoutPanel { Height = 28, Dock = DockStyle.Bottom, WrapContents = false, FlowDirection = FlowDirection.RightToLeft, Margin = Padding.Empty };
-        foreach (var b in buttons.Reverse()) row.Controls.Add(Ui.Glyph(b.glyph, b.tip, b.action, tips));
+        foreach (var b in Enumerable.Reverse(buttons)) row.Controls.Add(Ui.Glyph(b.glyph, b.tip, b.action, tips));
         return row;
     }
 
