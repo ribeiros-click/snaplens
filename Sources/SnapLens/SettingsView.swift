@@ -5,7 +5,8 @@ struct SettingsView: View {
     @AppStorage("activeProvider") private var active = ""
     @AppStorage("rec.system") private var recSystem = true
     @AppStorage("rec.mic") private var recMic = false
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var launchAtLogin = LoginItem.isOn
+    @State private var loginStatus = LoginItem.status
     @State private var loginError: String?
 
     var body: some View {
@@ -21,14 +22,26 @@ struct SettingsView: View {
                     get: { launchAtLogin },
                     set: { on in
                         do {
-                            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                            launchAtLogin = on
+                            try LoginItem.set(on)
                             loginError = nil
                         } catch {
-                            launchAtLogin = SMAppService.mainApp.status == .enabled
                             loginError = L("Não foi possível alterar: %@. Mova o app para /Applications e tente de novo.", error.localizedDescription)
                         }
+                        launchAtLogin = LoginItem.isOn
+                        loginStatus = LoginItem.status
                     }))
+                if loginStatus == .requiresApproval {
+                    HStack {
+                        Text(L("O macOS precisa da sua aprovação em Itens de Início."))
+                            .font(.caption).foregroundStyle(.orange)
+                        Spacer()
+                        Button(L("Abrir Ajustes do Sistema")) { LoginItem.openSystemSettings() }
+                            .controlSize(.small)
+                    }
+                } else if !LoginItem.isInstalled {
+                    Text(L("Para iniciar com o macOS, mova o SnapLens para a pasta Aplicativos."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
             }
             Section(L("Atalhos globais")) {
@@ -59,6 +72,11 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: 520, height: 900)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // Volta dos Ajustes do Sistema: reflete a aprovação (ou remoção) feita lá.
+            launchAtLogin = LoginItem.isOn
+            loginStatus = LoginItem.status
+        }
     }
 }
 

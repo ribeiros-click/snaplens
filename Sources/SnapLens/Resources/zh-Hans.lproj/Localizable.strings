@@ -210,3 +210,6 @@
 "Montagem" = "合并图片";
 "Capture, anote e compartilhe sem sair do teclado." = "截图、标注、分享，手不离键盘。";
 "Grátis e de código aberto. Baixe para macOS 15 ou mais recente." = "免费开源。支持 macOS 15 及更高版本。";
+"O macOS precisa da sua aprovação em Itens de Início." = "macOS 需要你在“登录项”中批准。";
+"Abrir Ajustes do Sistema" = "打开系统设置";
+"Para iniciar com o macOS, mova o SnapLens para a pasta Aplicativos." = "要登录时启动，请将 SnapLens 移到“应用程序”文件夹。";

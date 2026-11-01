@@ -44,11 +44,22 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 
-# Identidade estável mantém as permissões do macOS (Gravação de Tela) entre builds.
-IDENTITY="$(security find-identity -v -p codesigning | sed -n 's/.*"\(Apple Development:[^"]*\)".*/\1/p' | head -1)"
+# Assinatura:
+#  - "Developer ID Application" (conta paga do Apple Developer Program): Hardened Runtime + timestamp,
+#    pronto para notarizar (./make_dmg.sh com NOTARY_PROFILE) e abrir sem aviso do Gatekeeper.
+#  - senão "Apple Development": identidade estável mantém as permissões (Gravação de Tela) entre builds.
+#  - senão ad-hoc.
+IDS="$(security find-identity -v -p codesigning)"
+DEVID="$(sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' <<<"$IDS" | head -1)"
+DEV="$(sed -n 's/.*"\(Apple Development:[^"]*\)".*/\1/p' <<<"$IDS" | head -1)"
 if [ -n "${APPSTORE:-}" ]; then
   echo "(build App Store: assinatura feita por make_appstore.sh)"
+elif [ -n "$DEVID" ] && [ -z "${NO_DEVID:-}" ]; then
+  codesign --force --options runtime --timestamp --entitlements SnapLens.developerid.entitlements --sign "$DEVID" "$APP"
+  codesign --verify --strict --verbose=2 "$APP"
+  echo "Assinado com: $DEVID"
 else
-  codesign --force --deep --sign "${IDENTITY:--}" "$APP"
+  codesign --force --deep --sign "${DEV:--}" "$APP"
+  echo "Assinado com: ${DEV:-ad-hoc} (sem Developer ID: o Gatekeeper vai avisar em outros Macs)"
 fi
 echo "OK -> $(pwd)/$APP"

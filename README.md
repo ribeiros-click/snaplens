@@ -97,6 +97,8 @@ Differences from the Mac version: OCR uses the built-in **Windows OCR** engine (
 3. The build is not notarized yet: on first launch, right-click → **Open**.
 4. Allow **Screen Recording** (and Microphone, if you want it) in System Settings → Privacy & Security.
 
+SnapLens turns on **Launch at login** the first time it runs from Applications. macOS may ask you to approve it in System Settings → General → Login Items; you can turn it off in SnapLens Settings.
+
 Requires **macOS 15 (Sequoia) or later**, Apple Silicon.
 
 ## Privacy
@@ -109,7 +111,7 @@ Pure Swift (AppKit + SwiftUI), no third-party dependencies. ScreenCaptureKit for
 
 ```bash
 ./build.sh          # builds SnapLens.app (ICON=1|2|3|4 picks the icon; 4 = default)
-./make_dmg.sh       # builds SnapLens.dmg
+./make_dmg.sh       # builds SnapLens.dmg (signed + notarized with a Developer ID certificate and NOTARY_PROFILE)
 ./make_appstore.sh  # builds SnapLens.pkg for the Mac App Store (needs certificates + profile)
 SnapLens.app/Contents/MacOS/SnapLens --render-shots <dir>   # renders the website screenshots from the real UI
 ```

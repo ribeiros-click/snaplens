@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.applicationIconImage = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
         Keychain.set("", account: "share.key") // limpa chave de API legada; compartilhar não exige mais conta
         HangWatchdog.start()
+        LoginItem.enableOnFirstRun()
         setupMenu()
         setupHotKeys()
         startClipboardMonitor()
