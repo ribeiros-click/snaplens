@@ -360,7 +360,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func startDriveExpiry() {
         Task { await purgeExpiredDriveShares() }
         driveExpiryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { Task { await self?.purgeExpiredDriveShares() } }
+            Task { @MainActor in await self?.purgeExpiredDriveShares() }
         }
     }
 
