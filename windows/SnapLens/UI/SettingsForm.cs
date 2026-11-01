@@ -4,19 +4,22 @@ namespace SnapLens;
 
 public sealed class SettingsForm : Form
 {
-    private readonly FlowLayoutPanel root;
+    private FlowLayoutPanel root = null!;   // página (aba) onde Section() adiciona os grupos
+    private readonly TabControl tabs;
     private const int W = 500;
 
     public SettingsForm()
     {
-        Ui.Window(this, L("Ajustes"), 560, 760);
-        MinimumSize = new Size(540, 400);
+        Ui.Window(this, L("Ajustes"), 580, 640);
+        MinimumSize = new Size(560, 400);
         MaximizeBox = false;
         BackColor = Color.FromArgb(243, 243, 245);
-        root = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(16, 12, 16, 16) };
-        Controls.Add(root);
+        tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(14, 5) };
+        Controls.Add(tabs);
+        tabs.SelectedIndexChanged += (_, _) => lastTab = tabs.SelectedIndex;
 
         // Idioma
+        root = Page(L("Geral"));
         var lang = Section(L("Idioma"));
         var langBox = Combo();
         langBox.Items.Add(L("Mesmo do sistema"));
@@ -43,11 +46,13 @@ public sealed class SettingsForm : Form
         general.Controls.Add(loginError);
 
         // Atalhos
+        root = Page(L("Atalhos"));
         var keys = Section(L("Atalhos globais"));
         foreach (var action in Shortcuts.All) keys.Controls.Add(ShortcutRow(action));
         keys.Controls.Add(Note(L("Clique no atalho e pressione a nova combinação (precisa incluir Ctrl, Alt ou Win).")));
 
         // Gravação
+        root = Page(L("Gravação"));
         var rec = Section(L("Gravação de vídeo"));
         var sys = Check(L("Gravar áudio do sistema"), Settings.Data.RecSystem);
         sys.CheckedChanged += (_, _) => { Settings.Data.RecSystem = sys.Checked; Settings.Save(); };
@@ -58,6 +63,7 @@ public sealed class SettingsForm : Form
         rec.Controls.Add(Note(L("Grava a tela inteira onde está o mouse, em MP4. Com os dois desligados, o vídeo fica sem áudio. Os vídeos vão para a Biblioteca.")));
 
         // Compartilhar
+        root = Page(L("Compartilhar"));
         var share = Section(L("Compartilhar por link público"));
         var server = new TextBox { Width = 290, Text = Settings.Data.ShareServer, PlaceholderText = ShareConfig.DefaultServer };
         server.TextChanged += (_, _) => { Settings.Data.ShareServer = server.Text.Trim(); Settings.Save(); };
@@ -84,12 +90,38 @@ public sealed class SettingsForm : Form
         cloud.Controls.Add(advanced);
         cloud.Controls.Add(advPanel);
 
-        // Provedor de IA
+        // IA
+        aiPage = Page(L("IA"));
+        BuildAiPage();
+        tabs.SelectedIndex = Math.Clamp(lastTab, 0, tabs.TabCount - 1);
+    }
+
+    private static int lastTab;   // aba reaberta na próxima vez (enquanto o app estiver aberto)
+    private readonly FlowLayoutPanel aiPage;
+
+    private FlowLayoutPanel Page(string title)
+    {
+        var page = new TabPage(title) { BackColor = BackColor, UseVisualStyleBackColor = false };
+        var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(12, 12, 12, 16) };
+        page.Controls.Add(panel);
+        tabs.TabPages.Add(page);
+        return panel;
+    }
+
+    /// Aba IA: só os provedores adicionados aparecem (até 4); "Adicionar provedor" lista os que faltam.
+    /// Reconstruída a cada adição/remoção.
+    private void BuildAiPage()
+    {
+        aiPage.SuspendLayout();
+        foreach (Control c in aiPage.Controls.Cast<Control>().ToList()) { aiPage.Controls.Remove(c); c.Dispose(); }
+        root = aiPage;
+        var added = Providers.Added;
+
         var ai = Section(L("Provedor de IA"));
         var active = Combo(260);
         active.Items.Add(L("Nativo (Windows OCR, offline)"));
-        foreach (var p in Providers.All) active.Items.Add(p.Name());
-        active.SelectedIndex = Enum.TryParse<Provider>(Settings.Data.ActiveProvider, out var cur) ? Array.IndexOf(Providers.All, cur) + 1 : 0;
+        foreach (var p in added) active.Items.Add(p.Name());
+        active.SelectedIndex = Enum.TryParse<Provider>(Settings.Data.ActiveProvider, out var cur) && added.Contains(cur) ? added.IndexOf(cur) + 1 : 0;
         var titles = new Dictionary<Provider, GroupBox>();
         void RefreshTitles()
         {
@@ -98,14 +130,38 @@ public sealed class SettingsForm : Form
         }
         active.SelectedIndexChanged += (_, _) =>
         {
-            Settings.Data.ActiveProvider = active.SelectedIndex == 0 ? "" : Providers.All[active.SelectedIndex - 1].ToString();
+            Settings.Data.ActiveProvider = active.SelectedIndex <= 0 ? "" : added[active.SelectedIndex - 1].ToString();
             Settings.Save();
             RefreshTitles();
         };
         Row(ai, L("Provedor ativo"), active);
         ai.Controls.Add(Note(L("“Descrever com IA” usa o provedor ativo. Sem provedor (ou sem chave configurada), usa o modo nativo. O OCR de texto sempre roda localmente com o Windows OCR.")));
 
-        foreach (var p in Providers.All)
+        var addRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 6, 0, 2) };
+        var remaining = Providers.All.Where(p => !added.Contains(p)).ToList();
+        System.Windows.Forms.Button? addButton = null;
+        addButton = Ui.Button("+  " + L("Adicionar provedor"), () =>
+        {
+            var menu = new ContextMenuStrip();
+            foreach (var p in remaining)
+                menu.Items.Add(p.Name(), null, (_, _) =>
+                {
+                    var list = Providers.Added;
+                    if (list.Count >= Providers.MaxAdded || list.Contains(p)) return;
+                    list.Add(p);
+                    Providers.Added = list;
+                    BeginInvoke(BuildAiPage);
+                });
+            menu.Show(addButton!, new Point(0, addButton!.Height));
+        });
+        addButton.Enabled = added.Count < Providers.MaxAdded && remaining.Count > 0;
+        addRow.Controls.Add(addButton);
+        var count = Ui.Label(L("%@ de %@", added.Count, Providers.MaxAdded), Ui.Small, Ui.Secondary);
+        count.Margin = new Padding(8, 7, 0, 0);
+        addRow.Controls.Add(count);
+        ai.Controls.Add(addRow);
+
+        foreach (var p in added)
         {
             var box = Section(p.Name());
             titles[p] = (GroupBox)box.Parent!;
@@ -115,7 +171,7 @@ public sealed class SettingsForm : Form
                 p.SetApiKey(key.Text);
                 // Primeira chave salva: o provedor vira o ativo (como no macOS).
                 if (key.Text.Trim().Length > 0 && Settings.Data.ActiveProvider == "")
-                    active.SelectedIndex = Array.IndexOf(Providers.All, p) + 1;
+                    active.SelectedIndex = added.IndexOf(p) + 1;
             };
             Row(box, p.NeedsKey() ? "API key" : L("API key (opcional)"), key);
             var model = new TextBox { Width = 290, Text = Settings.Data.Models.GetValueOrDefault(p.ToString(), ""), PlaceholderText = p.DefaultModel().Length == 0 ? L("ex.: llava, gpt-4o…") : p.DefaultModel() };
@@ -125,8 +181,19 @@ public sealed class SettingsForm : Form
             baseUrl.TextChanged += (_, _) => { Settings.Data.Bases[p.ToString()] = baseUrl.Text.Trim(); Settings.Save(); };
             Row(box, L("URL base"), baseUrl);
             box.Controls.Add(Note(p.Hint()));
+            var remove = new LinkLabel { Text = L("Remover"), AutoSize = true, LinkColor = Color.Firebrick, Margin = new Padding(0, 4, 0, 2) };
+            remove.LinkClicked += (_, _) =>
+            {
+                var ok = MessageBox.Show(this, L("A chave de API, o modelo e a URL deste provedor serão apagados."), L("Remover %@?", p.Name()),
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK;
+                if (!ok) return;
+                p.Remove();
+                BeginInvoke(BuildAiPage);
+            };
+            box.Controls.Add(remove);
         }
         RefreshTitles();
+        aiPage.ResumeLayout();
     }
 
     // MARK: Construção

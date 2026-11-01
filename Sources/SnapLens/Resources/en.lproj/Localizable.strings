@@ -242,3 +242,9 @@
 "Buscar com Google Lens" = "Search with Google Lens";
 "Buscar seleção com Google Lens" = "Search selection with Google Lens";
 "Abrindo no Google Lens…" = "Opening in Google Lens…";
+"Atalhos" = "Shortcuts";
+"Adicionar provedor" = "Add provider";
+"%@ de %@" = "%@ of %@";
+"Remover %@?" = "Remove %@?";
+"Remover" = "Remove";
+"A chave de API, o modelo e a URL deste provedor serão apagados." = "This provider's API key, model and URL will be deleted.";

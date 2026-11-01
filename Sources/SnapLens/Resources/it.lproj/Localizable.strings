@@ -242,3 +242,9 @@
 "Buscar com Google Lens" = "Cerca con Google Lens";
 "Buscar seleção com Google Lens" = "Cerca la selezione con Google Lens";
 "Abrindo no Google Lens…" = "Apertura in Google Lens…";
+"Atalhos" = "Scorciatoie";
+"Adicionar provedor" = "Aggiungi provider";
+"%@ de %@" = "%@ di %@";
+"Remover %@?" = "Rimuovere %@?";
+"Remover" = "Rimuovi";
+"A chave de API, o modelo e a URL deste provedor serão apagados." = "La chiave API, il modello e l'URL di questo provider verranno eliminati.";

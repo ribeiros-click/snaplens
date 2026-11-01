@@ -2,81 +2,141 @@ import SwiftUI
 import ServiceManagement
 
 struct SettingsView: View {
-    @AppStorage("activeProvider") private var active = ""
     @AppStorage("rec.system") private var recSystem = true
     @AppStorage("rec.mic") private var recMic = false
     @State private var launchAtLogin = LoginItem.isOn
     @State private var loginStatus = LoginItem.status
     @State private var loginError: String?
 
+    enum Tab: String { case general, shortcuts, recording, share, ai }
+    @AppStorage("settings.tab") private var tab: Tab = .general
+
     var body: some View {
-        Form {
-            Section(L("Idioma")) {
-                Picker(L("Idioma do app"), selection: Binding(get: { L10n.selection }, set: { L10n.selection = $0 })) {
-                    Text(L("Mesmo do sistema")).tag("system")
-                    ForEach(L10n.languages, id: \.code) { Text($0.name).tag($0.code) }
-                }
-            }
-            Section(L("Geral")) {
-                Toggle(L("Iniciar com o macOS"), isOn: Binding(
-                    get: { launchAtLogin },
-                    set: { on in
-                        do {
-                            try LoginItem.set(on)
-                            loginError = nil
-                        } catch {
-                            loginError = L("Não foi possível alterar: %@. Mova o app para /Applications e tente de novo.", error.localizedDescription)
-                        }
-                        launchAtLogin = LoginItem.isOn
-                        loginStatus = LoginItem.status
-                    }))
-                if loginStatus == .requiresApproval {
-                    HStack {
-                        Text(L("O macOS precisa da sua aprovação em Itens de Início."))
-                            .font(.caption).foregroundStyle(.orange)
-                        Spacer()
-                        Button(L("Abrir Ajustes do Sistema")) { LoginItem.openSystemSettings() }
-                            .controlSize(.small)
-                    }
-                } else if !LoginItem.isInstalled {
-                    Text(L("Para iniciar com o macOS, mova o SnapLens para a pasta Aplicativos."))
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
-            }
-            Section(L("Atalhos globais")) {
-                ForEach(ShortcutAction.allCases) { ShortcutRow(action: $0) }
-                Text(L("Clique no atalho e pressione a nova combinação (precisa incluir ⌘, ⌃ ou ⌥)."))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section(L("Gravação de vídeo")) {
-                Toggle(L("Gravar áudio do sistema"), isOn: $recSystem)
-                Toggle(L("Gravar microfone"), isOn: $recMic)
-                Text(L("Grava a tela inteira onde está o mouse, em MP4. Com os dois desligados, o vídeo fica sem áudio. Os vídeos vão para a Biblioteca."))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            ShareSection()
-            Section(L("Provedor de IA")) {
-                Picker(L("Provedor ativo"), selection: $active) {
-                    Text(L("Nativo (Apple Vision, offline)")).tag("")
-                    ForEach(Provider.allCases) { Text($0.name).tag($0.rawValue) }
-                }
-                Text(L("“Descrever com IA” usa o provedor ativo. Sem provedor (ou sem chave configurada), usa o modo nativo. O OCR de texto sempre roda localmente com o Vision."))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            ForEach(Provider.allCases) { p in
-                ProviderSection(provider: p, isActive: active == p.rawValue) {
-                    if active.isEmpty { active = p.rawValue }
-                }
-            }
+        TabView(selection: $tab) {
+            Form { generalSections }.formStyle(.grouped)
+                .tabItem { Label(L("Geral"), systemImage: "gearshape") }.tag(Tab.general)
+            Form { shortcutSection }.formStyle(.grouped)
+                .tabItem { Label(L("Atalhos"), systemImage: "keyboard") }.tag(Tab.shortcuts)
+            Form { recordingSection }.formStyle(.grouped)
+                .tabItem { Label(L("Gravação"), systemImage: "record.circle") }.tag(Tab.recording)
+            Form { ShareSection() }.formStyle(.grouped)
+                .tabItem { Label(L("Compartilhar"), systemImage: "link") }.tag(Tab.share)
+            Form { AISection() }.formStyle(.grouped)
+                .tabItem { Label(L("IA"), systemImage: "sparkles") }.tag(Tab.ai)
         }
-        .formStyle(.grouped)
-        .frame(width: 520, height: 900)
+        .padding(.top, 6)
+        .frame(width: 560, height: 640)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // Volta dos Ajustes do Sistema: reflete a aprovação (ou remoção) feita lá.
             launchAtLogin = LoginItem.isOn
             loginStatus = LoginItem.status
         }
+    }
+
+    @ViewBuilder private var generalSections: some View {
+        Section(L("Idioma")) {
+            Picker(L("Idioma do app"), selection: Binding(get: { L10n.selection }, set: { L10n.selection = $0 })) {
+                Text(L("Mesmo do sistema")).tag("system")
+                ForEach(L10n.languages, id: \.code) { Text($0.name).tag($0.code) }
+            }
+        }
+        Section(L("Geral")) {
+            Toggle(L("Iniciar com o macOS"), isOn: Binding(
+                get: { launchAtLogin },
+                set: { on in
+                    do {
+                        try LoginItem.set(on)
+                        loginError = nil
+                    } catch {
+                        loginError = L("Não foi possível alterar: %@. Mova o app para /Applications e tente de novo.", error.localizedDescription)
+                    }
+                    launchAtLogin = LoginItem.isOn
+                    loginStatus = LoginItem.status
+                }))
+            if loginStatus == .requiresApproval {
+                HStack {
+                    Text(L("O macOS precisa da sua aprovação em Itens de Início."))
+                        .font(.caption).foregroundStyle(.orange)
+                    Spacer()
+                    Button(L("Abrir Ajustes do Sistema")) { LoginItem.openSystemSettings() }
+                        .controlSize(.small)
+                }
+            } else if !LoginItem.isInstalled {
+                Text(L("Para iniciar com o macOS, mova o SnapLens para a pasta Aplicativos."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+        }
+    }
+
+    private var shortcutSection: some View {
+        Section(L("Atalhos globais")) {
+            ForEach(ShortcutAction.allCases) { ShortcutRow(action: $0) }
+            Text(L("Clique no atalho e pressione a nova combinação (precisa incluir ⌘, ⌃ ou ⌥)."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private var recordingSection: some View {
+        Section(L("Gravação de vídeo")) {
+            Toggle(L("Gravar áudio do sistema"), isOn: $recSystem)
+            Toggle(L("Gravar microfone"), isOn: $recMic)
+            Text(L("Grava a tela inteira onde está o mouse, em MP4. Com os dois desligados, o vídeo fica sem áudio. Os vídeos vão para a Biblioteca."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Aba IA: só os provedores adicionados aparecem (até 4); "Adicionar provedor" lista os que faltam.
+private struct AISection: View {
+    @AppStorage("activeProvider") private var active = ""
+    @State private var added = Provider.added
+    @State private var removing: Provider?
+
+    var body: some View {
+        Section(L("Provedor de IA")) {
+            Picker(L("Provedor ativo"), selection: $active) {
+                Text(L("Nativo (Apple Vision, offline)")).tag("")
+                ForEach(added) { Text($0.name).tag($0.rawValue) }
+            }
+            Text(L("“Descrever com IA” usa o provedor ativo. Sem provedor (ou sem chave configurada), usa o modo nativo. O OCR de texto sempre roda localmente com o Vision."))
+                .font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Menu {
+                    ForEach(Provider.allCases.filter { !added.contains($0) }) { p in
+                        Button(p.name) { add(p) }
+                    }
+                } label: {
+                    Label(L("Adicionar provedor"), systemImage: "plus")
+                }
+                .fixedSize()
+                .disabled(added.count >= Provider.maxAdded || added.count == Provider.allCases.count)
+                Spacer()
+                Text(L("%@ de %@", String(added.count), String(Provider.maxAdded)))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .confirmationDialog(L("Remover %@?", removing?.name ?? ""), isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
+            Button(L("Remover"), role: .destructive) {
+                removing?.remove()
+                added = Provider.added
+                if !added.contains(where: { $0.rawValue == active }) { active = "" }
+                removing = nil
+            }
+        } message: {
+            Text(L("A chave de API, o modelo e a URL deste provedor serão apagados."))
+        }
+        ForEach(added) { p in
+            ProviderSection(provider: p, isActive: active == p.rawValue, onKeySaved: {
+                if active.isEmpty { active = p.rawValue }
+            }, onRemove: { removing = p })
+        }
+    }
+
+    private func add(_ p: Provider) {
+        guard added.count < Provider.maxAdded, !added.contains(p) else { return }
+        added.append(p)
+        Provider.added = added
     }
 }
 
@@ -166,14 +226,16 @@ private struct ProviderSection: View {
     let provider: Provider
     let isActive: Bool
     var onKeySaved: () -> Void
+    var onRemove: () -> Void
     @State private var key = ""
     @AppStorage private var model: String
     @AppStorage private var base: String
 
-    init(provider: Provider, isActive: Bool, onKeySaved: @escaping () -> Void) {
+    init(provider: Provider, isActive: Bool, onKeySaved: @escaping () -> Void, onRemove: @escaping () -> Void) {
         self.provider = provider
         self.isActive = isActive
         self.onKeySaved = onKeySaved
+        self.onRemove = onRemove
         _model = AppStorage(wrappedValue: "", "model.\(provider.rawValue)")
         _base = AppStorage(wrappedValue: "", "base.\(provider.rawValue)")
     }
@@ -186,6 +248,8 @@ private struct ProviderSection: View {
             TextField(L("Modelo"), text: $model, prompt: Text(provider.defaultModel.isEmpty ? L("ex.: llava, gpt-4o…") : provider.defaultModel))
             TextField(L("URL base"), text: $base, prompt: Text(provider.defaultBase))
             Text(provider.hint).font(.caption).foregroundStyle(.secondary)
+            Button(role: .destructive) { onRemove() } label: { Label(L("Remover"), systemImage: "trash") }
+                .controlSize(.small)
         }
         .onAppear { key = provider.apiKey }
     }

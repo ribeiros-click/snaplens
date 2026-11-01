@@ -242,3 +242,9 @@
 "Buscar com Google Lens" = "用 Google 智能镜头搜索";
 "Buscar seleção com Google Lens" = "用 Google 智能镜头搜索所选区域";
 "Abrindo no Google Lens…" = "正在用 Google 智能镜头打开…";
+"Atalhos" = "快捷键";
+"Adicionar provedor" = "添加提供商";
+"%@ de %@" = "%@ / %@";
+"Remover %@?" = "移除 %@？";
+"Remover" = "移除";
+"A chave de API, o modelo e a URL deste provedor serão apagados." = "将删除此提供商的 API 密钥、模型和 URL。";

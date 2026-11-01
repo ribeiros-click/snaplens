@@ -10,6 +10,7 @@ public sealed class AppSettings
 {
     public string Language { get; set; } = "system";
     public string ActiveProvider { get; set; } = "";
+    public List<string>? AddedProviders { get; set; } // null = ainda não migrado (ver Providers.Added)
     public bool RecSystem { get; set; } = true;
     public bool RecMic { get; set; }
     public string ShareServer { get; set; } = "";

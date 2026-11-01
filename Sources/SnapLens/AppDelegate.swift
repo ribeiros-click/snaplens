@@ -451,7 +451,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         if settingsWindow == nil {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 900),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 640),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
             w.title = "SnapLens — " + L("Ajustes")
             w.contentView = NSHostingView(rootView: SettingsView())
