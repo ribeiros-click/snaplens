@@ -28,6 +28,8 @@ public sealed class Item
     public DateTime? ShareExpires { get; set; }
     public string? ShareToken { get; set; }
     public bool? ShareOnce { get; set; }
+    /// "onedrive" / "gdrive" quando o link é de um arquivo no Drive do usuário; null = servidor SnapLens.
+    public string? ShareDrive { get; set; }
 }
 
 /// Biblioteca: screenshots, vídeos e textos em %APPDATA%\SnapLens (history.json + images\ + videos\).

@@ -158,7 +158,7 @@ enum Shots {
         let previousLang = L10n.selection
         if let language { L10n.selection = language }
         defer { if language != nil { L10n.selection = previousLang } }
-        if let img = snapshot(NSHostingView(rootView: ShareOptionsView(onShare: { _, _ in }, onCancel: {})), size: CGSize(width: 360, height: 260)) {
+        if let img = snapshot(NSHostingView(rootView: ShareOptionsView(onShare: { _, _, _ in }, onCancel: {})), size: CGSize(width: 360, height: 260)) {
             write(img, url)
         }
     }

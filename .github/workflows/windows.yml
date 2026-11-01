@@ -5,6 +5,8 @@ on:
   push:
     tags: ["v*"]
     paths-ignore: ["server/**"]
+  pull_request:
+    paths-ignore: ["server/**"]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +24,10 @@ jobs:
 
       - name: Build
         shell: pwsh
+        env:
+          ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "1.0.0" }
           ./windows/build.ps1 -Version $version

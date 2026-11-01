@@ -4,6 +4,17 @@
 param([string]$Version = "1.0.0")
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
+
+# Credenciais OAuth do OneDrive / Google Drive (opcional): .secrets\cloud.env com linhas CHAVE=valor
+# (ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET). O csproj lê essas variáveis de ambiente.
+$cloudEnv = Join-Path $root "..\.secrets\cloud.env"
+if (Test-Path $cloudEnv) {
+    foreach ($line in Get-Content $cloudEnv) {
+        if ($line -match '^\s*([A-Z_]+)\s*=\s*(.*?)\s*$') {
+            [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2].Trim('"'), "Process")
+        }
+    }
+}
 $dist = Join-Path $root "dist"
 $out = Join-Path $dist "SnapLens"
 

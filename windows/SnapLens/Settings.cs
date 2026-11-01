@@ -15,6 +15,12 @@ public sealed class AppSettings
     public string ShareServer { get; set; } = "";
     public string ShareChoice { get; set; } = "D1";   // última validade escolhida ao compartilhar
     public int ShareCustomDays { get; set; } = 7;
+    public string ShareDestination { get; set; } = "Server"; // Server, OneDrive ou GDrive
+    public Dictionary<string, string> CloudAccounts { get; set; } = new(); // conta conectada por Drive (só para exibir)
+    public string OneDriveClientId { get; set; } = "";     // vazio = credenciais do build
+    public string GoogleClientId { get; set; } = "";
+    public string GoogleClientSecret { get; set; } = "";
+    public string GoogleFolderId { get; set; } = "";
     public Dictionary<string, string> Models { get; set; } = new();
     public Dictionary<string, string> Bases { get; set; } = new();
     public Dictionary<string, Shortcut> Shortcuts { get; set; } = new();
@@ -28,6 +34,9 @@ public static class Settings
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
     public static AppSettings Data { get; private set; } = Load();
+
+    /// Disparado após cada Save (ex.: conta de Drive conectada, credenciais alteradas).
+    public static event Action? Changed;
 
     private static AppSettings Load()
     {
@@ -51,6 +60,7 @@ public static class Settings
             File.Move(tmp, FilePath, true);
         }
         catch (Exception e) { Trace.Log("settings: falha ao salvar: " + e.Message); }
+        Changed?.Invoke();
     }
 
     // MARK: Iniciar com o Windows (HKCU\...\Run)

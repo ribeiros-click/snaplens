@@ -54,6 +54,9 @@ public sealed class TrayApp : ApplicationContext
 
         ScreenRecorder.Shared.StateChanged += RecordingStateChanged;
         recTimer.Tick += (_, _) => UpdateRecordingTimer();
+        driveExpiryTimer.Tick += async (_, _) => await PurgeExpiredDriveShares();
+        driveExpiryTimer.Start();
+        ui.Post(async _ => await PurgeExpiredDriveShares(), null);
 
         // Troca de idioma: refaz o menu e as janelas (que guardam textos já traduzidos).
         L10n.Changed += () =>
@@ -251,6 +254,7 @@ public sealed class TrayApp : ApplicationContext
         using var options = new ShareOptionsForm();
         if (options.ShowDialog() != DialogResult.OK) return;
         var (seconds, onceWanted) = options.Choice.Resolve(options.CustomDays);
+        if (options.Destination.Drive() is CloudDrive drive) { await UploadToDrive(item, path, drive, seconds); return; }
         Toast.Show(L("Enviando para %@…", ShareConfig.Server.Replace("https://", "")), Icons.Link);
         try
         {
@@ -273,17 +277,68 @@ public sealed class TrayApp : ApplicationContext
         }
     }
 
-    public async Task Revoke(Item item)
+    /// Envia para a pasta SnapLens do OneDrive / Google Drive e cria um link de leitura público.
+    private async Task UploadToDrive(Item item, string path, CloudDrive drive, int seconds)
     {
-        if (item.ShareID is not string id || item.ShareToken is not string token) return;
+        Toast.Show(L("Enviando para %@…", drive.Name()), Icons.Link);
+        DateTime? expires = seconds > 0 ? DateTime.Now.AddSeconds(seconds) : null;
         try
         {
-            await ShareClient.Revoke(id, token);
-            item.ShareID = null; item.ShareURL = null; item.ShareExpires = null; item.ShareToken = null; item.ShareOnce = null;
+            var r = await Cloud.Upload(drive, await File.ReadAllBytesAsync(path), $"SnapLens {item.Date:yyyy-MM-dd HH.mm.ss}.png", expires);
+            item.ShareID = r.Id;
+            item.ShareURL = r.Url;
+            item.ShareExpires = expires;
+            item.ShareToken = null;
+            item.ShareOnce = null;
+            item.ShareDrive = drive.Key();
             store.Update(item);
+            CopyText(r.Url);
+            Toast.Show(L("Link copiado · %@", ShareClient.ExpiryText(expires)), Icons.Link);
+            ShowShareResult(r.Url, expires, "", false, drive);
+        }
+        catch (Exception e)
+        {
+            Trace.Log($"share {drive.Key()} ERRO: " + e.Message);
+            Toast.Show(e is AppError ? e.Message : L("Compartilhar: %@", e.Message), Icons.Warning);
+        }
+    }
+
+    /// Links em Drives não expiram sozinhos (o Google não permite; o OneDrive pessoal também não):
+    /// o próprio app apaga os arquivos vencidos ao abrir e a cada hora.
+    private readonly System.Windows.Forms.Timer driveExpiryTimer = new() { Interval = 3600 * 1000 };
+
+    private async Task PurgeExpiredDriveShares()
+    {
+        foreach (var item in store.Items.Where(i => i.ShareDrive != null && i.ShareExpires is DateTime e && e < DateTime.Now).ToList())
+            await Revoke(item, quiet: true);
+    }
+
+    private static CloudDrive? DriveOf(Item item) => item.ShareDrive switch
+    {
+        "onedrive" => CloudDrive.OneDrive,
+        "gdrive" => CloudDrive.GDrive,
+        _ => null,
+    };
+
+    public async Task Revoke(Item item, bool quiet = false)
+    {
+        if (item.ShareID is not string id) return;
+        try
+        {
+            if (DriveOf(item) is CloudDrive drive) await Cloud.Delete(drive, id);
+            else if (item.ShareToken is string token) await ShareClient.Revoke(id, token);
+            else return;
+            var was = item.ShareDrive;
+            item.ShareID = null; item.ShareURL = null; item.ShareExpires = null; item.ShareToken = null; item.ShareOnce = null; item.ShareDrive = null;
+            store.Update(item);
+            if (quiet) { Trace.Log($"share: link vencido apagado ({was ?? "servidor"})"); return; }
             Toast.Show(L("Link revogado"), Icons.Link);
         }
-        catch (Exception e) { Toast.Show(e.Message, Icons.Warning); }
+        catch (Exception e)
+        {
+            Trace.Log("revogar ERRO: " + e.Message);
+            if (!quiet) Toast.Show(e.Message, Icons.Warning);
+        }
     }
 
     public async Task RunOCR(Item item)
@@ -341,10 +396,10 @@ public sealed class TrayApp : ApplicationContext
         Bring(settings);
     }
 
-    private void ShowShareResult(string url, DateTime? expires, string token, bool once)
+    private void ShowShareResult(string url, DateTime? expires, string token, bool once, CloudDrive? drive = null)
     {
         shareForm?.Close();
-        shareForm = new ShareResultForm(url, expires, token, once);
+        shareForm = new ShareResultForm(url, expires, token, once, drive);
         shareForm.FormClosed += (_, _) => shareForm = null;
         Bring(shareForm);
     }

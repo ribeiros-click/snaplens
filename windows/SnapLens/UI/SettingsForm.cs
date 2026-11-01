@@ -64,6 +64,26 @@ public sealed class SettingsForm : Form
         Row(share, L("Servidor"), server);
         share.Controls.Add(Note(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.")));
 
+        // OneDrive / Google Drive
+        var cloud = Section(L("Salvar no OneDrive ou Google Drive"));
+        foreach (var d in Enum.GetValues<CloudDrive>()) cloud.Controls.Add(CloudRow(d));
+        cloud.Controls.Add(Note(L("Conecte uma conta para escolher, na hora de compartilhar, onde salvar a imagem. Ela vai para a pasta SnapLens do Drive e recebe um link de leitura público. O SnapLens só acessa os arquivos que ele mesmo cria (no Google Drive) e guarda o acesso no Gerenciador de Credenciais.")));
+        var advanced = new LinkLabel { Text = L("Credenciais OAuth (avançado)"), AutoSize = true, Margin = new Padding(0, 6, 0, 2) };
+        var advPanel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = Padding.Empty };
+        advanced.LinkClicked += (_, _) => advPanel.Visible = !advPanel.Visible;
+        var odId = new TextBox { Width = 290, Text = Settings.Data.OneDriveClientId };
+        odId.TextChanged += (_, _) => { Settings.Data.OneDriveClientId = odId.Text.Trim(); Settings.Save(); };
+        Row(advPanel, L("OneDrive — ID do cliente"), odId);
+        var gId = new TextBox { Width = 290, Text = Settings.Data.GoogleClientId };
+        gId.TextChanged += (_, _) => { Settings.Data.GoogleClientId = gId.Text.Trim(); Settings.Save(); };
+        Row(advPanel, L("Google — ID do cliente"), gId);
+        var gSecret = new TextBox { Width = 290, Text = Settings.Data.GoogleClientSecret, UseSystemPasswordChar = true };
+        gSecret.TextChanged += (_, _) => { Settings.Data.GoogleClientSecret = gSecret.Text.Trim(); Settings.Save(); };
+        Row(advPanel, L("Google — chave secreta do cliente"), gSecret);
+        advPanel.Controls.Add(Note(L("Deixe em branco para usar as credenciais deste build. Preencha só se você registrou o seu próprio app na Microsoft ou no Google (redirecionamento: http://localhost).")));
+        cloud.Controls.Add(advanced);
+        cloud.Controls.Add(advPanel);
+
         // Provedor de IA
         var ai = Section(L("Provedor de IA"));
         var active = Combo(260);
@@ -144,6 +164,59 @@ public sealed class SettingsForm : Form
         l.MaximumSize = new Size(W - 30, 0);
         l.Margin = new Padding(0, 4, 0, 2);
         return l;
+    }
+
+    /// Linha "OneDrive · conectado como x  [Desconectar]" / "[Conectar…]".
+    private static Control CloudRow(CloudDrive drive)
+    {
+        var panel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Margin = new Padding(0, 2, 0, 4) };
+        var row = new TableLayoutPanel { ColumnCount = 2, AutoSize = true, Width = W - 24 };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, W - 24 - 130));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+        var status = Ui.Label("", Ui.Body);
+        status.Anchor = AnchorStyles.Left;
+        status.MaximumSize = new Size(W - 24 - 136, 0);
+        var error = Ui.Label("", Ui.Small, Color.Firebrick, wrap: true);
+        error.MaximumSize = new Size(W - 30, 0);
+        error.Visible = false;
+        System.Windows.Forms.Button? button = null;
+
+        void Refresh()
+        {
+            if (status.IsDisposed) return;
+            if (status.InvokeRequired) { status.BeginInvoke(Refresh); return; }
+            var account = drive.AccountName();
+            status.Text = drive.IsConnected()
+                ? drive.Name() + " · " + (account.Length > 0 ? L("Conectado como %@", account) : L("Conectado"))
+                : drive.Name() + (drive.IsConfigured() ? "" : " · " + L("Sem credenciais OAuth neste build (veja “avançado”)."));
+            button!.Text = drive.IsConnected() ? L("Desconectar") : L("Conectar…");
+            button.Enabled = drive.IsConnected() || drive.IsConfigured();
+        }
+
+        button = Ui.Button(L("Conectar…"), async () =>
+        {
+            error.Visible = false;
+            if (drive.IsConnected()) { drive.Disconnect(); Refresh(); return; }
+            button!.Enabled = false;
+            try
+            {
+                await Cloud.Connect(drive);
+                if (panel.FindForm() is Form f) { f.Activate(); }
+            }
+            catch (Exception e) { error.Text = e.Message; error.Visible = true; }
+            Refresh();
+        });
+        button.Anchor = AnchorStyles.Right;
+        // As credenciais do "avançado" podem mudar enquanto a janela está aberta.
+        panel.VisibleChanged += (_, _) => Refresh();
+        Settings.Changed += Refresh;
+        panel.Disposed += (_, _) => Settings.Changed -= Refresh;
+        row.Controls.Add(status, 0, 0);
+        row.Controls.Add(button, 1, 0);
+        panel.Controls.Add(row);
+        panel.Controls.Add(error);
+        Refresh();
+        return panel;
     }
 
     private Control ShortcutRow(ShortcutAction action)

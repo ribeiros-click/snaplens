@@ -31,6 +31,14 @@
     <PackageReference Include="ScreenRecorderLib" Version="6.6.0" />
   </ItemGroup>
 
+  <!-- Credenciais OAuth do OneDrive / Google Drive, lidas das variáveis de ambiente no build
+       (build.ps1 carrega .secrets/cloud.env; o GitHub Actions usa os secrets do repositório). -->
+  <ItemGroup>
+    <AssemblyMetadata Include="OneDriveClientId" Value="$(ONEDRIVE_CLIENT_ID)" />
+    <AssemblyMetadata Include="GoogleClientId" Value="$(GOOGLE_CLIENT_ID)" />
+    <AssemblyMetadata Include="GoogleClientSecret" Value="$(GOOGLE_CLIENT_SECRET)" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Mesmas traduções do app macOS (chave = texto em pt-BR). -->
     <EmbeddedResource Include="..\..\Sources\SnapLens\Resources\**\Localizable.strings" LogicalName="l10n.%(RecursiveDir)strings" />

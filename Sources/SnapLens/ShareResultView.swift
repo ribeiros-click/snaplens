@@ -6,6 +6,7 @@ struct ShareResultView: View {
     let expires: Date?
     let token: String
     let once: Bool
+    var drive: CloudDrive? = nil
     var onClose: () -> Void
     @State private var showToken = false
     @State private var copied = ""
@@ -50,25 +51,32 @@ struct ShareResultView: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L("Token de exclusão"))
+            if let drive {
+                Label(L("Salvo na pasta SnapLens do seu %@ (%@).", drive.name, drive.accountName.isEmpty ? drive.name : drive.accountName), systemImage: "icloud")
                     .font(.caption).foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    Text(showToken ? token : String(repeating: "•", count: min(token.count, 32)))
-                        .font(.system(.body, design: .monospaced))
-                        .textSelection(.enabled)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Button { showToken.toggle() } label: {
-                        Image(systemName: showToken ? "eye.slash" : "eye")
+                Text(L("Para remover, revogue o link na Biblioteca ou apague o arquivo no %@.", drive.name))
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L("Token de exclusão"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        Text(showToken ? token : String(repeating: "•", count: min(token.count, 32)))
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Button { showToken.toggle() } label: {
+                            Image(systemName: showToken ? "eye.slash" : "eye")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(showToken ? L("Ocultar token") : L("Mostrar token"))
+                        Button { copy(token, label: "token") } label: { Label(L("Copiar token"), systemImage: "doc.on.doc") }
+                            .controlSize(.small)
                     }
-                    .buttonStyle(.borderless)
-                    .help(showToken ? L("Ocultar token") : L("Mostrar token"))
-                    Button { copy(token, label: "token") } label: { Label(L("Copiar token"), systemImage: "doc.on.doc") }
-                        .controlSize(.small)
+                    Text(L("Guarde este token. Sem ele, não é possível apagar o link fora deste app."))
+                        .font(.caption).foregroundStyle(.orange)
                 }
-                Text(L("Guarde este token. Sem ele, não é possível apagar o link fora deste app."))
-                    .font(.caption).foregroundStyle(.orange)
             }
 
             HStack {
