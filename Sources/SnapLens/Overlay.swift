@@ -1,6 +1,6 @@
 import AppKit
 
-enum ShotAction { case copy, save, ocr, describe, share }
+enum ShotAction { case copy, save, ocr, describe, share, lens }
 
 enum Tool: Int, CaseIterable {
     case rect, ellipse, line, arrow, pen, text
@@ -549,6 +549,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
         views.append(separator())
         views.append(button("arrow.uturn.backward", L("Desfazer (⌘Z)"), #selector(undo)))
         views.append(separator())
+        views.append(button("magnifyingglass", L("Buscar com Google Lens"), #selector(doLens)))
         views.append(button("sparkles", L("Descrever com IA"), #selector(doDescribe)))
         views.append(button("text.viewfinder", L("Extrair texto (OCR)"), #selector(doOCR)))
         views.append(button("link", L("Compartilhar por link público"), #selector(doShare)))
@@ -625,6 +626,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     @objc private func doSave() { finish(.save) }
     @objc private func doOCR() { finish(.ocr) }
     @objc private func doDescribe() { finish(.describe) }
+    @objc private func doLens() { finish(.lens) }
     @objc private func doShare() { finish(.share) }
 
     /// Estado de demonstração (prints do site): seleção, anotações e barra visíveis.
@@ -650,7 +652,7 @@ private final class OverlayView: NSView, NSTextFieldDelegate {
     private func finish(_ action: ShotAction) {
         Trace.log("finish(\(action)) sel=\(selection.map { "\(Int($0.width))x\(Int($0.height))" } ?? "nil") annotations=\(annotations.count)")
         commitText()
-        onFinish?(action, renderSelection(annotated: action != .ocr && action != .describe))
+        onFinish?(action, renderSelection(annotated: action != .ocr && action != .describe && action != .lens))
     }
 
     private func renderSelection(annotated: Bool) -> Data? {

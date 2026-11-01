@@ -239,3 +239,6 @@
 "Sem credenciais OAuth neste build (veja “avançado”)." = "No OAuth credentials in this build (see “advanced”).";
 "Servidor SnapLens" = "SnapLens server";
 "Tempo de login esgotado." = "Sign-in timed out.";
+"Buscar com Google Lens" = "Search with Google Lens";
+"Buscar seleção com Google Lens" = "Search selection with Google Lens";
+"Abrindo no Google Lens…" = "Opening in Google Lens…";

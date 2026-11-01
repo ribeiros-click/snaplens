@@ -121,6 +121,7 @@ public sealed class TrayApp : ApplicationContext
             case ShortcutAction.full: _ = StartCapture(false, null); break;
             case ShortcutAction.ocr: _ = StartCapture(true, ShotAction.ocr); break;
             case ShortcutAction.describe: _ = StartCapture(true, ShotAction.describe); break;
+            case ShortcutAction.lens: _ = StartCapture(true, ShotAction.lens); break;
             case ShortcutAction.record: ToggleRecording(); break;
             case ShortcutAction.history: ShowLibrary(); break;
         }
@@ -241,6 +242,28 @@ public sealed class TrayApp : ApplicationContext
             case ShotAction.ocr: await RunOCR(item); break;
             case ShotAction.describe: await RunDescribe(item); break;
             case ShotAction.share: await Share(item); break;
+            case ShotAction.lens: await RunLens(item); break;
+        }
+    }
+
+    /// O Google não tem API pública do Lens; ele aceita `uploadbyurl`, então a imagem vai para o servidor
+    /// de links com validade de 1 hora (sem token na Biblioteca) e o Lens abre no navegador.
+    public async Task RunLens(Item item)
+    {
+        var path = store.PathFor(item);
+        if (path == null || !File.Exists(path)) return;
+        Toast.Show(L("Abrindo no Google Lens…"), Icons.Search);
+        try
+        {
+            var r = await ShareClient.Upload(await File.ReadAllBytesAsync(path), 3600, false);
+            Trace.Log("lens: " + r.Id);
+            Open(ShareClient.LensUrl(string.IsNullOrEmpty(r.ImageUrl) ? r.Url : r.ImageUrl));
+            Toast.Dismiss();
+        }
+        catch (Exception e)
+        {
+            Trace.Log("lens ERRO: " + e.Message);
+            Toast.Show(e is AppError ? e.Message : L("Compartilhar: %@", e.Message), Icons.Warning);
         }
     }
 

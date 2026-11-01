@@ -5,7 +5,7 @@ using static SnapLens.Loc;
 
 namespace SnapLens;
 
-public enum ShotAction { copy, save, ocr, describe, share }
+public enum ShotAction { copy, save, ocr, describe, share, lens }
 
 public enum Tool { rect, ellipse, line, arrow, pen, text }
 
@@ -553,6 +553,7 @@ public sealed class OverlayForm : Form
         toolbar.Add(new Button { Tip = "|" });
         toolbar.Add(GlyphButton(Icons.Undo, L("Desfazer (Ctrl+Z)"), Undo));
         toolbar.Add(new Button { Tip = "|" });
+        toolbar.Add(GlyphButton(Icons.Search, L("Buscar com Google Lens"), () => Finish(ShotAction.lens)));
         toolbar.Add(new Button { Tip = L("Descrever com IA"), Click = () => Finish(ShotAction.describe), Draw = DrawSparkles });
         toolbar.Add(new Button { Tip = L("Extrair texto (OCR)"), Click = () => Finish(ShotAction.ocr), Draw = DrawOcrIcon });
         toolbar.Add(GlyphButton(Icons.Link, L("Compartilhar por link público"), () => Finish(ShotAction.share)));
@@ -696,7 +697,7 @@ public sealed class OverlayForm : Form
         if (finished) return;
         Trace.Log($"finish({action}) sel={selection} annotations={annotations.Count}");
         CommitText();
-        var data = RenderSelection(annotated: action is not (ShotAction.ocr or ShotAction.describe));
+        var data = RenderSelection(annotated: action is not (ShotAction.ocr or ShotAction.describe or ShotAction.lens));
         Dismiss();
         if (data != null) onFinish(action, data);
     }

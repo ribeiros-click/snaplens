@@ -59,6 +59,7 @@ public sealed class ShareResult
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("url")] public string Url { get; set; } = "";
+    [JsonPropertyName("image_url")] public string? ImageUrl { get; set; }
     [JsonPropertyName("expires_at")] public double? ExpiresAt { get; set; }
     [JsonPropertyName("delete_token")] public string DeleteToken { get; set; } = "";
     [JsonPropertyName("once")] public bool? Once { get; set; }
@@ -104,6 +105,13 @@ public static class ShareClient
             throw new AppError(L("Compartilhar: %@", msg));
         }
         return text;
+    }
+
+    /// Página do Google Lens para uma imagem pública (no idioma do app).
+    public static string LensUrl(string imageUrl)
+    {
+        var hl = L10n.Code == "zh-Hans" ? "zh-CN" : L10n.Code;
+        return "https://lens.google.com/uploadbyurl?url=" + Uri.EscapeDataString(imageUrl) + "&hl=" + Uri.EscapeDataString(hl);
     }
 
     public static string ExpiryText(DateTime? date)

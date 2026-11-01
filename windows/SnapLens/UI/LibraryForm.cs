@@ -247,6 +247,7 @@ public sealed class LibraryForm : Form
 
         var actions = new List<(string, string, Action)> { (Icons.Copy, L("Copiar imagem"), () => { if (path != null && File.Exists(path)) { app.CopyImage(File.ReadAllBytes(path)); Toast.Show(L("Imagem copiada")); } }) };
         if (!shared) actions.Add((Icons.Link, L("Compartilhar por link público"), () => _ = app.Share(item)));
+        actions.Add((Icons.Search, L("Buscar com Google Lens"), () => _ = app.RunLens(item)));
         actions.Add((Icons.Sparkle, L("Descrever com IA"), () => _ = app.RunDescribe(item)));
         actions.Add((Icons.Text, L("Extrair texto (OCR)"), () => _ = app.RunOCR(item)));
         actions.Add((Icons.Export, L("Exportar…"), () => Exporter.Export(item, store)));

@@ -110,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .full: return #selector(captureFull)
         case .ocr: return #selector(ocrRegion)
         case .describe: return #selector(describeRegion)
+        case .lens: return #selector(lensRegion)
         case .record: return #selector(toggleRecording)
         case .history: return #selector(showHistory)
         }
@@ -169,6 +170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case .full: self.captureFull()
                 case .ocr: self.ocrRegion()
                 case .describe: self.describeRegion()
+                case .lens: self.lensRegion()
                 case .record: self.toggleRecording()
                 case .history: self.showHistory()
                 }
@@ -210,6 +212,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func captureFull() { Task { await startCapture(region: false, auto: nil) } }
     @objc func describeRegion() { Task { await startCapture(region: true, auto: .describe) } }
     @objc func ocrRegion() { Task { await startCapture(region: true, auto: .ocr) } }
+    @objc func lensRegion() { Task { await startCapture(region: true, auto: .lens) } }
 
     private var isStartingCapture = false
 
@@ -270,6 +273,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await runDescribe(on: item)
         case .share:
             await share(item)
+        case .lens:
+            await runLens(on: item)
+        }
+    }
+
+    // MARK: Google Lens
+
+    /// O Google não tem API pública do Lens; ele aceita `uploadbyurl`, então a imagem vai para o servidor
+    /// de links com validade de 1 hora (sem token na Biblioteca) e o Lens abre no navegador.
+    func runLens(on item: Item) async {
+        guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
+        Toast.show(L("Abrindo no Google Lens…"), symbol: "magnifyingglass")
+        do {
+            let r = try await ShareClient.upload(data: data, expirySeconds: 3600, once: false)
+            guard let lens = ShareClient.lensURL(imageURL: r.image_url ?? r.url) else { return }
+            Trace.log("lens: \(r.id)")
+            NSWorkspace.shared.open(lens)
+            Toast.dismiss()
+        } catch {
+            Trace.log("lens ERRO: \(error.localizedDescription)")
+            Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
         }
     }
 
@@ -476,6 +500,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 Task { await self?.revoke(item) }
             }, onCopyImageData: { [weak self] data in
                 self?.copyImage(data: data)
+            }, onLens: { [weak self] item in
+                Task { await self?.runLens(on: item) }
             })
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
                              styleMask: [.titled, .closable, .miniaturizable, .resizable],

@@ -11,6 +11,7 @@ struct HistoryView: View {
     var onShare: (Item) -> Void
     var onRevoke: (Item) -> Void
     var onCopyImageData: (Data) -> Void
+    var onLens: (Item) -> Void = { _ in }
 
     enum Tab: String, CaseIterable { case images = "Imagens", videos = "Vídeos", texts = "Texto" }
     @State private var tab: Tab = .images
@@ -73,7 +74,7 @@ struct HistoryView: View {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 14)], spacing: 14) {
                         ForEach(images) { item in
                             ImageCard(item: item, store: store, onDescribe: onDescribe, onOCR: onOCR, onCopy: onCopyImage,
-                                      onShare: onShare, onRevoke: onRevoke, onCopyText: onCopyText,
+                                      onShare: onShare, onRevoke: onRevoke, onCopyText: onCopyText, onLens: onLens,
                                       selectionIndex: selected.firstIndex(of: item.id),
                                       onToggleSelect: { toggle(item) })
                         }
@@ -147,6 +148,7 @@ private struct ImageCard: View {
     var onShare: (Item) -> Void
     var onRevoke: (Item) -> Void
     var onCopyText: (String) -> Void
+    var onLens: (Item) -> Void
     var selectionIndex: Int?
     var onToggleSelect: () -> Void
     @State private var thumb: NSImage?
@@ -202,6 +204,7 @@ private struct ImageCard: View {
                 if item.shareURL == nil {
                     Button { onShare(item) } label: { Image(systemName: "link") }.help(L("Compartilhar por link público"))
                 }
+                Button { onLens(item) } label: { Image(systemName: "magnifyingglass") }.help(L("Buscar com Google Lens"))
                 Button { onDescribe(item) } label: { Image(systemName: "sparkles") }.help(L("Descrever com IA"))
                 Button { onOCR(item) } label: { Image(systemName: "text.viewfinder") }.help(L("Extrair texto (OCR)"))
                 Button { Exporter.export(item, store: store) } label: { Image(systemName: "square.and.arrow.up") }.help(L("Exportar…"))

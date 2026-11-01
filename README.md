@@ -33,6 +33,7 @@
 - **Instant capture** — region or full screen, from the menu bar or a global shortcut. The screen freezes; you select, resize with handles, nudge with arrow keys.
 - **Full annotation toolkit** — rectangle, ellipse, line, arrow, pen and text, seven colors, undo. All without leaving the capture.
 - **100% on-device OCR** — extract text from any region with Apple's Vision framework. Nothing leaves your Mac. Results open in an editable window with offline translation to nine languages.
+- **Search with Google Lens** — select anything on screen (a watch on someone's wrist in a photo, a lamp in a video call, a plant) and Google Lens opens in your browser with visually similar products and pages. The crop goes to the link server with a 1-hour expiry so Lens can fetch it.
 - **AI descriptions** — describe an image with Claude, OpenAI, DeepSeek or any OpenAI-compatible endpoint (including local Ollama). Without a key, a native offline mode is used.
 - **Screen recording** — MP4 (H.264) with system audio and/or microphone, with a timer in the menu bar.
 - **Anonymous sharing** — one click uploads the image and copies a public link. Pick an expiry (1 hour to 30 days, or never), optionally **view-once** (self-destructs on first open). You get a **delete token** to remove the image from anywhere. No account, no key.
@@ -69,6 +70,7 @@ A 79-second walkthrough with English narration and subtitles in the five languag
 | Capture full screen | ⌃⌥F |
 | OCR a region | ⌃⌥T |
 | Describe with AI | ⌃⌥D |
+| Search with Google Lens | ⌃⌥L |
 | Start / stop recording | ⌃⌥R |
 | Library | ⌃⌥H |
 | In the overlay: copy · save · undo · cancel | ⏎ · ⌘S · ⌘Z · Esc |
@@ -88,6 +90,7 @@ SnapLens also runs on **Windows 10 (2004+) and 11, x64** — same features, same
 | Capture full screen | Ctrl+Alt+F |
 | OCR a region | Ctrl+Alt+T |
 | Describe with AI | Ctrl+Alt+D |
+| Search with Google Lens | Ctrl+Alt+L |
 | Start / stop recording | Ctrl+Alt+R |
 | Library | Ctrl+Alt+H |
 | In the overlay: copy · save · undo · cancel | Enter / Ctrl+C · Ctrl+S · Ctrl+Z · Esc |
