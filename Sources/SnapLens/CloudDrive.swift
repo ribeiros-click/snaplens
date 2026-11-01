@@ -152,6 +152,10 @@ enum CloudClient {
         _ = try await api(d, method: "DELETE", url: url, allow404: true)
     }
 
+    private static func deleteQuietly(_ d: CloudDrive, id: String) async {
+        do { try await delete(d, id: id) } catch { Trace.log("cloud: não apagou \(id): \(error.localizedDescription)") }
+    }
+
     // MARK: OneDrive (Microsoft Graph)
 
     private static func oneDriveUpload(data: Data, filename: String, expires: Date?) async throws -> CloudUpload {
@@ -178,6 +182,7 @@ enum CloudClient {
                 }
             } catch { lastError = error }
         }
+        await deleteQuietly(.onedrive, id: id) // sem link, não deixa o arquivo órfão no Drive
         throw lastError ?? cloudError(L("Resposta inesperada do %@.", "OneDrive"))
     }
 
@@ -221,9 +226,14 @@ enum CloudClient {
                                  url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
                                  body: body, contentType: "multipart/related; boundary=\(boundary)")
         guard let id = file["id"] as? String else { throw cloudError(L("Resposta inesperada do %@.", "Google Drive")) }
-        _ = try await api(.gdrive, method: "POST", url: "https://www.googleapis.com/drive/v3/files/\(id)/permissions",
-                          body: try JSONSerialization.data(withJSONObject: ["role": "reader", "type": "anyone"]),
-                          contentType: "application/json")
+        do {
+            _ = try await api(.gdrive, method: "POST", url: "https://www.googleapis.com/drive/v3/files/\(id)/permissions",
+                              body: try JSONSerialization.data(withJSONObject: ["role": "reader", "type": "anyone"]),
+                              contentType: "application/json")
+        } catch {
+            await deleteQuietly(.gdrive, id: id) // ex.: domínio do Workspace bloqueia link público
+            throw error
+        }
         let link = file["webViewLink"] as? String ?? "https://drive.google.com/file/d/\(id)/view"
         return CloudUpload(id: id, url: link)
     }
@@ -268,17 +278,15 @@ enum CloudClient {
         var form = ["client_id": d.clientID, "grant_type": "refresh_token", "refresh_token": refresh]
         if d == .onedrive { form["scope"] = d.scope }
         if !d.clientSecret.isEmpty { form["client_secret"] = d.clientSecret }
-        let tok: [String: Any]
-        do { tok = try await tokenRequest(d, form: form) } catch {
-            throw cloudError(L("A conexão com o %@ expirou. Conecte de novo em Ajustes.", d.name))
-        }
+        // Só um 400/401 do servidor de login significa acesso revogado/expirado; rede e 5xx propagam como estão.
+        let tok = try await tokenRequest(d, form: form, expiredMessage: L("A conexão com o %@ expirou. Conecte de novo em Ajustes.", d.name))
         guard let access = tok["access_token"] as? String else { throw cloudError(L("Resposta de login inválida.")) }
         if let newRefresh = tok["refresh_token"] as? String { d.save(refresh: newRefresh) }
         await TokenCache.shared.put(d, token: access, expiresIn: tok["expires_in"] as? Double ?? 3000)
         return access
     }
 
-    private static func tokenRequest(_ d: CloudDrive, form: [String: String]) async throws -> [String: Any] {
+    private static func tokenRequest(_ d: CloudDrive, form: [String: String], expiredMessage: String? = nil) async throws -> [String: Any] {
         var req = URLRequest(url: URL(string: d.tokenURL)!, timeoutInterval: 60)
         req.httpMethod = "POST"
         req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -288,6 +296,7 @@ enum CloudClient {
             .joined(separator: "&").data(using: .utf8)
         let (data, resp) = try await URLSession.shared.data(for: req)
         let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        if let expiredMessage, status == 400 || status == 401 { throw cloudError(expiredMessage) }
         guard (200..<300).contains(status) else { throw cloudError(errorMessage(data, status: status), drive: d) }
         return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
     }

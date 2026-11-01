@@ -11,6 +11,7 @@ public static class WinStrings
          "Conecta una cuenta para elegir, al compartir, dónde guardar la imagen. Va a la carpeta SnapLens del Drive y recibe un enlace público de solo lectura. SnapLens solo accede a los archivos que él mismo crea (en Google Drive) y guarda el acceso en el Administrador de credenciales.",
          "Collega un account per scegliere, quando condividi, dove salvare l'immagine. Finisce nella cartella SnapLens del Drive e riceve un link pubblico di sola lettura. SnapLens accede solo ai file che crea (su Google Drive) e conserva l'accesso in Gestione credenziali.",
          "连接账户后，分享时可以选择图片的保存位置。图片会存入该云盘的 SnapLens 文件夹，并获得公开的只读链接。SnapLens 只访问它自己创建的文件（Google Drive），访问凭据保存在凭据管理器中。"),
+        ("Não foi possível guardar o acesso ao %@ no Gerenciador de Credenciais.", "Couldn't save the %@ access in Credential Manager.", "No se pudo guardar el acceso a %@ en el Administrador de credenciales.", "Impossibile salvare l'accesso a %@ in Gestione credenziali.", "无法将 %@ 的访问凭据保存到凭据管理器。"),
         ("Mostrar log no Explorer", "Show log in Explorer", "Mostrar registro en el Explorador", "Mostra log in Esplora file", "在资源管理器中显示日志"),
         ("Mostrar no Explorer", "Show in Explorer", "Mostrar en el Explorador", "Mostra in Esplora file", "在资源管理器中显示"),
         ("Iniciar com o Windows", "Launch at Windows startup", "Iniciar con Windows", "Avvia con Windows", "开机时启动"),

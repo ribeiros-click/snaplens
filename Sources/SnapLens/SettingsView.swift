@@ -140,7 +140,7 @@ private struct CloudDriveRow: View {
             if let errorText { Text(errorText).font(.caption).foregroundStyle(.red) }
         }
         .onAppear(perform: refresh)
-        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification).receive(on: RunLoop.main)) { _ in refresh() }
     }
 
     private func refresh() {

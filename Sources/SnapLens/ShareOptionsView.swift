@@ -41,8 +41,18 @@ struct ShareOptionsView: View {
     var onCancel: () -> Void
     @State private var choice = ShareChoice.last
     @State private var days = ShareChoice.customDays
-    @State private var destination = ShareDestination.current
-    private let destinations = ShareDestination.available
+    @State private var destination: ShareDestination
+    private let destinations: [ShareDestination]
+
+    /// `previewDestination` (só para os prints do site): mostra todos os destinos com esse selecionado.
+    init(previewDestination: ShareDestination? = nil, onShare: @escaping (ShareChoice, Int, ShareDestination) -> Void, onCancel: @escaping () -> Void) {
+        self.onShare = onShare
+        self.onCancel = onCancel
+        destinations = previewDestination == nil ? ShareDestination.available : ShareDestination.allCases
+        let dest = previewDestination ?? ShareDestination.current
+        _destination = State(initialValue: dest)
+        if dest != .server && ShareChoice.last == .once { _choice = State(initialValue: .d1) }
+    }
 
     /// "Ver uma vez" só existe no servidor SnapLens.
     private var choices: [ShareChoice] { destination == .server ? ShareChoice.allCases : ShareChoice.allCases.filter { $0 != .once } }

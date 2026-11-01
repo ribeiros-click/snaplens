@@ -287,6 +287,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.shareOptionsWindow?.close(); self?.shareOptionsWindow = nil
             let r = choice.resolve(customDays: days)
             Task {
+                // Compartilhar de novo um item que já está num Drive: apaga o arquivo antigo para não deixá-lo órfão.
+                if item.shareDrive != nil { await self?.revoke(item, quiet: true) }
                 if let drive = destination.drive { await self?.uploadToDrive(item, drive: drive, expirySeconds: r.seconds) }
                 else { await self?.upload(item, expirySeconds: r.seconds, once: r.once) }
             }
@@ -310,6 +312,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             it.shareExpires = r.expires_at.flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
             it.shareToken = r.delete_token
             it.shareOnce = r.once
+            it.shareDrive = nil
             store.update(it)
             copyText(r.url)
             NSSound(named: "Pop")?.play()

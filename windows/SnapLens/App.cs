@@ -254,6 +254,8 @@ public sealed class TrayApp : ApplicationContext
         using var options = new ShareOptionsForm();
         if (options.ShowDialog() != DialogResult.OK) return;
         var (seconds, onceWanted) = options.Choice.Resolve(options.CustomDays);
+        // Compartilhar de novo um item que já está num Drive: apaga o arquivo antigo para não deixá-lo órfão.
+        if (item.ShareDrive != null) await Revoke(item, quiet: true);
         if (options.Destination.Drive() is CloudDrive drive) { await UploadToDrive(item, path, drive, seconds); return; }
         Toast.Show(L("Enviando para %@…", ShareConfig.Server.Replace("https://", "")), Icons.Link);
         try
@@ -264,6 +266,7 @@ public sealed class TrayApp : ApplicationContext
             item.ShareExpires = r.ExpiresAt is double e && e > 0 ? DateTimeOffset.FromUnixTimeSeconds((long)e).LocalDateTime : null;
             item.ShareToken = r.DeleteToken;
             item.ShareOnce = r.Once;
+            item.ShareDrive = null;
             store.Update(item);
             CopyText(r.Url);
             bool once = r.Once ?? false;

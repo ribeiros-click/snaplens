@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
@@ -137,6 +138,8 @@ public static class Cloud
         var tok = await TokenRequest(d, form);
         var refresh = tok["refresh_token"]?.GetValue<string>() ?? throw new AppError(L("O provedor não devolveu um token de renovação."));
         CredentialStore.Set(RefreshKey(d), refresh);
+        if (CredentialStore.Get(RefreshKey(d)) != refresh)
+            throw new AppError(L("Não foi possível guardar o acesso ao %@ no Gerenciador de Credenciais.", d.Name()));
         if (tok["access_token"]?.GetValue<string>() is string access) PutToken(d, access, tok);
 
         string name = "";
@@ -161,6 +164,11 @@ public static class Cloud
         await Api(d, HttpMethod.Delete, url, allow404: true);
     }
 
+    private static async Task DeleteQuietly(CloudDrive d, string id)
+    {
+        try { await Delete(d, id); } catch (Exception e) { Trace.Log($"cloud: não apagou {id}: {e.Message}"); }
+    }
+
     private static async Task<CloudUpload> OneDriveUpload(byte[] png, string fileName, DateTime? expires)
     {
         var path = Uri.EscapeDataString(FolderName) + "/" + Uri.EscapeDataString(fileName);
@@ -171,7 +179,7 @@ public static class Cloud
 
         // Link anônimo com validade; contas pessoais não aceitam validade e algumas empresas bloqueiam links anônimos.
         var attempts = new List<object>();
-        if (expires is DateTime e) attempts.Add(new { type = "view", scope = "anonymous", expirationDateTime = e.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") });
+        if (expires is DateTime e) attempts.Add(new { type = "view", scope = "anonymous", expirationDateTime = e.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture) });
         attempts.Add(new { type = "view", scope = "anonymous" });
         attempts.Add(new { type = "view", scope = "organization" });
         Exception? last = null;
@@ -184,6 +192,7 @@ public static class Cloud
             }
             catch (Exception ex) { last = ex; }
         }
+        await DeleteQuietly(CloudDrive.OneDrive, id); // sem link, não deixa o arquivo órfão no Drive
         throw last ?? new AppError(L("Resposta inesperada do %@.", "OneDrive"));
     }
 
@@ -227,8 +236,16 @@ public static class Cloud
         var file = await Api(CloudDrive.GDrive, HttpMethod.Post,
             "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", Body);
         var id = file["id"]?.GetValue<string>() ?? throw new AppError(L("Resposta inesperada do %@.", "Google Drive"));
-        await Api(CloudDrive.GDrive, HttpMethod.Post, $"https://www.googleapis.com/drive/v3/files/{id}/permissions",
-            () => Json(new { role = "reader", type = "anyone" }));
+        try
+        {
+            await Api(CloudDrive.GDrive, HttpMethod.Post, $"https://www.googleapis.com/drive/v3/files/{id}/permissions",
+                () => Json(new { role = "reader", type = "anyone" }));
+        }
+        catch
+        {
+            await DeleteQuietly(CloudDrive.GDrive, id); // ex.: domínio do Workspace bloqueia link público
+            throw;
+        }
         return new CloudUpload(id, file["webViewLink"]?.GetValue<string>() ?? $"https://drive.google.com/file/d/{id}/view");
     }
 
@@ -279,9 +296,8 @@ public static class Cloud
         var form = new Dictionary<string, string> { ["client_id"] = d.ClientId(), ["grant_type"] = "refresh_token", ["refresh_token"] = refresh };
         if (d == CloudDrive.OneDrive) form["scope"] = Scope(d);
         if (d.ClientSecret().Length > 0) form["client_secret"] = d.ClientSecret();
-        JsonObject tok;
-        try { tok = await TokenRequest(d, form); }
-        catch (AppError) { throw new AppError(L("A conexão com o %@ expirou. Conecte de novo em Ajustes.", d.Name())); }
+        // Só um 400/401 do servidor de login significa acesso revogado/expirado; rede e 5xx propagam como estão.
+        var tok = await TokenRequest(d, form, expiredMessage: L("A conexão com o %@ expirou. Conecte de novo em Ajustes.", d.Name()));
         var access = tok["access_token"]?.GetValue<string>() ?? throw new AppError(L("Resposta de login inválida."));
         if (tok["refresh_token"]?.GetValue<string>() is { Length: > 0 } newRefresh) CredentialStore.Set(RefreshKey(d), newRefresh);
         PutToken(d, access, tok);
@@ -295,10 +311,12 @@ public static class Cloud
         lock (Tokens) Tokens[d] = (access, DateTime.UtcNow.AddSeconds(Math.Max(60, secs - 120)));
     }
 
-    private static async Task<JsonObject> TokenRequest(CloudDrive d, Dictionary<string, string> form)
+    private static async Task<JsonObject> TokenRequest(CloudDrive d, Dictionary<string, string> form, string? expiredMessage = null)
     {
         using var resp = await Http.PostAsync(TokenUrl(d), new FormUrlEncodedContent(form));
         var text = await resp.Content.ReadAsStringAsync();
+        if (expiredMessage != null && resp.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
+            throw new AppError(expiredMessage);
         if (!resp.IsSuccessStatusCode) throw new AppError($"{d.Name()}: {ErrorMessage(text, (int)resp.StatusCode)}");
         return Parse(text);
     }
@@ -340,24 +358,41 @@ public static class Cloud
             catch { v6 = null; } // sem IPv6: o navegador tenta 127.0.0.1
         }
 
+        private readonly TaskCompletionSource<Dictionary<string, string>> result = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public async Task<Dictionary<string, string>> WaitForCallback(TimeSpan timeout)
         {
-            cts.CancelAfter(timeout);
-            var tasks = new List<Task<Dictionary<string, string>>> { Loop(v4) };
-            if (v6 != null) tasks.Add(Loop(v6));
-            try { return await await Task.WhenAny(tasks); }
-            catch (OperationCanceledException) { throw new AppError(L("Tempo de login esgotado.")); }
+            _ = AcceptLoop(v4);
+            if (v6 != null) _ = AcceptLoop(v6);
+            try { return await result.Task.WaitAsync(timeout, cts.Token); }
+            catch (TimeoutException) { throw new AppError(L("Tempo de login esgotado.")); }
             finally { cts.Cancel(); }
         }
 
-        private async Task<Dictionary<string, string>> Loop(TcpListener listener)
+        /// Cada conexão é atendida em paralelo: navegadores abrem conexões "preconnect" ociosas
+        /// que não podem segurar a requisição real do redirecionamento.
+        private async Task AcceptLoop(TcpListener listener)
         {
-            while (true)
+            while (!cts.IsCancellationRequested)
             {
-                using var client = await listener.AcceptTcpClientAsync(cts.Token);
-                using var stream = client.GetStream();
+                TcpClient client;
+                try { client = await listener.AcceptTcpClientAsync(cts.Token); }
+                catch { return; }
+                _ = Task.Run(() => Handle(client));
+            }
+        }
+
+        private async Task Handle(TcpClient client)
+        {
+            using var conn = client;
+            try
+            {
+                using var readTimeout = CancellationTokenSource.CreateLinkedTokenSource(cts.Token);
+                readTimeout.CancelAfter(TimeSpan.FromSeconds(10));
+                var stream = client.GetStream();
                 var buf = new byte[65536];
-                int n = await stream.ReadAsync(buf, cts.Token);
+                int n = await stream.ReadAsync(buf, readTimeout.Token);
+                if (n <= 0) return;
                 var line = Encoding.UTF8.GetString(buf, 0, n).Split("\r\n")[0];
                 var target = line.Split(' ').ElementAtOrDefault(1) ?? "";
                 var qi = target.IndexOf('?');
@@ -367,14 +402,15 @@ public static class Cloud
                     : "Not found";
                 var body = Encoding.UTF8.GetBytes(html);
                 var head = Encoding.ASCII.GetBytes($"HTTP/1.1 {(isCallback ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
-                await stream.WriteAsync(head, cts.Token);
-                await stream.WriteAsync(body, cts.Token);
-                if (!isCallback) continue;
-                return target[(qi + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries)
+                await stream.WriteAsync(head, readTimeout.Token);
+                await stream.WriteAsync(body, readTimeout.Token);
+                if (!isCallback) return;
+                result.TrySetResult(target[(qi + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Split('=', 2))
                     .GroupBy(p => WebUtility.UrlDecode(p[0]))
-                    .ToDictionary(g => g.Key, g => WebUtility.UrlDecode(g.First().ElementAtOrDefault(1) ?? ""));
+                    .ToDictionary(g => g.Key, g => WebUtility.UrlDecode(g.First().ElementAtOrDefault(1) ?? "")));
             }
+            catch (Exception e) { Trace.Log("oauth loopback: " + e.Message); } // conexão ociosa ou resetada: ignora
         }
 
         public void Dispose()
@@ -382,7 +418,6 @@ public static class Cloud
             cts.Cancel();
             v4.Stop();
             v6?.Stop();
-            cts.Dispose();
         }
     }
 }
