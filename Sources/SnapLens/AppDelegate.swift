@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupMenu()
         setupHotKeys()
         startClipboardMonitor()
+        startDriveExpiry()
         NotificationCenter.default.addObserver(forName: Recorder.stateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.recordingStateChanged() }
         }
@@ -282,10 +283,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         w.title = "SnapLens — " + L("Compartilhar")
         w.isReleasedWhenClosed = false
         w.level = .floating
-        w.contentView = NSHostingView(rootView: ShareOptionsView(onShare: { [weak self] choice, days in
+        w.contentView = NSHostingView(rootView: ShareOptionsView(onShare: { [weak self] choice, days, destination in
             self?.shareOptionsWindow?.close(); self?.shareOptionsWindow = nil
             let r = choice.resolve(customDays: days)
-            Task { await self?.upload(item, expirySeconds: r.seconds, once: r.once) }
+            Task {
+                // Compartilhar de novo um item que já está num Drive: apaga o arquivo antigo para não deixá-lo órfão.
+                if item.shareDrive != nil { await self?.revoke(item, quiet: true) }
+                if let drive = destination.drive { await self?.uploadToDrive(item, drive: drive, expirySeconds: r.seconds) }
+                else { await self?.upload(item, expirySeconds: r.seconds, once: r.once) }
+            }
         }, onCancel: { [weak self] in
             self?.shareOptionsWindow?.close(); self?.shareOptionsWindow = nil
         }))
@@ -306,6 +312,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             it.shareExpires = r.expires_at.flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
             it.shareToken = r.delete_token
             it.shareOnce = r.once
+            it.shareDrive = nil
             store.update(it)
             copyText(r.url)
             NSSound(named: "Pop")?.play()
@@ -318,16 +325,68 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func revoke(_ item: Item) async {
-        guard let id = item.shareID, let token = item.shareToken else { return }
+    /// Envia para a pasta SnapLens do OneDrive / Google Drive e cria um link de leitura público.
+    private func uploadToDrive(_ item: Item, drive: CloudDrive, expirySeconds: Int) async {
+        guard let url = store.url(for: item), let data = try? Data(contentsOf: url) else { return }
+        Toast.show(L("Enviando para %@…", drive.name), symbol: "icloud.and.arrow.up")
+        let expires = expirySeconds > 0 ? Date().addingTimeInterval(TimeInterval(expirySeconds)) : nil
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = "yyyy-MM-dd HH.mm.ss"
+        let stamp = fmt.string(from: item.date)
         do {
-            try await ShareClient.revoke(id: id, token: token)
+            let r = try await CloudClient.upload(drive, data: data, filename: "SnapLens \(stamp).png", expires: expires)
             var it = item
-            it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil; it.shareOnce = nil
+            it.shareID = r.id
+            it.shareURL = r.url
+            it.shareExpires = expires
+            it.shareToken = nil
+            it.shareOnce = nil
+            it.shareDrive = drive.rawValue
             store.update(it)
+            copyText(r.url)
+            NSSound(named: "Pop")?.play()
+            Toast.show(L("Link copiado · %@", expiryText(expires)), symbol: "icloud")
+            showShareResult(url: r.url, expires: expires, token: "", once: false, drive: drive)
+        } catch {
+            Trace.log("share \(drive.rawValue) ERRO: \(error.localizedDescription)")
+            Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+        }
+    }
+
+    /// Links em Drives não expiram sozinhos (o Google não permite; o OneDrive pessoal também não):
+    /// o próprio app apaga os arquivos vencidos ao abrir e a cada hora.
+    private var driveExpiryTimer: Timer?
+    func startDriveExpiry() {
+        Task { await purgeExpiredDriveShares() }
+        driveExpiryTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.purgeExpiredDriveShares() }
+        }
+    }
+
+    private func purgeExpiredDriveShares() async {
+        for item in store.items where item.shareDrive != nil && (item.shareExpires.map { $0 < Date() } ?? false) {
+            await revoke(item, quiet: true)
+        }
+    }
+
+    func revoke(_ item: Item, quiet: Bool = false) async {
+        guard let id = item.shareID else { return }
+        do {
+            if let drive = item.shareDrive.flatMap(CloudDrive.init(rawValue:)) {
+                try await CloudClient.delete(drive, id: id)
+            } else {
+                guard let token = item.shareToken else { return }
+                try await ShareClient.revoke(id: id, token: token)
+            }
+            guard var it = store.items.first(where: { $0.id == item.id }) else { return }
+            it.shareID = nil; it.shareURL = nil; it.shareExpires = nil; it.shareToken = nil; it.shareOnce = nil; it.shareDrive = nil
+            store.update(it)
+            if quiet { Trace.log("share: link vencido apagado (\(item.shareDrive ?? "servidor"))"); return }
             Toast.show(L("Link revogado"), symbol: "link.badge.plus")
         } catch {
-            Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+            Trace.log("revogar ERRO: \(error.localizedDescription)")
+            if !quiet { Toast.show(error.localizedDescription, symbol: "exclamationmark.triangle.fill") }
         }
     }
 
@@ -380,7 +439,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    func showShareResult(url: String, expires: Date?, token: String, once: Bool) {
+    func showShareResult(url: String, expires: Date?, token: String, once: Bool, drive: CloudDrive? = nil) {
         if shareWindow == nil {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 260),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
@@ -389,7 +448,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             w.center()
             shareWindow = w
         }
-        shareWindow?.contentView = NSHostingView(rootView: ShareResultView(url: url, expires: expires, token: token, once: once) { [weak self] in
+        shareWindow?.contentView = NSHostingView(rootView: ShareResultView(url: url, expires: expires, token: token, once: once, drive: drive) { [weak self] in
             self?.shareWindow?.close()
         })
         NSApp.activate(ignoringOtherApps: true)

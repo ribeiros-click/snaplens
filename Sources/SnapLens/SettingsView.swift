@@ -89,6 +89,76 @@ private struct ShareSection: View {
             Text(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app."))
                 .font(.caption).foregroundStyle(.secondary)
         }
+        Section(L("Salvar no OneDrive ou Google Drive")) {
+            ForEach(CloudDrive.allCases) { CloudDriveRow(drive: $0) }
+            Text(L("Conecte uma conta para escolher, na hora de compartilhar, onde salvar a imagem. Ela vai para a pasta SnapLens do Drive e recebe um link de leitura público. O SnapLens só acessa os arquivos que ele mesmo cria (no Google Drive) e guarda o acesso no Keychain."))
+                .font(.caption).foregroundStyle(.secondary)
+            DisclosureGroup(L("Credenciais OAuth (avançado)")) {
+                TextField(L("OneDrive — ID do cliente"), text: $oneDriveID)
+                TextField(L("Google — ID do cliente"), text: $googleID)
+                SecureField(L("Google — chave secreta do cliente"), text: $googleSecret)
+                Text(L("Deixe em branco para usar as credenciais deste build. Preencha só se você registrou o seu próprio app na Microsoft ou no Google (redirecionamento: http://localhost)."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @AppStorage("cloud.onedrive.clientId") private var oneDriveID = ""
+    @AppStorage("cloud.gdrive.clientId") private var googleID = ""
+    @AppStorage("cloud.gdrive.clientSecret") private var googleSecret = ""
+}
+
+private struct CloudDriveRow: View {
+    let drive: CloudDrive
+    @State private var connected = false
+    @State private var account = ""
+    @State private var busy = false
+    @State private var errorText: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Image(systemName: connected ? "checkmark.icloud.fill" : "icloud").foregroundStyle(connected ? .green : .secondary)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(drive.name)
+                    if connected {
+                        Text(account.isEmpty ? L("Conectado") : L("Conectado como %@", account))
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else if !drive.isConfigured {
+                        Text(L("Sem credenciais OAuth neste build (veja “avançado”)."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                if busy { ProgressView().controlSize(.small) }
+                if connected {
+                    Button(L("Desconectar")) { drive.disconnect(); refresh() }
+                } else {
+                    Button(L("Conectar…")) { connect() }.disabled(busy || !drive.isConfigured)
+                }
+            }
+            if let errorText { Text(errorText).font(.caption).foregroundStyle(.red) }
+        }
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification).receive(on: RunLoop.main)) { _ in refresh() }
+    }
+
+    private func refresh() {
+        connected = drive.isConnected
+        account = drive.accountName
+    }
+
+    private func connect() {
+        busy = true
+        errorText = nil
+        Task { @MainActor in
+            do {
+                try await CloudClient.connect(drive)
+                NSApp.activate(ignoringOtherApps: true)
+            } catch { errorText = error.localizedDescription }
+            busy = false
+            refresh()
+        }
     }
 }
 

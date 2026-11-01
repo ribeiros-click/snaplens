@@ -267,7 +267,8 @@ public sealed class LibraryForm : Form
         var app = TrayApp.Instance;
         var link = item.ShareURL!;
         var row = new Panel { Dock = DockStyle.Bottom, Height = 26 };
-        var text = link.Replace("https://", "") + " · " + ShareClient.ExpiryText(item.ShareExpires) + (item.ShareOnce == true ? " · 1×" : "");
+        var drive = item.ShareDrive switch { "onedrive" => "OneDrive · ", "gdrive" => "Google Drive · ", _ => "" };
+        var text = drive + link.Replace("https://", "") + " · " + ShareClient.ExpiryText(item.ShareExpires) + (item.ShareOnce == true ? " · 1×" : "");
         var label = new Label { Text = text, AutoEllipsis = true, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = Ui.Small, ForeColor = item.ShareOnce == true ? Ui.Orange : Ui.Accent };
         if (item.ShareOnce == true) tips.SetToolTip(label, L("Visualização única — o link se apaga na primeira abertura"));
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 86, WrapContents = false, Margin = Padding.Empty };

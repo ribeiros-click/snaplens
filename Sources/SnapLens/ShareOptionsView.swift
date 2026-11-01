@@ -37,16 +37,37 @@ enum ShareChoice: String, CaseIterable {
 }
 
 struct ShareOptionsView: View {
-    var onShare: (ShareChoice, Int) -> Void
+    var onShare: (ShareChoice, Int, ShareDestination) -> Void
     var onCancel: () -> Void
     @State private var choice = ShareChoice.last
     @State private var days = ShareChoice.customDays
+    @State private var destination: ShareDestination
+    private let destinations: [ShareDestination]
+
+    /// `previewDestination` (só para os prints do site): mostra todos os destinos com esse selecionado.
+    init(previewDestination: ShareDestination? = nil, onShare: @escaping (ShareChoice, Int, ShareDestination) -> Void, onCancel: @escaping () -> Void) {
+        self.onShare = onShare
+        self.onCancel = onCancel
+        destinations = previewDestination == nil ? ShareDestination.available : ShareDestination.allCases
+        let dest = previewDestination ?? ShareDestination.current
+        _destination = State(initialValue: dest)
+        if dest != .server && ShareChoice.last == .once { _choice = State(initialValue: .d1) }
+    }
+
+    /// "Ver uma vez" só existe no servidor SnapLens.
+    private var choices: [ShareChoice] { destination == .server ? ShareChoice.allCases : ShareChoice.allCases.filter { $0 != .once } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Label(L("Compartilhar por link público"), systemImage: "link").font(.headline)
+            if destinations.count > 1 {
+                Picker(L("Salvar em"), selection: $destination) {
+                    ForEach(destinations) { Text($0.title).tag($0) }
+                }
+                .onChange(of: destination) { _, d in if d != .server && choice == .once { choice = .d1 } }
+            }
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(ShareChoice.allCases, id: \.self) { c in
+                ForEach(choices, id: \.self) { c in
                     HStack(spacing: 8) {
                         Image(systemName: choice == c ? "largecircle.fill.circle" : "circle")
                             .foregroundStyle(choice == c ? Color.accentColor : .secondary)
@@ -69,18 +90,26 @@ struct ShareOptionsView: View {
                 Spacer()
                 Button(L("Cancelar"), role: .cancel) { onCancel() }.keyboardShortcut(.cancelAction)
                 Button(L("Compartilhar")) {
+                    if destination != .server && choice == .once { choice = .d1 }
                     ShareChoice.last = choice
                     ShareChoice.customDays = max(1, min(days, 365))
-                    onShare(choice, ShareChoice.customDays)
+                    ShareDestination.current = destination
+                    onShare(choice, ShareChoice.customDays, destination)
                 }
                 .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
         }
         .padding(18)
         .frame(width: 360)
+        .onAppear { if destination != .server && choice == .once { choice = .d1 } }
     }
 
     private var hint: String {
+        if let drive = destination.drive {
+            return choice == .never
+                ? L("Salvo na pasta SnapLens do seu %@. O link fica ativo até você revogá-lo na Biblioteca.", drive.name)
+                : L("Salvo na pasta SnapLens do seu %@. Passado o prazo, o SnapLens apaga o arquivo (precisa estar aberto).", drive.name)
+        }
         switch choice {
         case .once: return L("O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro).")
         case .never: return L("O link fica no ar até você revogá-lo na Biblioteca ou pela página de token.")

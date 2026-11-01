@@ -7,10 +7,12 @@ public sealed class ShareOptionsForm : Form
 {
     public ShareChoice Choice { get; private set; } = ShareConfig.LastChoice;
     public int CustomDays { get; private set; } = ShareConfig.CustomDays;
+    public ShareDestination Destination { get; private set; } = ShareDestinations.Current;
 
     public ShareOptionsForm()
     {
-        Ui.Window(this, L("Compartilhar"), 400, 300);
+        var destinations = ShareDestinations.Available;
+        Ui.Window(this, L("Compartilhar"), 400, destinations.Length > 1 ? 340 : 300);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = false;
         ShowInTaskbar = false;
@@ -21,6 +23,20 @@ public sealed class ShareOptionsForm : Form
         root.Controls.Add(Ui.Label(L("Compartilhar por link público"), Ui.Bold));
         root.Controls.Add(new Label { Height = 6, Width = 1, Margin = Padding.Empty });
 
+        // "Salvar em": só aparece com algum Drive conectado.
+        var destBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200, Margin = new Padding(6, 0, 0, 0) };
+        if (destinations.Length > 1)
+        {
+            foreach (var d in destinations) destBox.Items.Add(d.Title());
+            destBox.SelectedIndex = Math.Max(0, Array.IndexOf(destinations, Destination));
+            var destRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 8) };
+            var destLabel = Ui.Label(L("Salvar em"));
+            destLabel.Margin = new Padding(0, 4, 0, 0);
+            destRow.Controls.Add(destLabel);
+            destRow.Controls.Add(destBox);
+            root.Controls.Add(destRow);
+        }
+
         var hint = Ui.Label("", Ui.Small, Ui.Secondary, wrap: true);
         hint.MaximumSize = new Size(350, 0);
         var radios = new Dictionary<ShareChoice, RadioButton>();
@@ -29,6 +45,13 @@ public sealed class ShareOptionsForm : Form
         void Select(ShareChoice c)
         {
             Choice = c;
+            if (Destination.Drive() is CloudDrive drive)
+            {
+                hint.Text = c == ShareChoice.Never
+                    ? L("Salvo na pasta SnapLens do seu %@. O link fica ativo até você revogá-lo na Biblioteca.", drive.Name())
+                    : L("Salvo na pasta SnapLens do seu %@. Passado o prazo, o SnapLens apaga o arquivo (precisa estar aberto).", drive.Name());
+                return;
+            }
             hint.Text = c switch
             {
                 ShareChoice.Once => L("O link se apaga na primeira abertura (ou em 30 dias, o que vier primeiro)."),
@@ -53,13 +76,28 @@ public sealed class ShareOptionsForm : Form
             root.Controls.Add(row);
         }
         root.Controls.Add(hint);
-        Select(Choice);
+
+        // "Ver uma vez" só existe no servidor SnapLens.
+        void ApplyDestination()
+        {
+            bool drive = Destination != ShareDestination.Server;
+            radios[ShareChoice.Once].Parent!.Visible = !drive;
+            if (drive && Choice == ShareChoice.Once) radios[ShareChoice.D1].Checked = true;
+            Select(Choice);
+        }
+        destBox.SelectedIndexChanged += (_, _) =>
+        {
+            if (destBox.SelectedIndex >= 0) Destination = destinations[destBox.SelectedIndex];
+            ApplyDestination();
+        };
+        ApplyDestination();
 
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 44, Padding = new Padding(16, 6, 16, 8) };
         var ok = Ui.Button(L("Compartilhar"), () =>
         {
             CustomDays = (int)days.Value;
             ShareConfig.LastChoice = Choice;
+            ShareDestinations.Current = Destination;
             ShareConfig.CustomDays = CustomDays;
             DialogResult = DialogResult.OK;
             Close();

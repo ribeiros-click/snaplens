@@ -1,0 +1,72 @@
+# Compila o SnapLens para macOS (SnapLens.dmg). Em tags v*, anexa o DMG à release do GitHub.
+#
+# Assinatura opcional (secrets do repositório). Sem eles, o app sai com assinatura ad-hoc
+# (funciona, mas o Gatekeeper pede "botão direito → Abrir" na primeira vez):
+#   MACOS_CERT_P12        certificado "Developer ID Application" exportado do Keychain (.p12) em base64
+#   MACOS_CERT_PASSWORD   senha do .p12
+#   NOTARY_APPLE_ID, NOTARY_TEAM_ID, NOTARY_PASSWORD   (senha específica de app) para notarizar
+# Credenciais OAuth dos Drives: ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+name: macOS build
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths-ignore: ["server/**", "windows/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+      NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+      NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
+      ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import Developer ID certificate
+        if: env.MACOS_CERT_P12 != ''
+        run: |
+          KC="$RUNNER_TEMP/build.keychain-db"
+          KC_PW="$(uuidgen)"
+          echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KC_PW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KC_PW" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$MACOS_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: Build DMG
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then export VERSION="${GITHUB_REF_NAME#v}"; fi
+          export BUILD="$GITHUB_RUN_NUMBER"
+          if [ -n "$NOTARY_APPLE_ID" ] && [ -n "$NOTARY_PASSWORD" ] && [ -n "$MACOS_CERT_P12" ]; then
+            xcrun notarytool store-credentials snaplens --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD"
+            export NOTARY_PROFILE=snaplens
+          fi
+          ./make_dmg.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SnapLens-macos
+          path: SnapLens.dmg
+
+      - name: Attach to release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # O workflow do Windows roda em paralelo e também pode criar a release.
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes || true
+          gh release upload "$GITHUB_REF_NAME" SnapLens.dmg --clobber

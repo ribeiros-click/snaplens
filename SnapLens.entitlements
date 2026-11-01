@@ -4,6 +4,8 @@
   <key>com.apple.security.app-sandbox</key><true/>
   <!-- Provedores de IA (OpenAI, Anthropic, Gemini, Ollama...) -->
   <key>com.apple.security.network.client</key><true/>
+  <!-- Login do OneDrive / Google Drive: recebe o redirecionamento OAuth em http://localhost -->
+  <key>com.apple.security.network.server</key><true/>
   <!-- Microfone na gravação de tela -->
   <key>com.apple.security.device.audio-input</key><true/>
   <!-- "Salvar em Imagens/SnapLens" -->

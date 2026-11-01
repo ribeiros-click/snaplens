@@ -15,12 +15,14 @@ struct Item: Codable, Identifiable, Equatable {
     var file: String?
     var source: String?
     var duration: Double?
-    // Link público (lens.ribeiros.click)
+    // Link público (lens.ribeiros.click, ou arquivo no OneDrive / Google Drive)
     var shareID: String?
     var shareURL: String?
     var shareExpires: Date?
     var shareToken: String?
     var shareOnce: Bool?
+    /// "onedrive" / "gdrive" quando o link é de um arquivo no Drive do usuário; nil = servidor SnapLens.
+    var shareDrive: String?
 }
 
 @MainActor

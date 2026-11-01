@@ -49,6 +49,12 @@ enum Shots {
             write(img, dir.appendingPathComponent("ajustes.png"))
         }
         if let savedProvider { ud.set(savedProvider, forKey: "activeProvider") } else { ud.removeObject(forKey: "activeProvider") }
+
+        // 4. Caixa de compartilhamento com "Salvar em" (destinos mostrados como se os Drives estivessem conectados).
+        let share = ShareOptionsView(previewDestination: .onedrive, onShare: { _, _, _ in }, onCancel: {})
+        if let img = snapshot(NSHostingView(rootView: share), size: CGSize(width: 360, height: 300)) {
+            write(img, dir.appendingPathComponent("compartilhar.png"))
+        }
         try? FileManager.default.removeItem(at: tmp)
     }
 
@@ -158,7 +164,7 @@ enum Shots {
         let previousLang = L10n.selection
         if let language { L10n.selection = language }
         defer { if language != nil { L10n.selection = previousLang } }
-        if let img = snapshot(NSHostingView(rootView: ShareOptionsView(onShare: { _, _ in }, onCancel: {})), size: CGSize(width: 360, height: 260)) {
+        if let img = snapshot(NSHostingView(rootView: ShareOptionsView(onShare: { _, _, _ in }, onCancel: {})), size: CGSize(width: 360, height: 260)) {
             write(img, url)
         }
     }

@@ -5,9 +5,9 @@ namespace SnapLens;
 /// Janela mostrada após o upload: link público + token de exclusão.
 public sealed class ShareResultForm : Form
 {
-    public ShareResultForm(string url, DateTime? expires, string token, bool once)
+    public ShareResultForm(string url, DateTime? expires, string token, bool once, CloudDrive? drive = null)
     {
-        Ui.Window(this, L("Link compartilhado"), 500, once ? 380 : 350);
+        Ui.Window(this, L("Link compartilhado"), 500, drive != null ? 290 : once ? 380 : 350);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = false;
         TopMost = true;
@@ -42,22 +42,35 @@ public sealed class ShareResultForm : Form
 
         root.Controls.Add(new Label { Height = 1, Width = 450, BackColor = Color.FromArgb(225, 225, 228), Margin = new Padding(0, 12, 0, 10) });
 
-        root.Controls.Add(Ui.Label(L("Token de exclusão"), Ui.Small, Ui.Secondary));
-        var tokenRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
-        var tokenBox = new TextBox { Text = token, ReadOnly = true, UseSystemPasswordChar = true, Width = 250, Font = Ui.Mono, BorderStyle = BorderStyle.FixedSingle, BackColor = Color.FromArgb(248, 248, 250) };
-        tokenRow.Controls.Add(tokenBox);
-        var tips = new ToolTip();
-        System.Windows.Forms.Button? eye = null;
-        eye = Ui.Glyph(Icons.Eye, L("Mostrar token"), () =>
+        if (drive is CloudDrive d)
         {
-            tokenBox.UseSystemPasswordChar = !tokenBox.UseSystemPasswordChar;
-            tips.SetToolTip(eye!, tokenBox.UseSystemPasswordChar ? L("Mostrar token") : L("Ocultar token"));
-        }, tips);
-        eye.Margin = new Padding(4, 0, 4, 0);
-        tokenRow.Controls.Add(eye);
-        tokenRow.Controls.Add(Ui.Button(L("Copiar token"), () => Copy(token, L("Token"))));
-        root.Controls.Add(tokenRow);
-        root.Controls.Add(Ui.Label(L("Guarde este token. Sem ele, não é possível apagar o link fora deste app."), Ui.Small, Ui.Orange, wrap: true));
+            var account = d.AccountName();
+            var where = Ui.Label(L("Salvo na pasta SnapLens do seu %@ (%@).", d.Name(), account.Length > 0 ? account : d.Name()), Ui.Small, Ui.Secondary, wrap: true);
+            where.MaximumSize = new Size(450, 0);
+            root.Controls.Add(where);
+            var how = Ui.Label(L("Para remover, revogue o link na Biblioteca ou apague o arquivo no %@.", d.Name()), Ui.Small, Ui.Secondary, wrap: true);
+            how.MaximumSize = new Size(450, 0);
+            root.Controls.Add(how);
+        }
+        else
+        {
+            root.Controls.Add(Ui.Label(L("Token de exclusão"), Ui.Small, Ui.Secondary));
+            var tokenRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
+            var tokenBox = new TextBox { Text = token, ReadOnly = true, UseSystemPasswordChar = true, Width = 250, Font = Ui.Mono, BorderStyle = BorderStyle.FixedSingle, BackColor = Color.FromArgb(248, 248, 250) };
+            tokenRow.Controls.Add(tokenBox);
+            var tips = new ToolTip();
+            System.Windows.Forms.Button? eye = null;
+            eye = Ui.Glyph(Icons.Eye, L("Mostrar token"), () =>
+            {
+                tokenBox.UseSystemPasswordChar = !tokenBox.UseSystemPasswordChar;
+                tips.SetToolTip(eye!, tokenBox.UseSystemPasswordChar ? L("Mostrar token") : L("Ocultar token"));
+            }, tips);
+            eye.Margin = new Padding(4, 0, 4, 0);
+            tokenRow.Controls.Add(eye);
+            tokenRow.Controls.Add(Ui.Button(L("Copiar token"), () => Copy(token, L("Token"))));
+            root.Controls.Add(tokenRow);
+            root.Controls.Add(Ui.Label(L("Guarde este token. Sem ele, não é possível apagar o link fora deste app."), Ui.Small, Ui.Orange, wrap: true));
+        }
 
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 44, Padding = new Padding(16, 6, 16, 8) };
         var close = Ui.Button(L("Fechar"), Close);

@@ -176,7 +176,8 @@ private struct ImageCard: View {
             .onTapGesture(count: 1) { onToggleSelect() }
             if let link = item.shareURL {
                 HStack(spacing: 6) {
-                    Image(systemName: "link").foregroundStyle(.tint)
+                    Image(systemName: item.shareDrive == nil ? "link" : "icloud").foregroundStyle(.tint)
+                        .help(item.shareDrive.flatMap(CloudDrive.init(rawValue:))?.name ?? L("Servidor SnapLens"))
                     Text(link.replacingOccurrences(of: "https://", with: "")).lineLimit(1).truncationMode(.middle)
                     Text("· \(expiryText(item.shareExpires))").foregroundStyle(.secondary)
                     if item.shareOnce == true {
