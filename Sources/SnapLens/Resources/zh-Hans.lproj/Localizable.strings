@@ -239,3 +239,6 @@
 "Sem credenciais OAuth neste build (veja “avançado”)." = "此版本没有 OAuth 凭据（见“高级”）。";
 "Servidor SnapLens" = "SnapLens 服务器";
 "Tempo de login esgotado." = "登录超时。";
+"Buscar com Google Lens" = "用 Google 智能镜头搜索";
+"Buscar seleção com Google Lens" = "用 Google 智能镜头搜索所选区域";
+"Abrindo no Google Lens…" = "正在用 Google 智能镜头打开…";

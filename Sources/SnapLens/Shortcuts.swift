@@ -26,7 +26,7 @@ struct Shortcut: Codable, Equatable {
 }
 
 enum ShortcutAction: String, CaseIterable, Identifiable {
-    case region, full, ocr, describe, record, history
+    case region, full, ocr, describe, lens, record, history
     var id: String { rawValue }
     static let changed = Notification.Name("SnapLensShortcutsChanged")
 
@@ -36,6 +36,7 @@ enum ShortcutAction: String, CaseIterable, Identifiable {
         case .full: return L("Capturar tela inteira")
         case .ocr: return L("OCR de uma seleção")
         case .describe: return L("Descrever seleção com IA")
+        case .lens: return L("Buscar seleção com Google Lens")
         case .record: return L("Gravar tela (iniciar/parar)")
         case .history: return L("Abrir biblioteca")
         }
@@ -47,6 +48,7 @@ enum ShortcutAction: String, CaseIterable, Identifiable {
         case .full: return Shortcut(keyCode: kVK_ANSI_F, modifiers: controlKey | optionKey, key: "F")
         case .ocr: return Shortcut(keyCode: kVK_ANSI_T, modifiers: controlKey | optionKey, key: "T")
         case .describe: return Shortcut(keyCode: kVK_ANSI_D, modifiers: controlKey | optionKey, key: "D")
+        case .lens: return Shortcut(keyCode: kVK_ANSI_L, modifiers: controlKey | optionKey, key: "L")
         case .record: return Shortcut(keyCode: kVK_ANSI_R, modifiers: controlKey | optionKey, key: "R")
         case .history: return Shortcut(keyCode: kVK_ANSI_H, modifiers: controlKey | optionKey, key: "H")
         }

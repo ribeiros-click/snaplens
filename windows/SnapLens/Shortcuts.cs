@@ -35,7 +35,7 @@ public sealed record Shortcut(int Key, int Mods)
     };
 }
 
-public enum ShortcutAction { region, full, ocr, describe, record, history }
+public enum ShortcutAction { region, full, ocr, describe, lens, record, history }
 
 public static class Shortcuts
 {
@@ -52,6 +52,7 @@ public static class Shortcuts
         ShortcutAction.full => L("Capturar tela inteira"),
         ShortcutAction.ocr => L("OCR de uma seleção"),
         ShortcutAction.describe => L("Descrever seleção com IA"),
+        ShortcutAction.lens => L("Buscar seleção com Google Lens"),
         ShortcutAction.record => L("Gravar tela (iniciar/parar)"),
         _ => L("Abrir biblioteca"),
     };
@@ -64,6 +65,7 @@ public static class Shortcuts
         ShortcutAction.full => new((int)Keys.F, Shortcut.Ctrl | Shortcut.Alt),
         ShortcutAction.ocr => new((int)Keys.T, Shortcut.Ctrl | Shortcut.Alt),
         ShortcutAction.describe => new((int)Keys.D, Shortcut.Ctrl | Shortcut.Alt),
+        ShortcutAction.lens => new((int)Keys.L, Shortcut.Ctrl | Shortcut.Alt),
         ShortcutAction.record => new((int)Keys.R, Shortcut.Ctrl | Shortcut.Alt),
         _ => new((int)Keys.H, Shortcut.Ctrl | Shortcut.Alt),
     };

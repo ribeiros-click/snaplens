@@ -34,6 +34,7 @@ enum ShareConfig {
 struct ShareResult: Decodable {
     let id: String
     let url: String
+    let image_url: String?
     let expires_at: Double?
     let delete_token: String
     let once: Bool?
@@ -64,6 +65,13 @@ enum ShareClient {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: ["id": id, "token": token])
         _ = try await send(req)
+    }
+
+    /// Página do Google Lens para uma imagem pública (no idioma do app).
+    static func lensURL(imageURL: String) -> URL? {
+        var c = URLComponents(string: "https://lens.google.com/uploadbyurl")
+        c?.queryItems = [URLQueryItem(name: "url", value: imageURL), URLQueryItem(name: "hl", value: L10n.code == "zh-Hans" ? "zh-CN" : L10n.code)]
+        return c?.url
     }
 
     private static func request(path: String) -> URLRequest {
