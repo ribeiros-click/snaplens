@@ -57,6 +57,7 @@ public sealed class TrayApp : ApplicationContext
         driveExpiryTimer.Tick += async (_, _) => await PurgeExpiredDriveShares();
         driveExpiryTimer.Start();
         DriveBackup.Start();
+        LibrarySync.Start();
         UpdateChecker.Changed += () => ui.Post(_ => RebuildMenu(), null);
         UpdateChecker.Start();
         ui.Post(async _ => await PurgeExpiredDriveShares(), null);

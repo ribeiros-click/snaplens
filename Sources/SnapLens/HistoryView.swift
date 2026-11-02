@@ -197,7 +197,7 @@ private struct ImageCard: View {
                 .padding(.horizontal, 2)
             }
             HStack {
-                Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(L10n.locale)))")
+                Text("\(item.kind == .screenshot ? "Screenshot" : "Clipboard") · \(item.date.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(L10n.locale)))\(item.device.map { " · \($0)" } ?? "")")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button { onCopy(item) } label: { Image(systemName: "doc.on.doc") }.help(L("Copiar imagem"))

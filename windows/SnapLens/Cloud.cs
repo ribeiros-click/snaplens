@@ -283,10 +283,13 @@ public static class Cloud
         return id;
     }
 
-    private static async Task<(string, string?)> GooglePut(Func<Stream> open, long length, string fileName, string mime)
+    private static async Task<(string, string?)> GooglePut(Func<Stream> open, long length, string fileName, string mime,
+        string? parent = null, Dictionary<string, string>? appProperties = null)
     {
-        var folder = await GoogleTarget();
-        var meta = new { name = fileName, parents = new[] { folder } };
+        var folder = parent ?? await GoogleTarget();
+        object meta = appProperties == null
+            ? new { name = fileName, parents = new[] { folder } }
+            : new { name = fileName, parents = new[] { folder }, appProperties };
         JsonObject file;
         if (length <= 5 * 1024 * 1024)
         {
@@ -332,6 +335,93 @@ public static class Cloud
             throw;
         }
         return new CloudUpload(id, webLink ?? $"https://drive.google.com/file/d/{id}/view");
+    }
+
+    // MARK: Sincronização entre dispositivos (Google Drive)
+    // Pasta "SnapLens Sync" criada pelo app na raiz do Drive. Cada item é um arquivo com os metadados em
+    // appProperties (privados do app); como todos os computadores usam o mesmo app OAuth, o escopo
+    // drive.file deixa cada um ver os arquivos criados pelos outros.
+
+    public const string SyncFolderName = "SnapLens Sync";
+    public sealed record SyncFile(string Id, Dictionary<string, string> Props, DateTime Created);
+
+    private static async Task<string> SyncFolder()
+    {
+        var cached = Settings.Data.SyncFolderId;
+        if (cached.Length > 0)
+        {
+            try
+            {
+                var f = await Api(CloudDrive.GDrive, HttpMethod.Get, $"https://www.googleapis.com/drive/v3/files/{cached}?fields=id,trashed");
+                if (f["trashed"]?.GetValue<bool>() != true) return cached;
+            }
+            catch { }
+        }
+        var query = Uri.EscapeDataString($"name='{SyncFolderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+        var found = await Api(CloudDrive.GDrive, HttpMethod.Get, $"https://www.googleapis.com/drive/v3/files?q={query}&fields=files(id)&spaces=drive&orderBy=createdTime");
+        var id = found["files"]?.AsArray().FirstOrDefault()?["id"]?.GetValue<string>();
+        if (id == null)
+        {
+            var created = await Api(CloudDrive.GDrive, HttpMethod.Post, "https://www.googleapis.com/drive/v3/files?fields=id",
+                () => Json(new { name = SyncFolderName, mimeType = "application/vnd.google-apps.folder" }));
+            id = created["id"]?.GetValue<string>() ?? throw new AppError(L("Resposta inesperada do %@.", "Google Drive"));
+        }
+        Settings.Data.SyncFolderId = id;
+        Settings.Save();
+        return id;
+    }
+
+    /// Envia um item para a pasta de sincronização, com os metadados em appProperties.
+    public static async Task<string> SyncUpload(Func<Stream> open, long length, string fileName, string mime, Dictionary<string, string> props)
+    {
+        var folder = await SyncFolder();
+        return (await GooglePut(open, length, fileName, mime, folder, props)).Item1;
+    }
+
+    /// Arquivos da pasta de sincronização. `after`: criados depois; `before` + `device`: antigos deste aparelho.
+    public static async Task<List<SyncFile>> SyncList(DateTime? after = null, DateTime? before = null, string? device = null)
+    {
+        var folder = await SyncFolder();
+        static string Iso(DateTime d) => d.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
+        var q = $"'{folder}' in parents and trashed=false";
+        if (after is DateTime a) q += $" and createdTime > '{Iso(a)}'";
+        if (before is DateTime b) q += $" and createdTime < '{Iso(b)}'";
+        if (device != null) q += $" and appProperties has {{ key='device' and value='{device}' }}";
+        var result = new List<SyncFile>();
+        string? page = null;
+        do
+        {
+            var url = $"https://www.googleapis.com/drive/v3/files?q={Uri.EscapeDataString(q)}&pageSize=1000&fields={Uri.EscapeDataString("nextPageToken,files(id,createdTime,appProperties)")}"
+                + (page != null ? "&pageToken=" + Uri.EscapeDataString(page) : "");
+            var r = await Api(CloudDrive.GDrive, HttpMethod.Get, url);
+            foreach (var f in r["files"]?.AsArray() ?? new JsonArray())
+            {
+                if (f?["id"]?.GetValue<string>() is not string id) continue;
+                var props = new Dictionary<string, string>();
+                if (f["appProperties"] is JsonObject ap)
+                    foreach (var (k, v) in ap) if (v is JsonValue jv && jv.TryGetValue<string>(out var s)) props[k] = s;
+                var created = DateTime.TryParse(f["createdTime"]?.GetValue<string>(), CultureInfo.InvariantCulture,
+                    DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var c) ? c : DateTime.UtcNow;
+                result.Add(new SyncFile(id, props, created));
+            }
+            page = r["nextPageToken"]?.GetValue<string>();
+        } while (page != null);
+        return result;
+    }
+
+    /// Conteúdo de um arquivo do Drive.
+    public static async Task<byte[]> Download(CloudDrive d, string id)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            var token = await AccessToken(d);
+            using var req = new HttpRequestMessage(HttpMethod.Get, $"https://www.googleapis.com/drive/v3/files/{Uri.EscapeDataString(id)}?alt=media");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var resp = await Http.SendAsync(req);
+            if (resp.StatusCode == HttpStatusCode.Unauthorized && attempt == 0) { lock (Tokens) Tokens.Remove(d); continue; }
+            if (!resp.IsSuccessStatusCode) throw new AppError($"{d.Name()}: HTTP {(int)resp.StatusCode}");
+            return await resp.Content.ReadAsByteArrayAsync();
+        }
     }
 
     /// Abre o seletor de pastas do Google (Google Picker) no navegador. Escolher uma pasta lá dá ao SnapLens

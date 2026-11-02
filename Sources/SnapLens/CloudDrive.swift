@@ -318,9 +318,13 @@ enum CloudClient {
         return id
     }
 
-    private static func googlePut(data: Data, filename: String, mime: String) async throws -> (id: String, webLink: String?) {
-        let folder = try await googleTarget()
-        let meta = try JSONSerialization.data(withJSONObject: ["name": filename, "parents": [folder]])
+    private static func googlePut(data: Data, filename: String, mime: String,
+                                  parent: String? = nil, appProperties: [String: String]? = nil) async throws -> (id: String, webLink: String?) {
+        let folder: String
+        if let parent { folder = parent } else { folder = try await googleTarget() }
+        var metaObj: [String: Any] = ["name": filename, "parents": [folder]]
+        if let appProperties { metaObj["appProperties"] = appProperties }
+        let meta = try JSONSerialization.data(withJSONObject: metaObj)
         let file: [String: Any]
         if data.count <= 5 * 1024 * 1024 {
             // Upload "multipart": metadados + conteúdo numa só requisição (limite de 5 MB).
@@ -423,6 +427,91 @@ enum CloudClient {
         </script>
         <script src="https://apis.google.com/js/api.js" onload="gapi.load('picker', start)"></script>
         """
+    }
+
+    // MARK: Sincronização entre dispositivos (Google Drive)
+    // Pasta "SnapLens Sync" criada pelo app na raiz do Drive. Cada item é um arquivo com os metadados em
+    // appProperties (privados do app); como todos os computadores usam o mesmo app OAuth, o escopo
+    // drive.file deixa cada um ver os arquivos criados pelos outros.
+
+    static let syncFolderName = "SnapLens Sync"
+
+    struct SyncFile {
+        let id: String
+        let props: [String: String]
+        let created: Date
+    }
+
+    private static func syncFolder() async throws -> String {
+        let key = "cloud.gdrive.syncFolder"
+        if let cached = UserDefaults.standard.string(forKey: key), !cached.isEmpty,
+           let f = try? await api(.gdrive, method: "GET", url: "https://www.googleapis.com/drive/v3/files/\(cached)?fields=id,trashed"),
+           f["trashed"] as? Bool != true {
+            return cached
+        }
+        var c = URLComponents(string: "https://www.googleapis.com/drive/v3/files")!
+        c.queryItems = [.init(name: "q", value: "name='\(syncFolderName)' and mimeType='application/vnd.google-apps.folder' and trashed=false"),
+                        .init(name: "fields", value: "files(id)"), .init(name: "spaces", value: "drive"),
+                        .init(name: "orderBy", value: "createdTime")]
+        let found = try await api(.gdrive, method: "GET", url: c.url!.absoluteString)
+        let id: String
+        if let existing = ((found["files"] as? [[String: Any]])?.first)?["id"] as? String {
+            id = existing
+        } else {
+            let created = try await api(.gdrive, method: "POST", url: "https://www.googleapis.com/drive/v3/files?fields=id",
+                                        body: try JSONSerialization.data(withJSONObject: ["name": syncFolderName, "mimeType": "application/vnd.google-apps.folder"]),
+                                        contentType: "application/json")
+            guard let newID = created["id"] as? String else { throw cloudError(L("Resposta inesperada do %@.", "Google Drive")) }
+            id = newID
+        }
+        UserDefaults.standard.set(id, forKey: key)
+        return id
+    }
+
+    /// Envia um item para a pasta de sincronização, com os metadados em appProperties.
+    static func syncUpload(data: Data, filename: String, mime: String, props: [String: String]) async throws -> String {
+        let folder = try await syncFolder()
+        return try await googlePut(data: data, filename: filename, mime: mime, parent: folder, appProperties: props).id
+    }
+
+    /// Arquivos da pasta de sincronização. `after`: criados depois; `before` + `device`: antigos deste aparelho.
+    static func syncList(after: Date? = nil, before: Date? = nil, device: String? = nil) async throws -> [SyncFile] {
+        let folder = try await syncFolder()
+        let iso = ISO8601DateFormatter()
+        var q = "'\(folder)' in parents and trashed=false"
+        if let after { q += " and createdTime > '\(iso.string(from: after))'" }
+        if let before { q += " and createdTime < '\(iso.string(from: before))'" }
+        if let device { q += " and appProperties has { key='device' and value='\(device)' }" }
+        var result: [SyncFile] = []
+        var pageToken: String?
+        repeat {
+            var c = URLComponents(string: "https://www.googleapis.com/drive/v3/files")!
+            var items: [URLQueryItem] = [.init(name: "q", value: q), .init(name: "pageSize", value: "1000"),
+                                         .init(name: "fields", value: "nextPageToken,files(id,createdTime,appProperties)")]
+            if let pageToken { items.append(.init(name: "pageToken", value: pageToken)) }
+            c.queryItems = items
+            let r = try await api(.gdrive, method: "GET", url: c.url!.absoluteString)
+            for f in r["files"] as? [[String: Any]] ?? [] {
+                guard let id = f["id"] as? String else { continue }
+                let created = (f["createdTime"] as? String).flatMap { parseISO($0) } ?? Date()
+                result.append(SyncFile(id: id, props: f["appProperties"] as? [String: String] ?? [:], created: created))
+            }
+            pageToken = r["nextPageToken"] as? String
+        } while pageToken != nil
+        return result
+    }
+
+    /// Conteúdo de um arquivo do Drive.
+    static func download(_ d: CloudDrive, id: String) async throws -> Data {
+        try await send(d, method: "GET", url: "https://www.googleapis.com/drive/v3/files/\(id)?alt=media").0
+    }
+
+    /// Aceita datas com ou sem frações de segundo ("…T10:00:00.123Z").
+    static func parseISO(_ s: String) -> Date? {
+        let f = ISO8601DateFormatter()
+        if let d = f.date(from: s) { return d }
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f.date(from: s)
     }
 
     // MARK: Conta

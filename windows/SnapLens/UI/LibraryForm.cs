@@ -240,7 +240,7 @@ public sealed class LibraryForm : Form
         thumb.MouseDoubleClick += (_, _) => { Toggle(item); if (path != null) TrayApp.Open(path); };
 
         var kind = item.Kind == ItemKind.screenshot ? "Screenshot" : "Clipboard";
-        var meta = Ui.Label($"{kind} · {Format.Time(item.Date)}", Ui.Small, Ui.Secondary);
+        var meta = Ui.Label($"{kind} · {Format.Time(item.Date)}" + (item.Device != null ? $" · {item.Device}" : ""), Ui.Small, Ui.Secondary);
         meta.Dock = DockStyle.Bottom;
         meta.AutoSize = false;
         meta.Height = 20;

@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startClipboardMonitor()
         startDriveExpiry()
         DriveBackup.shared.start()
+        LibrarySync.shared.start()
         NotificationCenter.default.addObserver(forName: UpdateChecker.changed, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.rebuildMenu() }
         }

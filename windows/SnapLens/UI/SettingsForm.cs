@@ -100,6 +100,7 @@ public sealed class SettingsForm : Form
         cloud.Controls.Add(advanced);
         cloud.Controls.Add(advPanel);
         BuildBackupSection(Section(L("Backup automático da Biblioteca")));
+        BuildSyncSection(Section(L("Sincronizar entre dispositivos")));
 
         // IA
         aiPage = Page(L("IA"));
@@ -245,6 +246,64 @@ public sealed class SettingsForm : Form
     }
 
     /// Linha "OneDrive · conectado como x  [Desconectar]" / "[Conectar…]".
+    /// Sincronização da Biblioteca entre computadores pelo Google Drive.
+    private void BuildSyncSection(FlowLayoutPanel box)
+    {
+        var enabled = Check(L("Sincronizar a Biblioteca com meus outros computadores"), Settings.Data.SyncEnabled);
+        var days = new NumericUpDown { Minimum = 1, Maximum = 90, Value = LibrarySync.Days, Width = 70 };
+        var images = Check(L("Screenshots e imagens"), Settings.Data.SyncImages);
+        var texts = Check(L("Textos (OCR, IA e copiados)"), Settings.Data.SyncTexts);
+        var videos = Check(L("Gravações de vídeo"), Settings.Data.SyncVideos);
+        var name = new TextBox { Width = 290, Text = Settings.Data.SyncDeviceName, PlaceholderText = Environment.MachineName };
+        var status = Ui.Label("", Ui.Small, Ui.Secondary);
+        status.Margin = new Padding(8, 7, 0, 0);
+        var now = Ui.Button(L("Sincronizar agora"), LibrarySync.Run);
+        var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 2) };
+        actions.Controls.Add(now);
+        actions.Controls.Add(status);
+        var note = Note("");
+
+        box.Controls.Add(enabled);
+        var daysRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 2, 0, 2) };
+        var daysLabel = Ui.Label(L("Dias a sincronizar"));
+        daysLabel.Margin = new Padding(0, 5, 8, 0);
+        daysRow.Controls.Add(daysLabel);
+        daysRow.Controls.Add(days);
+        box.Controls.Add(daysRow);
+        foreach (var c in new Control[] { images, texts, videos }) box.Controls.Add(c);
+        Row(box, L("Nome deste computador"), name);
+        var nameRow = box.Controls[box.Controls.Count - 1];
+        box.Controls.Add(actions);
+        box.Controls.Add(note);
+        var options = new Control[] { daysRow, images, texts, videos, nameRow, actions };
+
+        enabled.CheckedChanged += (_, _) => { Settings.Data.SyncEnabled = enabled.Checked; Settings.Save(); if (enabled.Checked) LibrarySync.Run(); };
+        days.ValueChanged += (_, _) => { Settings.Data.SyncDays = (int)days.Value; Settings.Save(); };
+        images.CheckedChanged += (_, _) => { Settings.Data.SyncImages = images.Checked; Settings.Save(); };
+        texts.CheckedChanged += (_, _) => { Settings.Data.SyncTexts = texts.Checked; Settings.Save(); };
+        videos.CheckedChanged += (_, _) => { Settings.Data.SyncVideos = videos.Checked; Settings.Save(); };
+        name.TextChanged += (_, _) => { Settings.Data.SyncDeviceName = name.Text.Trim(); Settings.Save(); };
+
+        void Refresh()
+        {
+            if (box.IsDisposed) return;
+            if (box.InvokeRequired) { box.BeginInvoke(Refresh); return; }
+            bool connected = CloudDrive.GDrive.IsConnected();
+            enabled.Enabled = connected;
+            bool on = connected && Settings.Data.SyncEnabled;
+            foreach (var o in options) o.Visible = on;
+            note.Text = connected
+                ? L("Ligue em cada computador (Mac ou Windows) conectado à mesma conta do Google Drive. As capturas dos últimos dias aparecem na Biblioteca de todos. Os arquivos ficam na pasta “SnapLens Sync” do Drive; apagar num computador não apaga nos outros.")
+                : L("Conecte o Google Drive acima para sincronizar a Biblioteca entre computadores.");
+            status.Text = LibrarySync.Status;
+            now.Enabled = !LibrarySync.Running;
+        }
+        Settings.Changed += Refresh;
+        LibrarySync.StatusChanged += Refresh;
+        box.Disposed += (_, _) => { Settings.Changed -= Refresh; LibrarySync.StatusChanged -= Refresh; };
+        Refresh();
+    }
+
     /// Backup automático da Biblioteca para um Drive conectado (mão única).
     private void BuildBackupSection(FlowLayoutPanel box)
     {

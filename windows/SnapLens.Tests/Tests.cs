@@ -50,3 +50,72 @@ public class LensUrlTests
         Assert.False(string.IsNullOrEmpty(query["hl"]));
     }
 }
+
+/// Regras da sincronização entre dispositivos.
+public class SyncPlanTests
+{
+    private static readonly DateTime Now = DateTime.Now;
+    private static readonly DateTime Cutoff = Now.AddDays(-7);
+
+    private static Item Make(ItemKind kind, double daysAgo, string? text = null, string? file = "x.png") =>
+        new() { Kind = kind, Date = Now.AddDays(-daysAgo), Text = text, File = kind.IsText() ? null : file };
+
+    [Fact]
+    public void UploadsOnlyRecentLocalUnsentItemsOfEnabledKinds()
+    {
+        var synced = Make(ItemKind.screenshot, 1); synced.SyncId = "abc";
+        var fromOther = Make(ItemKind.screenshot, 1); fromOther.Device = "Mac";
+        var recent = Make(ItemKind.screenshot, 1);
+        var old = Make(ItemKind.screenshot, 10);
+        var text = Make(ItemKind.ocr, 2, "olá");
+        var emptyText = Make(ItemKind.clipboardText, 2, "");
+        var video = Make(ItemKind.video, 1, file: "v.mp4");
+        var up = SyncPlan.ToUpload(new[] { synced, fromOther, recent, old, text, emptyText, video }, Cutoff, new SyncPlan.Options());
+        Assert.Equal(new[] { text.Id, recent.Id }, up.Select(i => i.Id)); // mais antigo primeiro; vídeos desligados
+        Assert.Single(SyncPlan.ToUpload(new[] { video }, Cutoff, new SyncPlan.Options(Videos: true)));
+    }
+
+    [Fact]
+    public void PropsRoundTripIntoIncomingItem()
+    {
+        var original = Make(ItemKind.screenshot, 1);
+        original.Source = "Claude";
+        var props = SyncPlan.Props(original, "PC-1", "DESKTOP-01");
+        var incoming = SyncPlan.Incoming(props, "drive-file", new HashSet<Guid>(), "MAC-2", Cutoff);
+        Assert.NotNull(incoming);
+        Assert.Equal(original.Id, incoming!.Id);
+        Assert.Equal(ItemKind.screenshot, incoming.Kind);
+        Assert.True(Math.Abs((incoming.Date - original.Date).TotalSeconds) < 1);
+        Assert.Equal("DESKTOP-01", incoming.Device);
+        Assert.Equal("drive-file", incoming.SyncId);
+        Assert.Equal("Claude", incoming.Source);
+        Assert.Equal(original.Id.ToString().ToUpperInvariant() + ".png", incoming.File);
+    }
+
+    [Fact]
+    public void IgnoresOwnKnownOldOrInvalidFiles()
+    {
+        var i = Make(ItemKind.screenshot, 1);
+        var props = SyncPlan.Props(i, "PC-1", "DESKTOP-01");
+        Assert.Null(SyncPlan.Incoming(props, "f", new HashSet<Guid>(), "PC-1", Cutoff));
+        Assert.Null(SyncPlan.Incoming(props, "f", new HashSet<Guid> { i.Id }, "MAC", Cutoff));
+        var old = SyncPlan.Props(Make(ItemKind.screenshot, 30), "PC-1", "DESKTOP-01");
+        Assert.Null(SyncPlan.Incoming(old, "f", new HashSet<Guid>(), "MAC", Cutoff));
+        Assert.Null(SyncPlan.Incoming(new Dictionary<string, string> { ["id"] = "x" }, "f", new HashSet<Guid>(), "MAC", Cutoff));
+    }
+
+    /// Itens criados no Mac chegam com o tipo pelo rawValue do enum Swift (mesmos nomes).
+    [Fact]
+    public void AcceptsMacProps()
+    {
+        var props = new Dictionary<string, string>
+        {
+            ["id"] = "0f8fad5b-d9cb-469f-a165-70867728950e", ["kind"] = "ocr",
+            ["date"] = SyncPlan.Iso(Now), ["device"] = "MAC-1", ["deviceName"] = "MacBook",
+        };
+        var i = SyncPlan.Incoming(props, "f", new HashSet<Guid>(), "PC-2", Cutoff);
+        Assert.NotNull(i);
+        Assert.Equal(ItemKind.ocr, i!.Kind);
+        Assert.Null(i.File);
+    }
+}

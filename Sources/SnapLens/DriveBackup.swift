@@ -71,7 +71,8 @@ final class DriveBackup: ObservableObject {
     private func pending(_ drive: CloudDrive) -> [Item] {
         let since = Self.since
         return Store.shared.items.filter { item in
-            guard item.date >= since, item.backups?[drive.rawValue] == nil else { return false }
+            // Itens vindos de outro dispositivo já são copiados por lá.
+            guard item.date >= since, item.backups?[drive.rawValue] == nil, item.device == nil else { return false }
             if item.kind.isImage { return Self.images }
             if item.kind == .video { return Self.videos }
             return Self.texts && !(item.text ?? "").isEmpty

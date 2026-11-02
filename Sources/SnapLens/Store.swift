@@ -25,6 +25,10 @@ struct Item: Codable, Identifiable, Equatable {
     var shareDrive: String?
     /// Backup automático: id do arquivo em cada Drive ("onedrive"/"gdrive" → id).
     var backups: [String: String]?
+    /// Sincronização entre dispositivos: id do arquivo na pasta "SnapLens Sync" do Google Drive.
+    var syncId: String?
+    /// Nome do computador de origem, quando o item veio de outro dispositivo (nil = criado aqui).
+    var device: String?
 }
 
 @MainActor
@@ -85,6 +89,19 @@ final class Store: ObservableObject {
         save()
         NotificationCenter.default.post(name: Self.inserted, object: self)
         return item
+    }
+
+    /// Item vindo de outro dispositivo: grava o arquivo e insere na posição da data (sem disparar backup/sync).
+    func importSynced(_ item: Item, data: Data?) {
+        guard !items.contains(where: { $0.id == item.id }) else { return }
+        if let data, let u = url(for: item) { try? data.write(to: u) }
+        let i = items.firstIndex(where: { $0.date < item.date }) ?? items.count
+        items.insert(item, at: i)
+        while items.filter({ $0.kind != .video }).count > Self.maxItems,
+              let last = items.last(where: { $0.kind != .video }) {
+            remove(last)
+        }
+        save()
     }
 
     func update(_ item: Item) {
