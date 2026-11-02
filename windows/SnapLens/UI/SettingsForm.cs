@@ -334,6 +334,8 @@ public sealed class SettingsForm : Form
         folderRow.Controls.Add(folderLabel);
         folderRow.Controls.Add(choose);
         folderRow.Controls.Add(reset);
+        var noKey = Ui.Label(L("Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”."), Ui.Small, Ui.Orange, wrap: true);
+        noKey.MaximumSize = new Size(W - 30, 0);
 
         void Refresh()
         {
@@ -342,6 +344,7 @@ public sealed class SettingsForm : Form
             folderRow.Visible = drive.IsConnected();
             folderLabel.Text = L("Pasta: %@", drive.FolderDisplay());
             choose!.Enabled = drive.CanPickFolder();
+            noKey.Visible = drive.IsConnected() && !drive.CanPickFolder();
             reset.Visible = drive.Folder() != null;
             var account = drive.AccountName();
             status.Text = drive.IsConnected()
@@ -373,6 +376,7 @@ public sealed class SettingsForm : Form
         row.Controls.Add(button, 1, 0);
         panel.Controls.Add(row);
         panel.Controls.Add(folderRow);
+        panel.Controls.Add(noKey);
         panel.Controls.Add(error);
         Refresh();
         return panel;

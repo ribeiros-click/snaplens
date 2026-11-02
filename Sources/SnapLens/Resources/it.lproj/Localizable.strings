@@ -273,3 +273,4 @@
 "Screenshots e imagens" = "Screenshot e immagini";
 "Textos (OCR, IA e copiados)" = "Testi (OCR, IA e copiati)";
 "Voltar para a pasta SnapLens criada pelo app" = "Torna alla cartella SnapLens creata dall'app";
+"Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”." = "Per scegliere un'altra cartella manca la chiave API di Google: aggiungi il secret GOOGLE_API_KEY e crea una nuova build, oppure incolla la chiave in «Credenziali OAuth (avanzate)».";

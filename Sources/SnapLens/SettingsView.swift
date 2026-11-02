@@ -322,7 +322,10 @@ private struct CloudDriveRow: View {
                     }
                     Button(L("Escolher…")) { chooseFolder() }.controlSize(.small)
                         .disabled(busy || !drive.canPickFolder)
-                        .help(drive.canPickFolder ? "" : L("Falta a chave de API do Google (veja “avançado”)."))
+                }
+                if !drive.canPickFolder {
+                    Text(L("Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”."))
+                        .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
                 }
             }
             if let errorText { Text(errorText).font(.caption).foregroundStyle(.red) }
