@@ -1,8 +1,10 @@
-# Compila o SnapLens para Windows (instalador + zip). Em tags v*, anexa os arquivos à release do GitHub.
+# Compila o SnapLens para Windows (instalador + zip). Em cada push no main (merge de PR) publica a release
+# v<VERSION> com os arquivos; numa tag v*, anexa à release da tag. Em PRs, só gera o artefato para teste.
 name: Windows build
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
     paths-ignore: ["server/**"]
   pull_request:
@@ -42,12 +44,19 @@ jobs:
             windows/dist/SnapLens-Setup.exe
             windows/dist/SnapLens-windows-x64.zip
 
-      - name: Attach to release
-        if: github.ref_type == 'tag'
+      - name: Publish release
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view $env:GITHUB_REF_NAME 2>$null
-          if ($LASTEXITCODE -ne 0) { gh release create $env:GITHUB_REF_NAME --title $env:GITHUB_REF_NAME --generate-notes }
-          gh release upload $env:GITHUB_REF_NAME windows/dist/SnapLens-Setup.exe windows/dist/SnapLens-windows-x64.zip --clobber
+          # main: release v<VERSION> (criada no primeiro merge da versão; merges seguintes atualizam os arquivos).
+          $tag = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME } else { "v" + (Get-Content VERSION -Raw).Trim() }
+          gh release view $tag 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            # O workflow do macOS roda em paralelo e também pode criar a release.
+            gh release create $tag --title ("SnapLens " + $tag.TrimStart("v")) --generate-notes --target $env:GITHUB_SHA
+            if ($LASTEXITCODE -ne 0) { Write-Host "Release $tag já foi criada pelo outro workflow." }
+          }
+          gh release upload $tag windows/dist/SnapLens-Setup.exe windows/dist/SnapLens-windows-x64.zip --clobber
+          exit $LASTEXITCODE

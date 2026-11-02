@@ -1,4 +1,5 @@
-# Compila o SnapLens para macOS (SnapLens.dmg). Em tags v*, anexa o DMG à release do GitHub.
+# Compila o SnapLens para macOS (SnapLens.dmg). Em cada push no main (merge de PR) publica a release
+# v<VERSION> com o DMG; numa tag v*, anexa à release da tag. Em PRs, só gera o artefato para teste.
 #
 # Assinatura opcional (secrets do repositório). Sem eles, o app sai com assinatura ad-hoc
 # (funciona, mas o Gatekeeper pede "botão direito → Abrir" na primeira vez):
@@ -10,7 +11,9 @@ name: macOS build
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+    paths-ignore: ["server/**", "windows/**"]
   pull_request:
     paths-ignore: ["server/**", "windows/**"]
   workflow_dispatch:
@@ -65,11 +68,13 @@ jobs:
           name: SnapLens-macos
           path: SnapLens.dmg
 
-      - name: Attach to release
-        if: github.ref_type == 'tag'
+      - name: Publish release
+        if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # main: release v<VERSION> (criada no primeiro merge da versão; merges seguintes atualizam os arquivos).
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"; else TAG="v$(tr -d '[:space:]' < VERSION)"; fi
           # O workflow do Windows roda em paralelo e também pode criar a release.
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes || true
-          gh release upload "$GITHUB_REF_NAME" SnapLens.dmg --clobber
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "SnapLens ${TAG#v}" --generate-notes --target "$GITHUB_SHA" || true
+          gh release upload "$TAG" SnapLens.dmg --clobber
