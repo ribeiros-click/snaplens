@@ -44,6 +44,10 @@ public sealed class SettingsForm : Form
         };
         general.Controls.Add(login);
         general.Controls.Add(loginError);
+        var updates = Check(L("Avisar quando houver versão nova"), Settings.Data.CheckUpdates);
+        updates.CheckedChanged += (_, _) => { Settings.Data.CheckUpdates = updates.Checked; Settings.Save(); };
+        general.Controls.Add(updates);
+        general.Controls.Add(Note(L("Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho.")));
 
         // Atalhos
         root = Page(L("Atalhos"));

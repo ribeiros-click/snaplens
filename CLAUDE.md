@@ -7,6 +7,14 @@
 - **Cada merge no `main` publica a release `v<VERSION>`** sozinho (DMG + instalador do Windows). Se a versão não subiu, os arquivos da release existente são substituídos.
 - O número do build é automático (contagem de commits, `git rev-list --count HEAD`); não edite à mão.
 
+## Notas de versão
+- **Todo PR com mudança visível adiciona uma linha em `CHANGELOG.md`** na seção `## <VERSION>` (em português: “**Novo:**”, “**Correção:**”…). Essa seção vira a nota da release.
+
+## Site (lens.ribeiros.click)
+- As páginas `server/public_html/{,en/,es/,it/,zh/}index.html` são **geradas** por `Tools/build_site.py` (textos nos 5 idiomas ficam lá). Não edite os `index.html` à mão: rode `python3 Tools/build_site.py`.
+- Prints: `SnapLens --render-shots <pasta>` (interface real). O workflow `site.yml` gera os prints e publica o site a cada merge no `main` (precisa do secret `HOSTINGER_API_TOKEN`); em PRs só gera os prints como artefato.
+- Recurso novo que muda o que o app faz com dados → atualizar `server/public_html/politicas/privacidade.html`.
+
 ## Builds
 - macOS: `./build.sh` / `./make_dmg.sh`; Windows: `windows/build.ps1`. Os dois leem `VERSION`.
 - CI: `.github/workflows/macos.yml` (DMG) e `windows.yml` (instalador) rodam em todo PR (artefato para teste) e em push no `main` / tag `v*` (release).

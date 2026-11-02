@@ -274,3 +274,10 @@
 "Textos (OCR, IA e copiados)" = "Testi (OCR, IA e copiati)";
 "Voltar para a pasta SnapLens criada pelo app" = "Torna alla cartella SnapLens creata dall'app";
 "Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”." = "Per scegliere un'altra cartella manca la chiave API di Google: aggiungi il secret GOOGLE_API_KEY e crea una nuova build, oppure incolla la chiave in «Credenziali OAuth (avanzate)».";
+"SnapLens %@ disponível — veja no menu" = "SnapLens %@ disponibile — vedi il menu";
+"Você está na versão mais recente (%@)" = "Hai la versione più recente (%@)";
+"Não foi possível verificar atualizações" = "Impossibile verificare gli aggiornamenti";
+"⬆︎ SnapLens %@ disponível — baixar" = "⬆︎ SnapLens %@ disponibile — scarica";
+"Verificar atualizações…" = "Verifica aggiornamenti…";
+"Avisar quando houver versão nova" = "Avvisami quando c'è una nuova versione";
+"Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho." = "Una volta al giorno SnapLens controlla la pagina delle versioni su GitHub. Non viene scaricato nulla automaticamente.";

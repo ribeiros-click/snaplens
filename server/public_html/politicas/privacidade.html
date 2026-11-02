@@ -14,26 +14,27 @@
 </header>
 <main class="doc">
   <h1>Política de Privacidade</h1>
-  <p class="updated">Versão 2.0 · vigente a partir de 8 de outubro de 2026 · substitui a versão 1.0</p>
+  <p class="updated">Versão 2.1 · vigente a partir de 2 de novembro de 2026 · substitui a versão 2.0</p>
 
-  <p>Esta política descreve como o aplicativo <strong>SnapLens</strong> para macOS (“App”) e o serviço de links públicos em <strong>lens.ribeiros.click</strong> (“Serviço”) tratam dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, “LGPD”).</p>
+  <p>Esta política descreve como o aplicativo <strong>SnapLens</strong> para macOS e Windows (“App”) e o serviço de links públicos em <strong>lens.ribeiros.click</strong> (“Serviço”) tratam dados pessoais, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, “LGPD”).</p>
 
   <h2>1. Quem é o responsável</h2>
   <p>O App e o Serviço são mantidos por seu desenvolvedor, contatável em <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> ou pelo <a href="/contato">formulário de contato</a>. Para fins da LGPD, o desenvolvedor é o <strong>controlador</strong> dos dados operacionais do Serviço (seção 3) e <strong>operador</strong> em relação ao conteúdo das imagens que você decide publicar.</p>
 
-  <h2>2. O App: tudo fica no seu Mac</h2>
+  <h2>2. O App: tudo fica no seu computador</h2>
   <p>O App não exige conta, não possui telemetria e não envia dados a terceiros por iniciativa própria. Localmente ele guarda:</p>
   <ul>
     <li><strong>Screenshots, gravações e textos</strong> capturados ou copiados, na Biblioteca (pasta de suporte do app). Até 500 itens de imagem/texto; vídeos ficam até você apagar.</li>
     <li><strong>Área de transferência</strong>: o App monitora o clipboard para montar o histórico. Conteúdo marcado como confidencial ou transitório (o padrão usado por gerenciadores de senha) é ignorado e nunca armazenado.</li>
-    <li><strong>Chaves de provedores de IA</strong>, no Keychain do macOS. Preferências (atalhos, modelos, validade padrão dos links) nos ajustes do app.</li>
+    <li><strong>Chaves de provedores de IA</strong> e o <strong>acesso ao Google Drive</strong> (token de renovação), no Keychain do macOS ou no Gerenciador de Credenciais do Windows. Preferências (atalhos, modelos, pasta do Drive, validade padrão dos links) nos ajustes do app.</li>
     <li><strong>Links que você criou</strong>: URL, validade e token de exclusão de cada compartilhamento, para que a Biblioteca possa revogá-los.</li>
     <li><strong>Log de diagnóstico</strong> opcional em <code>~/Library/Logs/SnapLens</code>, com eventos técnicos (abertura do overlay, cliques, teclas, erros). Não contém imagens nem textos capturados e nunca é enviado automaticamente.</li>
   </ul>
   <p>Você pode apagar qualquer item pela Biblioteca. Desinstalar o App e remover suas pastas de suporte e de logs elimina todos os dados locais.</p>
+  <p><strong>Verificação de atualizações:</strong> ao abrir e uma vez por dia, o App consulta a página pública de versões do projeto no GitHub (<code>api.github.com</code>) para saber se há uma versão nova. Nenhum dado seu é enviado além do que qualquer acesso a um site revela (endereço IP e versão do App no cabeçalho da requisição). Você pode desligar isso em Ajustes → Geral.</p>
 
   <h2>3. O Serviço de links públicos</h2>
-  <p>Uma imagem só é enviada ao Serviço quando você clica em <em>Compartilhar</em> (ícone de link) no App. <strong>Não há cadastro, conta, login nem cookie</strong>: o upload é anônimo. O Serviço trata:</p>
+  <p>Uma imagem só é enviada ao Serviço quando você clica em <em>Compartilhar</em> (ícone de link) com o destino “Servidor SnapLens”, ou em <em>Buscar com Google Lens</em> (seção 7). <strong>Não há cadastro, conta, login nem cookie</strong>: o upload é anônimo. O Serviço trata:</p>
   <table>
     <tr><th>Dado</th><th>Finalidade</th><th>Retenção</th></tr>
     <tr><td>A imagem enviada</td><td>Exibi-la a quem possuir o link</td><td>Até a validade escolhida (1 h a 30 dias); em links “sem expirar”, até a revogação; em “visualização única”, até a primeira abertura</td></tr>
@@ -51,24 +52,37 @@
   <h2>5. Provedores de IA (opcional)</h2>
   <p>A função “Descrever com IA” só funciona se você configurar um provedor e clicar no botão. A imagem selecionada é então enviada diretamente do seu Mac ao provedor escolhido (Anthropic, OpenAI, DeepSeek ou um endpoint personalizado, inclusive local como Ollama), sob a política de privacidade desse provedor. O Serviço lens.ribeiros.click não participa dessa transmissão. Sem provedor configurado, a análise é feita offline pelo framework Vision da Apple. O OCR de texto e a tradução nativa sempre rodam localmente.</p>
 
-  <h2>6. Compartilhamento com terceiros</h2>
-  <p>Não vendemos nem cedemos dados. Os únicos terceiros envolvidos são o provedor de hospedagem (Hostinger, que armazena o Serviço e entrega os e-mails de contato) e, se você optar, o provedor de IA que você mesmo configurou.</p>
+  <h2>6. Google Drive (opcional)</h2>
+  <p>Se você conectar sua conta Google em Ajustes → Compartilhar, o App passa a poder salvar arquivos no seu Google Drive. O login acontece no seu navegador, diretamente com o Google; o App recebe apenas um token de acesso, guardado no seu computador (seção 2), e <strong>nada passa pelo servidor lens.ribeiros.click</strong>.</p>
+  <ul>
+    <li><strong>Permissão mínima:</strong> o App pede só o escopo <code>drive.file</code>, que dá acesso apenas aos arquivos que o próprio SnapLens cria e à pasta que você escolher no seletor oficial do Google. Ele não consegue ver, ler nem apagar o restante do seu Drive.</li>
+    <li><strong>O que é enviado:</strong> a imagem que você compartilhar escolhendo “Salvar em: Google Drive” (que recebe um link de leitura público, apagado pelo App ao vencer ou ao ser revogado) e, se você ativar o backup automático, cópias dos screenshots, gravações e textos da Biblioteca, nos tipos que você marcar.</li>
+    <li><strong>Uso dos dados:</strong> o App usa o acesso ao Drive apenas para essas funções, a seu pedido. Os dados não são lidos, analisados, vendidos, nem usados para publicidade ou para treinar modelos de IA, e não são transferidos a terceiros.</li>
+    <li><strong>Como desligar:</strong> “Desconectar” em Ajustes → Compartilhar apaga o token do seu computador; você também pode revogar o acesso em <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>. Os arquivos já enviados continuam no seu Drive, sob seu controle.</li>
+  </ul>
+  <p>O uso e a transferência, pelo SnapLens, de informações recebidas das APIs do Google seguirão a <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Política de Dados do Usuário dos Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado.</p>
 
-  <h2>7. Transferência internacional</h2>
-  <p>O Serviço é hospedado em infraestrutura da Hostinger, que pode estar localizada fora do Brasil. Provedores de IA configurados por você também podem processar dados no exterior. Tais transferências ocorrem com base no art. 33 da LGPD, para a execução do serviço solicitado.</p>
+  <h2>7. Busca com Google Lens (opcional)</h2>
+  <p>Ao usar “Buscar com Google Lens”, a área selecionada (sem as anotações) é enviada ao Serviço como um link com validade de <strong>1 hora</strong>, e o App abre o Google Lens no seu navegador apontando para esse link, para que o Google busque a imagem. A partir daí vale a <a href="https://policies.google.com/privacy" rel="noopener">política de privacidade do Google</a>. O link não aparece na Biblioteca e é apagado do Serviço automaticamente ao vencer.</p>
 
-  <h2>8. Seus direitos</h2>
+  <h2>8. Compartilhamento com terceiros</h2>
+  <p>Não vendemos nem cedemos dados. Os únicos terceiros envolvidos são o provedor de hospedagem (Hostinger, que armazena o Serviço e entrega os e-mails de contato) e, quando você usa as funções correspondentes, o provedor de IA que você configurou, o Google (Drive e Lens) e o GitHub (verificação de atualizações).</p>
+
+  <h2>9. Transferência internacional</h2>
+  <p>O Serviço é hospedado em infraestrutura da Hostinger, que pode estar localizada fora do Brasil. Provedores de IA configurados por você, o Google e o GitHub também podem processar dados no exterior. Tais transferências ocorrem com base no art. 33 da LGPD, para a execução do serviço solicitado.</p>
+
+  <h2>10. Seus direitos</h2>
   <p>Você pode, a qualquer momento: revogar um link pela Biblioteca do App ou pela página <a href="/token">/token</a> (a imagem é apagada imediatamente); solicitar confirmação, acesso, correção ou eliminação de dados; e obter informações sobre o tratamento. Use o <a href="/contato">formulário de contato</a> ou escreva para <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a>, informando a URL do link quando houver. Respondemos em até 15 dias.</p>
   <p>Se uma imagem publicada por outra pessoa contiver dados seus, use o link “Denunciar conteúdo” na própria página do link.</p>
 
-  <h2>9. Menores de idade</h2>
+  <h2>11. Menores de idade</h2>
   <p>O Serviço não é direcionado a menores de 18 anos e não coleta conscientemente dados de crianças ou adolescentes.</p>
 
-  <h2>10. Segurança</h2>
+  <h2>12. Segurança</h2>
   <p>Tráfego cifrado com HTTPS; arquivos e metadados fora do alcance direto do navegador; tokens de exclusão armazenados apenas como hash; limites por IP contra abuso. Detalhes na <a href="/politicas/seguranca.html">Política de Segurança</a>.</p>
 
-  <h2>11. Alterações</h2>
-  <p>Mudanças nesta política serão publicadas nesta página com nova data de vigência. Mudanças relevantes serão destacadas no site por ao menos 30 dias. Histórico: v1.0 (06/10/2026) previa contas de usuário e cookie de sessão, recursos removidos em 08/10/2026.</p>
+  <h2>13. Alterações</h2>
+  <p>Mudanças nesta política serão publicadas nesta página com nova data de vigência. Mudanças relevantes serão destacadas no site por ao menos 30 dias. Histórico: v1.0 (06/10/2026) previa contas de usuário e cookie de sessão, recursos removidos em 08/10/2026. v2.1 (02/11/2026) inclui a versão para Windows, o Google Drive, a busca com Google Lens e a verificação de atualizações.</p>
 </main>
 <footer class="foot simple">SnapLens · <a href="/contato">Contato</a> · <a href="mailto:contato@ribeiros.click">contato@ribeiros.click</a> · © 2026
   <nav><a href="/politicas/">Todas as políticas</a></nav>

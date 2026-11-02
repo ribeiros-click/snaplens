@@ -13,9 +13,15 @@ TOKEN=${HOSTINGER_API_TOKEN:-$(cat "$ROOT/.hostinger/token" 2>/dev/null || true)
 auth=(-H "Authorization: Bearer $TOKEN")
 api() { curl -sS "${auth[@]}" -H "Content-Type: application/json" "$@"; }
 
-# 1. config.php (copiado do exemplo na primeira vez; fica fora do git)
+# 1. config.php (copiado do exemplo na primeira vez; fica fora do git).
+#    No GitHub Actions (CI=true) não existe o config.php real: ele não é criado nem enviado,
+#    e o do servidor fica como está (a extração do zip não apaga arquivos que não estão nele).
 CFG=server/public_html/config.php
-if [ ! -f "$CFG" ]; then
+ZIP_EXCLUDE=()
+if [ -n "${CI:-}" ]; then
+  ZIP_EXCLUDE=(-x "config.php")
+  echo "(CI: config.php do servidor preservado)"
+elif [ ! -f "$CFG" ]; then
   cp server/public_html/config.example.php "$CFG" && chmod 600 "$CFG"
   echo "config.php criado a partir do exemplo — ajuste admin_token se quiser."
 fi
@@ -48,7 +54,7 @@ python3 Tools/build_site.py
 
 # 5. Zip (inclui .htaccess) e upload via TUS
 STAMP=$(date +%Y%m%d_%H%M%S); ZIP=$ROOT/.build/site_$STAMP.zip
-( cd server/public_html && rm -f "$ZIP" && zip -qr "$ZIP" . -x "_data/*" -x "config.example.php" )
+( cd server/public_html && rm -f "$ZIP" && zip -qr "$ZIP" . -x "_data/*" -x "config.example.php" ${ZIP_EXCLUDE[@]+"${ZIP_EXCLUDE[@]}"} )
 UP=$(api -X POST "$API/hosting/v1/files/upload-urls" -d "{\"username\":\"$USERNAME\",\"domain\":\"$DOMAIN\"}")
 URL=$(echo "$UP" | python3 -c "import json,sys; print(json.load(sys.stdin)['url'])")
 AK=$(echo "$UP" | python3 -c "import json,sys; print(json.load(sys.stdin)['auth_key'])")
