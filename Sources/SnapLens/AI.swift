@@ -86,6 +86,40 @@ enum Provider: String, CaseIterable, Identifiable {
     }
     var isConfigured: Bool { (!needsKey || !apiKey.isEmpty) && !model.isEmpty }
 
+    // MARK: Provedores adicionados em Ajustes
+
+    static let maxAdded = 4
+    private static let addedKey = "providers.added"
+
+    /// Provedores que o usuário adicionou (na ordem em que adicionou). Na primeira leitura, migra quem
+    /// já tinha chave, modelo/URL próprios ou era o ativo, para ninguém perder a configuração.
+    static var added: [Provider] {
+        get {
+            if let raw = UserDefaults.standard.stringArray(forKey: addedKey) { return raw.compactMap(Provider.init(rawValue:)) }
+            let active = UserDefaults.standard.string(forKey: "activeProvider") ?? ""
+            let ud = UserDefaults.standard
+            let migrated = allCases.filter { p in
+                !p.apiKey.isEmpty || p.rawValue == active
+                    || !(ud.string(forKey: "model.\(p.rawValue)") ?? "").isEmpty
+                    || !(ud.string(forKey: "base.\(p.rawValue)") ?? "").isEmpty
+            }
+            UserDefaults.standard.set(migrated.map(\.rawValue), forKey: addedKey)
+            return migrated
+        }
+        set { UserDefaults.standard.set(Array(newValue.prefix(maxAdded)).map(\.rawValue), forKey: addedKey) }
+    }
+
+    /// Remove o provedor: apaga chave, modelo e URL; se era o ativo, volta ao nativo.
+    func remove() {
+        Keychain.set("", account: "key.\(rawValue)")
+        UserDefaults.standard.removeObject(forKey: "model.\(rawValue)")
+        UserDefaults.standard.removeObject(forKey: "base.\(rawValue)")
+        if UserDefaults.standard.string(forKey: "activeProvider") == rawValue {
+            UserDefaults.standard.set("", forKey: "activeProvider")
+        }
+        Provider.added = Provider.added.filter { $0 != self }
+    }
+
     /// Provedor ativo; nil = nativo (Apple Vision).
     static var active: Provider? {
         guard let raw = UserDefaults.standard.string(forKey: "activeProvider"),

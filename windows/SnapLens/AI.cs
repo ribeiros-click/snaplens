@@ -53,6 +53,45 @@ public static class Providers
 
     public static bool NeedsKey(this Provider p) => p != Provider.custom;
 
+    // MARK: Provedores adicionados em Ajustes
+
+    public const int MaxAdded = 4;
+
+    /// Provedores que o usuário adicionou (na ordem em que adicionou). Na primeira leitura, migra quem
+    /// já tinha chave, modelo/URL próprios ou era o ativo, para ninguém perder a configuração.
+    public static List<Provider> Added
+    {
+        get
+        {
+            if (Settings.Data.AddedProviders == null)
+            {
+                Settings.Data.AddedProviders = All.Where(p =>
+                        p.ApiKey().Length > 0 || Settings.Data.ActiveProvider == p.ToString()
+                        || Settings.Data.Models.GetValueOrDefault(p.ToString(), "").Length > 0
+                        || Settings.Data.Bases.GetValueOrDefault(p.ToString(), "").Length > 0)
+                    .Select(p => p.ToString()).ToList();
+                Settings.Save();
+            }
+            return Settings.Data.AddedProviders.Select(s => Enum.TryParse<Provider>(s, out var p) ? (Provider?)p : null)
+                .Where(p => p != null).Select(p => p!.Value).Distinct().ToList();
+        }
+        set
+        {
+            Settings.Data.AddedProviders = value.Distinct().Take(MaxAdded).Select(p => p.ToString()).ToList();
+            Settings.Save();
+        }
+    }
+
+    /// Remove o provedor: apaga chave, modelo e URL; se era o ativo, volta ao nativo.
+    public static void Remove(this Provider p)
+    {
+        p.SetApiKey("");
+        Settings.Data.Models.Remove(p.ToString());
+        Settings.Data.Bases.Remove(p.ToString());
+        if (Settings.Data.ActiveProvider == p.ToString()) Settings.Data.ActiveProvider = "";
+        Added = Added.Where(x => x != p).ToList();
+    }
+
     public static string ApiKey(this Provider p) => CredentialStore.Get("key." + p) ?? "";
     public static void SetApiKey(this Provider p, string key) => CredentialStore.Set("key." + p, key.Trim());
 

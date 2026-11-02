@@ -37,6 +37,7 @@
     <AssemblyMetadata Include="OneDriveClientId" Value="$(ONEDRIVE_CLIENT_ID)" />
     <AssemblyMetadata Include="GoogleClientId" Value="$(GOOGLE_CLIENT_ID)" />
     <AssemblyMetadata Include="GoogleClientSecret" Value="$(GOOGLE_CLIENT_SECRET)" />
+    <AssemblyMetadata Include="GoogleApiKey" Value="$(GOOGLE_API_KEY)" />
   </ItemGroup>
 
   <ItemGroup>

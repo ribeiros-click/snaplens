@@ -10,6 +10,7 @@ public sealed class AppSettings
 {
     public string Language { get; set; } = "system";
     public string ActiveProvider { get; set; } = "";
+    public List<string>? AddedProviders { get; set; } // null = ainda não migrado (ver Providers.Added)
     public bool RecSystem { get; set; } = true;
     public bool RecMic { get; set; }
     public string ShareServer { get; set; } = "";
@@ -21,6 +22,13 @@ public sealed class AppSettings
     public string GoogleClientId { get; set; } = "";
     public string GoogleClientSecret { get; set; } = "";
     public string GoogleFolderId { get; set; } = "";
+    public string GoogleApiKey { get; set; } = "";            // vazio = chave do build (seletor de pastas)
+    public Dictionary<string, DriveFolderInfo> CloudFolders { get; set; } = new(); // pasta escolhida por Drive
+    public string BackupDrive { get; set; } = "";             // "" = backup desligado; "gdrive" / "onedrive"
+    public bool BackupImages { get; set; } = true;
+    public bool BackupVideos { get; set; } = true;
+    public bool BackupTexts { get; set; } = true;
+    public DateTime? BackupSince { get; set; }                 // itens a partir daqui entram sozinhos no backup
     public Dictionary<string, string> Models { get; set; } = new();
     public Dictionary<string, string> Bases { get; set; } = new();
     public Dictionary<string, Shortcut> Shortcuts { get; set; } = new();

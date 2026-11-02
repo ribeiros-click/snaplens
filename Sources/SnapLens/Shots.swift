@@ -45,7 +45,10 @@ enum Shots {
         let ud = UserDefaults.standard
         let savedProvider = ud.string(forKey: "activeProvider")
         ud.set("", forKey: "activeProvider")
-        if let img = snapshot(NSHostingView(rootView: SettingsView()), size: CGSize(width: 520, height: 900)) {
+        let savedTab = ud.string(forKey: "settings.tab")
+        ud.set("general", forKey: "settings.tab")
+        defer { if let savedTab { ud.set(savedTab, forKey: "settings.tab") } else { ud.removeObject(forKey: "settings.tab") } }
+        if let img = snapshot(NSHostingView(rootView: SettingsView()), size: CGSize(width: 560, height: 640)) {
             write(img, dir.appendingPathComponent("ajustes.png"))
         }
         if let savedProvider { ud.set(savedProvider, forKey: "activeProvider") } else { ud.removeObject(forKey: "activeProvider") }
@@ -101,7 +104,7 @@ enum Shots {
             write(window(w, title: "SnapLens — " + L("Biblioteca"), over: desktop), dir.appendingPathComponent("08_library.png"))
         }
         let ud = UserDefaults.standard; let savedProvider = ud.string(forKey: "activeProvider"); ud.set("", forKey: "activeProvider")
-        if let w = snapshot(NSHostingView(rootView: SettingsView()), size: CGSize(width: 520, height: 700)) {
+        if let w = snapshot(NSHostingView(rootView: SettingsView()), size: CGSize(width: 560, height: 640)) {
             write(window(w, title: "SnapLens — " + L("Ajustes"), over: desktop), dir.appendingPathComponent("09_settings.png"))
         }
         if let savedProvider { ud.set(savedProvider, forKey: "activeProvider") } else { ud.removeObject(forKey: "activeProvider") }

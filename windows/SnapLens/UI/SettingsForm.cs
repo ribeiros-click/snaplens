@@ -4,19 +4,22 @@ namespace SnapLens;
 
 public sealed class SettingsForm : Form
 {
-    private readonly FlowLayoutPanel root;
+    private FlowLayoutPanel root = null!;   // página (aba) onde Section() adiciona os grupos
+    private readonly TabControl tabs;
     private const int W = 500;
 
     public SettingsForm()
     {
-        Ui.Window(this, L("Ajustes"), 560, 760);
-        MinimumSize = new Size(540, 400);
+        Ui.Window(this, L("Ajustes"), 580, 640);
+        MinimumSize = new Size(560, 400);
         MaximizeBox = false;
         BackColor = Color.FromArgb(243, 243, 245);
-        root = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(16, 12, 16, 16) };
-        Controls.Add(root);
+        tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(14, 5) };
+        Controls.Add(tabs);
+        tabs.SelectedIndexChanged += (_, _) => lastTab = tabs.SelectedIndex;
 
         // Idioma
+        root = Page(L("Geral"));
         var lang = Section(L("Idioma"));
         var langBox = Combo();
         langBox.Items.Add(L("Mesmo do sistema"));
@@ -43,11 +46,13 @@ public sealed class SettingsForm : Form
         general.Controls.Add(loginError);
 
         // Atalhos
+        root = Page(L("Atalhos"));
         var keys = Section(L("Atalhos globais"));
         foreach (var action in Shortcuts.All) keys.Controls.Add(ShortcutRow(action));
         keys.Controls.Add(Note(L("Clique no atalho e pressione a nova combinação (precisa incluir Ctrl, Alt ou Win).")));
 
         // Gravação
+        root = Page(L("Gravação"));
         var rec = Section(L("Gravação de vídeo"));
         var sys = Check(L("Gravar áudio do sistema"), Settings.Data.RecSystem);
         sys.CheckedChanged += (_, _) => { Settings.Data.RecSystem = sys.Checked; Settings.Save(); };
@@ -58,38 +63,72 @@ public sealed class SettingsForm : Form
         rec.Controls.Add(Note(L("Grava a tela inteira onde está o mouse, em MP4. Com os dois desligados, o vídeo fica sem áudio. Os vídeos vão para a Biblioteca.")));
 
         // Compartilhar
+        root = Page(L("Compartilhar"));
         var share = Section(L("Compartilhar por link público"));
         var server = new TextBox { Width = 290, Text = Settings.Data.ShareServer, PlaceholderText = ShareConfig.DefaultServer };
         server.TextChanged += (_, _) => { Settings.Data.ShareServer = server.Text.Trim(); Settings.Save(); };
         Row(share, L("Servidor"), server);
         share.Controls.Add(Note(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.")));
 
-        // OneDrive / Google Drive
-        var cloud = Section(L("Salvar no OneDrive ou Google Drive"));
-        foreach (var d in Enum.GetValues<CloudDrive>()) cloud.Controls.Add(CloudRow(d));
+        // Google Drive (OneDrive oculto por enquanto: ver Cloud.Visible)
+        var cloud = Section(L("Salvar no Google Drive"));
+        foreach (var d in Cloud.Visible) cloud.Controls.Add(CloudRow(d));
         cloud.Controls.Add(Note(L("Conecte uma conta para escolher, na hora de compartilhar, onde salvar a imagem. Ela vai para a pasta SnapLens do Drive e recebe um link de leitura público. O SnapLens só acessa os arquivos que ele mesmo cria (no Google Drive) e guarda o acesso no Gerenciador de Credenciais.")));
         var advanced = new LinkLabel { Text = L("Credenciais OAuth (avançado)"), AutoSize = true, Margin = new Padding(0, 6, 0, 2) };
         var advPanel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = Padding.Empty };
         advanced.LinkClicked += (_, _) => advPanel.Visible = !advPanel.Visible;
-        var odId = new TextBox { Width = 290, Text = Settings.Data.OneDriveClientId };
-        odId.TextChanged += (_, _) => { Settings.Data.OneDriveClientId = odId.Text.Trim(); Settings.Save(); };
-        Row(advPanel, L("OneDrive — ID do cliente"), odId);
+        if (Cloud.Visible.Contains(CloudDrive.OneDrive))
+        {
+            var odId = new TextBox { Width = 290, Text = Settings.Data.OneDriveClientId };
+            odId.TextChanged += (_, _) => { Settings.Data.OneDriveClientId = odId.Text.Trim(); Settings.Save(); };
+            Row(advPanel, L("OneDrive — ID do cliente"), odId);
+        }
         var gId = new TextBox { Width = 290, Text = Settings.Data.GoogleClientId };
         gId.TextChanged += (_, _) => { Settings.Data.GoogleClientId = gId.Text.Trim(); Settings.Save(); };
         Row(advPanel, L("Google — ID do cliente"), gId);
         var gSecret = new TextBox { Width = 290, Text = Settings.Data.GoogleClientSecret, UseSystemPasswordChar = true };
         gSecret.TextChanged += (_, _) => { Settings.Data.GoogleClientSecret = gSecret.Text.Trim(); Settings.Save(); };
         Row(advPanel, L("Google — chave secreta do cliente"), gSecret);
+        var gKey = new TextBox { Width = 290, Text = Settings.Data.GoogleApiKey, UseSystemPasswordChar = true };
+        gKey.TextChanged += (_, _) => { Settings.Data.GoogleApiKey = gKey.Text.Trim(); Settings.Save(); };
+        Row(advPanel, L("Google — chave de API (seletor de pastas)"), gKey);
         advPanel.Controls.Add(Note(L("Deixe em branco para usar as credenciais deste build. Preencha só se você registrou o seu próprio app na Microsoft ou no Google (redirecionamento: http://localhost).")));
         cloud.Controls.Add(advanced);
         cloud.Controls.Add(advPanel);
+        BuildBackupSection(Section(L("Backup automático da Biblioteca")));
 
-        // Provedor de IA
+        // IA
+        aiPage = Page(L("IA"));
+        BuildAiPage();
+        tabs.SelectedIndex = Math.Clamp(lastTab, 0, tabs.TabCount - 1);
+    }
+
+    private static int lastTab;   // aba reaberta na próxima vez (enquanto o app estiver aberto)
+    private readonly FlowLayoutPanel aiPage;
+
+    private FlowLayoutPanel Page(string title)
+    {
+        var page = new TabPage(title) { BackColor = BackColor, UseVisualStyleBackColor = false };
+        var panel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(12, 12, 12, 16) };
+        page.Controls.Add(panel);
+        tabs.TabPages.Add(page);
+        return panel;
+    }
+
+    /// Aba IA: só os provedores adicionados aparecem (até 4); "Adicionar provedor" lista os que faltam.
+    /// Reconstruída a cada adição/remoção.
+    private void BuildAiPage()
+    {
+        aiPage.SuspendLayout();
+        foreach (Control c in aiPage.Controls.Cast<Control>().ToList()) { aiPage.Controls.Remove(c); c.Dispose(); }
+        root = aiPage;
+        var added = Providers.Added;
+
         var ai = Section(L("Provedor de IA"));
         var active = Combo(260);
         active.Items.Add(L("Nativo (Windows OCR, offline)"));
-        foreach (var p in Providers.All) active.Items.Add(p.Name());
-        active.SelectedIndex = Enum.TryParse<Provider>(Settings.Data.ActiveProvider, out var cur) ? Array.IndexOf(Providers.All, cur) + 1 : 0;
+        foreach (var p in added) active.Items.Add(p.Name());
+        active.SelectedIndex = Enum.TryParse<Provider>(Settings.Data.ActiveProvider, out var cur) && added.Contains(cur) ? added.IndexOf(cur) + 1 : 0;
         var titles = new Dictionary<Provider, GroupBox>();
         void RefreshTitles()
         {
@@ -98,14 +137,38 @@ public sealed class SettingsForm : Form
         }
         active.SelectedIndexChanged += (_, _) =>
         {
-            Settings.Data.ActiveProvider = active.SelectedIndex == 0 ? "" : Providers.All[active.SelectedIndex - 1].ToString();
+            Settings.Data.ActiveProvider = active.SelectedIndex <= 0 ? "" : added[active.SelectedIndex - 1].ToString();
             Settings.Save();
             RefreshTitles();
         };
         Row(ai, L("Provedor ativo"), active);
         ai.Controls.Add(Note(L("“Descrever com IA” usa o provedor ativo. Sem provedor (ou sem chave configurada), usa o modo nativo. O OCR de texto sempre roda localmente com o Windows OCR.")));
 
-        foreach (var p in Providers.All)
+        var addRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 6, 0, 2) };
+        var remaining = Providers.All.Where(p => !added.Contains(p)).ToList();
+        System.Windows.Forms.Button? addButton = null;
+        addButton = Ui.Button("+  " + L("Adicionar provedor"), () =>
+        {
+            var menu = new ContextMenuStrip();
+            foreach (var p in remaining)
+                menu.Items.Add(p.Name(), null, (_, _) =>
+                {
+                    var list = Providers.Added;
+                    if (list.Count >= Providers.MaxAdded || list.Contains(p)) return;
+                    list.Add(p);
+                    Providers.Added = list;
+                    BeginInvoke(BuildAiPage);
+                });
+            menu.Show(addButton!, new Point(0, addButton!.Height));
+        });
+        addButton.Enabled = added.Count < Providers.MaxAdded && remaining.Count > 0;
+        addRow.Controls.Add(addButton);
+        var count = Ui.Label(L("%@ de %@", added.Count, Providers.MaxAdded), Ui.Small, Ui.Secondary);
+        count.Margin = new Padding(8, 7, 0, 0);
+        addRow.Controls.Add(count);
+        ai.Controls.Add(addRow);
+
+        foreach (var p in added)
         {
             var box = Section(p.Name());
             titles[p] = (GroupBox)box.Parent!;
@@ -115,7 +178,7 @@ public sealed class SettingsForm : Form
                 p.SetApiKey(key.Text);
                 // Primeira chave salva: o provedor vira o ativo (como no macOS).
                 if (key.Text.Trim().Length > 0 && Settings.Data.ActiveProvider == "")
-                    active.SelectedIndex = Array.IndexOf(Providers.All, p) + 1;
+                    active.SelectedIndex = added.IndexOf(p) + 1;
             };
             Row(box, p.NeedsKey() ? "API key" : L("API key (opcional)"), key);
             var model = new TextBox { Width = 290, Text = Settings.Data.Models.GetValueOrDefault(p.ToString(), ""), PlaceholderText = p.DefaultModel().Length == 0 ? L("ex.: llava, gpt-4o…") : p.DefaultModel() };
@@ -125,8 +188,19 @@ public sealed class SettingsForm : Form
             baseUrl.TextChanged += (_, _) => { Settings.Data.Bases[p.ToString()] = baseUrl.Text.Trim(); Settings.Save(); };
             Row(box, L("URL base"), baseUrl);
             box.Controls.Add(Note(p.Hint()));
+            var remove = new LinkLabel { Text = L("Remover"), AutoSize = true, LinkColor = Color.Firebrick, Margin = new Padding(0, 4, 0, 2) };
+            remove.LinkClicked += (_, _) =>
+            {
+                var ok = MessageBox.Show(this, L("A chave de API, o modelo e a URL deste provedor serão apagados."), L("Remover %@?", p.Name()),
+                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK;
+                if (!ok) return;
+                p.Remove();
+                BeginInvoke(BuildAiPage);
+            };
+            box.Controls.Add(remove);
         }
         RefreshTitles();
+        aiPage.ResumeLayout();
     }
 
     // MARK: Construção
@@ -167,6 +241,64 @@ public sealed class SettingsForm : Form
     }
 
     /// Linha "OneDrive · conectado como x  [Desconectar]" / "[Conectar…]".
+    /// Backup automático da Biblioteca para um Drive conectado (mão única).
+    private void BuildBackupSection(FlowLayoutPanel box)
+    {
+        var target = Combo(260);
+        var images = Check(L("Screenshots e imagens"), Settings.Data.BackupImages);
+        images.CheckedChanged += (_, _) => { Settings.Data.BackupImages = images.Checked; Settings.Save(); };
+        var videos = Check(L("Gravações de vídeo"), Settings.Data.BackupVideos);
+        videos.CheckedChanged += (_, _) => { Settings.Data.BackupVideos = videos.Checked; Settings.Save(); };
+        var texts = Check(L("Textos (OCR, IA e copiados)"), Settings.Data.BackupTexts);
+        texts.CheckedChanged += (_, _) => { Settings.Data.BackupTexts = texts.Checked; Settings.Save(); };
+        var status = Ui.Label("", Ui.Small, Ui.Secondary);
+        status.Margin = new Padding(8, 7, 0, 0);
+        var sendAll = Ui.Button(L("Enviar a Biblioteca agora"), () => DriveBackup.Run(all: true));
+        var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 2) };
+        actions.Controls.Add(sendAll);
+        actions.Controls.Add(status);
+        var note = Note("");
+        var options = new Control[] { images, videos, texts, actions };
+
+        Row(box, L("Enviar para"), target);
+        foreach (var c in options) box.Controls.Add(c);
+        box.Controls.Add(note);
+
+        var drives = new List<CloudDrive>();
+        bool updating = false;
+        void Refresh()
+        {
+            if (box.IsDisposed) return;
+            if (box.InvokeRequired) { box.BeginInvoke(Refresh); return; }
+            updating = true;
+            drives = Cloud.Visible.Where(d => d.IsConnected()).ToList();
+            target.Items.Clear();
+            target.Items.Add(L("Desligado"));
+            foreach (var d in drives) target.Items.Add(d.Name());
+            var current = DriveBackup.Drive;
+            target.SelectedIndex = current is CloudDrive c && drives.Contains(c) ? drives.IndexOf(c) + 1 : 0;
+            foreach (var o in options) o.Visible = current != null;
+            note.Text = current is CloudDrive cd
+                ? L("Pasta: %@. Cada captura nova vai sozinha para lá. É uma cópia de segurança: apagar na Biblioteca não apaga no Drive.", cd.FolderDisplay())
+                : drives.Count == 0
+                    ? L("Conecte o Google Drive acima para ativar o backup.")
+                    : L("Escolha um Drive para copiar sozinho cada captura nova, e a Biblioteca inteira quando quiser.");
+            status.Text = DriveBackup.Status;
+            sendAll.Enabled = !DriveBackup.Running;
+            updating = false;
+        }
+        target.SelectedIndexChanged += (_, _) =>
+        {
+            if (updating) return;
+            DriveBackup.Drive = target.SelectedIndex <= 0 ? null : drives[target.SelectedIndex - 1];
+            DriveBackup.Run();
+        };
+        Settings.Changed += Refresh;
+        DriveBackup.StatusChanged += Refresh;
+        box.Disposed += (_, _) => { Settings.Changed -= Refresh; DriveBackup.StatusChanged -= Refresh; };
+        Refresh();
+    }
+
     private static Control CloudRow(CloudDrive drive)
     {
         var panel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Margin = new Padding(0, 2, 0, 4) };
@@ -180,11 +312,40 @@ public sealed class SettingsForm : Form
         error.MaximumSize = new Size(W - 30, 0);
         error.Visible = false;
         System.Windows.Forms.Button? button = null;
+        var folderRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 2, 0, 0) };
+        var folderLabel = Ui.Label("", Ui.Small, Ui.Secondary);
+        folderLabel.Margin = new Padding(0, 6, 8, 0);
+        folderLabel.MaximumSize = new Size(W - 24 - 200, 0);
+        folderLabel.AutoEllipsis = true;
+        System.Windows.Forms.Button? choose = null;
+        choose = Ui.Button(L("Escolher…"), async () =>
+        {
+            error.Visible = false;
+            choose!.Enabled = false;
+            try
+            {
+                if (await Cloud.PickGoogleFolder() is DriveFolderInfo f) drive.SetFolder(f);
+                if (panel.FindForm() is Form form) form.Activate();
+            }
+            catch (Exception e) { error.Text = e.Message; error.Visible = true; }
+            choose.Enabled = true;
+        });
+        var reset = Ui.Button(L("Padrão"), () => drive.SetFolder(null));
+        folderRow.Controls.Add(folderLabel);
+        folderRow.Controls.Add(choose);
+        folderRow.Controls.Add(reset);
+        var noKey = Ui.Label(L("Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”."), Ui.Small, Ui.Orange, wrap: true);
+        noKey.MaximumSize = new Size(W - 30, 0);
 
         void Refresh()
         {
             if (status.IsDisposed) return;
             if (status.InvokeRequired) { status.BeginInvoke(Refresh); return; }
+            folderRow.Visible = drive.IsConnected();
+            folderLabel.Text = L("Pasta: %@", drive.FolderDisplay());
+            choose!.Enabled = drive.CanPickFolder();
+            noKey.Visible = drive.IsConnected() && !drive.CanPickFolder();
+            reset.Visible = drive.Folder() != null;
             var account = drive.AccountName();
             status.Text = drive.IsConnected()
                 ? drive.Name() + " · " + (account.Length > 0 ? L("Conectado como %@", account) : L("Conectado"))
@@ -214,6 +375,8 @@ public sealed class SettingsForm : Form
         row.Controls.Add(status, 0, 0);
         row.Controls.Add(button, 1, 0);
         panel.Controls.Add(row);
+        panel.Controls.Add(folderRow);
+        panel.Controls.Add(noKey);
         panel.Controls.Add(error);
         Refresh();
         return panel;

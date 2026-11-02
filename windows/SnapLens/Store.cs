@@ -30,6 +30,8 @@ public sealed class Item
     public bool? ShareOnce { get; set; }
     /// "onedrive" / "gdrive" quando o link é de um arquivo no Drive do usuário; null = servidor SnapLens.
     public string? ShareDrive { get; set; }
+    /// Backup automático: id do arquivo em cada Drive ("onedrive"/"gdrive" → id).
+    public Dictionary<string, string>? Backups { get; set; }
 }
 
 /// Biblioteca: screenshots, vídeos e textos em %APPDATA%\SnapLens (history.json + images\ + videos\).
@@ -39,6 +41,8 @@ public sealed class Store
     public const int MaxItems = 500;
 
     public event Action? Changed;
+    /// Disparado a cada item novo, para o backup automático.
+    public event Action<Item>? Inserted;
     public List<Item> Items { get; private set; } = new();
 
     public string Dir { get; }
@@ -89,6 +93,7 @@ public sealed class Store
             Items.Remove(last);
         }
         Save();
+        Inserted?.Invoke(item);
         return item;
     }
 

@@ -1,9 +1,12 @@
 ﻿# Compila o SnapLens para Windows (x64, self-contained: não exige .NET instalado).
 # Saída: windows\dist\SnapLens\SnapLens.exe e windows\dist\SnapLens-windows-x64.zip
 # Com Inno Setup instalado (iscc no PATH), gera também windows\dist\SnapLens-Setup.exe.
-param([string]$Version = "1.0.0")
+# Versão: arquivo VERSION na raiz (suba a cada release); build = nº de commits (sobe sozinho).
+param([string]$Version = "", [string]$Build = "")
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
+if (-not $Version) { $Version = (Get-Content (Join-Path $root "..\VERSION") -Raw).Trim() }
+if (-not $Build) { $Build = (git -C $root rev-list --count HEAD 2>$null); if (-not $Build) { $Build = "1" } }
 
 # Credenciais OAuth do OneDrive / Google Drive (opcional): .secrets\cloud.env com linhas CHAVE=valor
 # (ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET). O csproj lê essas variáveis de ambiente.
@@ -28,7 +31,7 @@ if (-not (Test-Path $icon)) { python (Join-Path $root "..\Tools\make_icon_window
 if (Test-Path $out) { Remove-Item -Recurse -Force $out }
 & $dotnet publish (Join-Path $root "SnapLens\SnapLens.csproj") -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true `
-    -p:Version=$Version -o $out
+    -p:Version=$Version -p:FileVersion="$Version.$Build" -p:InformationalVersion="$Version ($Build)" -o $out
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish falhou" }
 
 $zip = Join-Path $dist "SnapLens-windows-x64.zip"

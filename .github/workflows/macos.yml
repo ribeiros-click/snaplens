@@ -5,7 +5,7 @@
 #   MACOS_CERT_P12        certificado "Developer ID Application" exportado do Keychain (.p12) em base64
 #   MACOS_CERT_PASSWORD   senha do .p12
 #   NOTARY_APPLE_ID, NOTARY_TEAM_ID, NOTARY_PASSWORD   (senha específica de app) para notarizar
-# Credenciais OAuth dos Drives: ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+# Credenciais dos Drives: ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_API_KEY (seletor de pastas).
 name: macOS build
 
 on:
@@ -30,8 +30,11 @@ jobs:
       ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo: o nº do build é a contagem de commits
 
       - name: Import Developer ID certificate
         if: env.MACOS_CERT_P12 != ''
@@ -49,8 +52,8 @@ jobs:
 
       - name: Build DMG
         run: |
+          # Versão vem do arquivo VERSION; numa tag v*, a tag manda.
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then export VERSION="${GITHUB_REF_NAME#v}"; fi
-          export BUILD="$GITHUB_RUN_NUMBER"
           if [ -n "$NOTARY_APPLE_ID" ] && [ -n "$NOTARY_PASSWORD" ] && [ -n "$MACOS_CERT_P12" ]; then
             xcrun notarytool store-credentials snaplens --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD"
             export NOTARY_PROFILE=snaplens
