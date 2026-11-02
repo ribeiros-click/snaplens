@@ -1,0 +1,53 @@
+# Site lens.ribeiros.click: a cada merge no main que mexe no app ou no site, gera os prints a partir da
+# interface real (SnapLens --render-shots num Mac do GitHub), monta as páginas nos 5 idiomas e publica
+# na Hostinger. Sem o secret HOSTINGER_API_TOKEN, só gera os prints (artefato "site-shots") sem publicar.
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths: ["server/public_html/**", "Tools/build_site.py", "Sources/**", ".github/workflows/site.yml"]
+  pull_request: # só gera os prints (artefato), para conferir antes do merge
+    paths: ["server/public_html/**", "Tools/build_site.py", "Sources/**", ".github/workflows/site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      HOSTINGER_API_TOKEN: ${{ secrets.HOSTINGER_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build app (for the screenshots)
+        run: ./build.sh
+
+      - name: Render screenshots from the real UI
+        run: |
+          OUT="$RUNNER_TEMP/shots"
+          # perl alarm: aborta se a renderização travar (o macOS não tem o comando timeout)
+          perl -e 'alarm 300; exec @ARGV' SnapLens.app/Contents/MacOS/SnapLens --render-shots "$OUT" pt-BR
+          ls -la "$OUT"
+          for f in overlay biblioteca ajustes compartilhar; do
+            test -s "$OUT/$f.png" || { echo "Faltou $f.png"; exit 1; }
+            cp "$OUT/$f.png" server/public_html/assets/img/
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-shots
+          path: server/public_html/assets/img/*.png
+
+      - name: Publish site
+        if: env.HOSTINGER_API_TOKEN != '' && github.ref == 'refs/heads/main'
+        run: ./server/deploy.sh

@@ -1,0 +1,16 @@
+# Novidades do SnapLens
+
+Cada PR que muda algo visível adiciona uma linha na seção da versão atual (a do arquivo `VERSION`).
+O texto da seção vira as notas da release no GitHub, publicada a cada merge no `main`.
+
+## 1.11
+- **Novo:** aviso de versão nova. O SnapLens consulta a página de versões uma vez por dia e mostra “SnapLens X disponível — baixar” no menu (Mac e Windows). Dá para verificar na hora em “Verificar atualizações…” ou desligar em Ajustes → Geral.
+- **Site:** textos e prints atualizados (Google Lens, Google Drive, backup, abas dos Ajustes); a política de privacidade passa a cobrir o Google Drive, o Google Lens, o Windows e a verificação de atualizações.
+- **Releases:** notas de versão em português, a partir deste arquivo.
+
+## 1.10
+- **Novo:** buscar com Google Lens — selecione algo na tela (⌃⌥L / Ctrl+Alt+L) e o Google Lens abre com produtos parecidos, lojas e preços.
+- **Novo:** salvar no Google Drive — escolha “Salvar em” ao compartilhar; a pasta de destino é escolhida no seletor do Google.
+- **Novo:** backup automático da Biblioteca no Google Drive (screenshots, gravações e textos).
+- **Novo:** Ajustes em abas; provedores de IA adicionados sob demanda (até 4).
+- **Novo:** o SnapLens inicia com o macOS por padrão.

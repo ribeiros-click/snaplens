@@ -18,3 +18,5 @@ server/public_html/apple-touch-icon.png
 windows/dist/
 windows/SnapLens/bin/
 windows/SnapLens/obj/
+windows/SnapLens.Tests/bin/
+windows/SnapLens.Tests/obj/

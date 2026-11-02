@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startClipboardMonitor()
         startDriveExpiry()
         DriveBackup.shared.start()
+        NotificationCenter.default.addObserver(forName: UpdateChecker.changed, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.rebuildMenu() }
+        }
+        UpdateChecker.shared.start()
         NotificationCenter.default.addObserver(forName: Recorder.stateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.recordingStateChanged() }
         }
@@ -119,9 +123,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu() {
         let menu = NSMenu()
+        if let update = UpdateChecker.shared.available {
+            let item = NSMenuItem(title: L("⬆︎ SnapLens %@ disponível — baixar", update.version), action: #selector(openUpdate), keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
         let about = NSMenuItem(title: L("Sobre o SnapLens"), action: #selector(showAbout), keyEquivalent: "")
         about.target = self
         menu.addItem(about)
+        let checkUpdates = NSMenuItem(title: L("Verificar atualizações…"), action: #selector(checkForUpdates), keyEquivalent: "")
+        checkUpdates.target = self
+        menu.addItem(checkUpdates)
         menu.addItem(.separator())
         for action in ShortcutAction.allCases {
             let sc = action.shortcut
@@ -206,6 +219,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func revealLog() { NSWorkspace.shared.activateFileViewerSelecting([Trace.fileURL]) }
     @objc func copyLog() { copyText(Trace.tail(200)); Toast.show(L("Log copiado — cole no chat"), symbol: "doc.on.doc") }
+
+    @objc func openUpdate() {
+        if let u = UpdateChecker.shared.available?.url { NSWorkspace.shared.open(u) }
+    }
+
+    @objc func checkForUpdates() { Task { await UpdateChecker.shared.check(manual: true) } }
 
     @objc func cancelCapture() { overlay?.dismiss(); overlay = nil; OverlayWindow.closeAll() }
 

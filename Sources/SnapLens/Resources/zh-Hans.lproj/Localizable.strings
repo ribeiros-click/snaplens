@@ -274,3 +274,10 @@
 "Textos (OCR, IA e copiados)" = "文本（OCR、AI 和复制的内容）";
 "Voltar para a pasta SnapLens criada pelo app" = "恢复为应用创建的 SnapLens 文件夹";
 "Para escolher outra pasta, falta a chave de API do Google: cadastre o secret GOOGLE_API_KEY e gere um build novo, ou cole a chave em “Credenciais OAuth (avançado)”." = "要选择其他文件夹，还缺少 Google API 密钥：请添加 GOOGLE_API_KEY secret 并重新构建，或在“OAuth 凭据（高级）”中粘贴密钥。";
+"SnapLens %@ disponível — veja no menu" = "SnapLens %@ 已发布——请查看菜单";
+"Você está na versão mais recente (%@)" = "已是最新版本（%@）";
+"Não foi possível verificar atualizações" = "无法检查更新";
+"⬆︎ SnapLens %@ disponível — baixar" = "⬆︎ SnapLens %@ 已发布——下载";
+"Verificar atualizações…" = "检查更新…";
+"Avisar quando houver versão nova" = "有新版本时提醒我";
+"Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho." = "SnapLens 每天检查一次 GitHub 上的版本页面，不会自动下载任何内容。";

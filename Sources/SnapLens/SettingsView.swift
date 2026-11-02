@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var launchAtLogin = LoginItem.isOn
     @State private var loginStatus = LoginItem.status
     @State private var loginError: String?
+    @AppStorage("updates.check") private var checkUpdates = true
 
     enum Tab: String { case general, shortcuts, recording, share, ai }
     @AppStorage("settings.tab") private var tab: Tab = .general
@@ -66,6 +67,9 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
+            Toggle(L("Avisar quando houver versão nova"), isOn: $checkUpdates)
+            Text(L("Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho."))
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 

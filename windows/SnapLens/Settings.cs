@@ -33,6 +33,8 @@ public sealed class AppSettings
     public Dictionary<string, string> Bases { get; set; } = new();
     public Dictionary<string, Shortcut> Shortcuts { get; set; } = new();
     public bool WelcomeShown { get; set; }
+    public bool CheckUpdates { get; set; } = true;            // aviso de versão nova (GitHub, 1×/dia)
+    public string UpdateNotified { get; set; } = "";          // última versão já avisada
 }
 
 public static class Settings

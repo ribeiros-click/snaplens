@@ -53,6 +53,9 @@ jobs:
           security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
           rm -f "$RUNNER_TEMP/cert.p12"
 
+      - name: Unit tests
+        run: swift test
+
       - name: Build DMG
         run: |
           # Versão vem do arquivo VERSION; numa tag v*, a tag manda.
@@ -75,6 +78,11 @@ jobs:
         run: |
           # main: release v<VERSION> (criada no primeiro merge da versão; merges seguintes atualizam os arquivos).
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"; else TAG="v$(tr -d '[:space:]' < VERSION)"; fi
+          # Notas: a seção da versão no CHANGELOG.md (senão, as notas automáticas do GitHub).
+          python3 Tools/release_notes.py "${TAG#v}" "$RUNNER_TEMP/notes.md"
+          if [ -s "$RUNNER_TEMP/notes.md" ]; then NOTES=(--notes-file "$RUNNER_TEMP/notes.md"); else NOTES=(--generate-notes); fi
           # O workflow do Windows roda em paralelo e também pode criar a release.
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "SnapLens ${TAG#v}" --generate-notes --target "$GITHUB_SHA" || true
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "SnapLens ${TAG#v}" "${NOTES[@]}" --target "$GITHUB_SHA" || true
+          # Merges seguintes da mesma versão atualizam as notas com o CHANGELOG atual.
+          if [ -s "$RUNNER_TEMP/notes.md" ]; then gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md" || true; fi
           gh release upload "$TAG" SnapLens.dmg --clobber

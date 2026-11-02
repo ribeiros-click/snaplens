@@ -26,6 +26,10 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Unit tests
+        shell: pwsh
+        run: dotnet test windows/SnapLens.Tests -c Release
+
       - name: Build
         shell: pwsh
         env:
@@ -52,10 +56,15 @@ jobs:
         run: |
           # main: release v<VERSION> (criada no primeiro merge da versão; merges seguintes atualizam os arquivos).
           $tag = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME } else { "v" + (Get-Content VERSION -Raw).Trim() }
+          # Notas: a seção da versão no CHANGELOG.md (senão, as notas automáticas do GitHub).
+          $notes = Join-Path $env:RUNNER_TEMP "notes.md"
+          python Tools/release_notes.py $tag.TrimStart("v") $notes
+          $hasNotes = (Test-Path $notes) -and ((Get-Item $notes).Length -gt 0)
           gh release view $tag 2>$null | Out-Null
           if ($LASTEXITCODE -ne 0) {
             # O workflow do macOS roda em paralelo e também pode criar a release.
-            gh release create $tag --title ("SnapLens " + $tag.TrimStart("v")) --generate-notes --target $env:GITHUB_SHA
+            if ($hasNotes) { gh release create $tag --title ("SnapLens " + $tag.TrimStart("v")) --notes-file $notes --target $env:GITHUB_SHA }
+            else { gh release create $tag --title ("SnapLens " + $tag.TrimStart("v")) --generate-notes --target $env:GITHUB_SHA }
             if ($LASTEXITCODE -ne 0) { Write-Host "Release $tag já foi criada pelo outro workflow." }
           }
           gh release upload $tag windows/dist/SnapLens-Setup.exe windows/dist/SnapLens-windows-x64.zip --clobber

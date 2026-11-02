@@ -57,6 +57,8 @@ public sealed class TrayApp : ApplicationContext
         driveExpiryTimer.Tick += async (_, _) => await PurgeExpiredDriveShares();
         driveExpiryTimer.Start();
         DriveBackup.Start();
+        UpdateChecker.Changed += () => ui.Post(_ => RebuildMenu(), null);
+        UpdateChecker.Start();
         ui.Post(async _ => await PurgeExpiredDriveShares(), null);
 
         // Troca de idioma: refaz o menu e as janelas (que guardam textos já traduzidos).
@@ -88,7 +90,15 @@ public sealed class TrayApp : ApplicationContext
     {
         var old = tray.ContextMenuStrip;
         var menu = new ContextMenuStrip();
+        if (UpdateChecker.Available is { } available)
+        {
+            var (version, url) = available;
+            var update = new ToolStripMenuItem(L("⬆︎ SnapLens %@ disponível — baixar", version), null, (_, _) => Open(url)) { Font = new Font(menu.Font, FontStyle.Bold) };
+            menu.Items.Add(update);
+            menu.Items.Add(new ToolStripSeparator());
+        }
         menu.Items.Add(L("Sobre o SnapLens"), null, (_, _) => ShowAbout());
+        menu.Items.Add(L("Verificar atualizações…"), null, async (_, _) => await UpdateChecker.Check(manual: true));
         menu.Items.Add(new ToolStripSeparator());
         foreach (var action in Shortcuts.All)
         {
