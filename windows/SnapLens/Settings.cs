@@ -28,7 +28,15 @@ public sealed class AppSettings
     public bool BackupImages { get; set; } = true;
     public bool BackupVideos { get; set; } = true;
     public bool BackupTexts { get; set; } = true;
-    public DateTime? BackupSince { get; set; }                 // itens a partir daqui entram sozinhos no backup
+    public DateTime? BackupSince { get; set; }
+    public bool SyncEnabled { get; set; }                    // sincronizar a Biblioteca entre computadores
+    public int SyncDays { get; set; } = 7;                   // janela de dias (1–90)
+    public bool SyncImages { get; set; } = true;
+    public bool SyncVideos { get; set; }
+    public bool SyncTexts { get; set; } = true;
+    public string SyncDeviceId { get; set; } = "";
+    public string SyncDeviceName { get; set; } = "";
+    public string SyncFolderId { get; set; } = "";                 // itens a partir daqui entram sozinhos no backup
     public Dictionary<string, string> Models { get; set; } = new();
     public Dictionary<string, string> Bases { get; set; } = new();
     public Dictionary<string, Shortcut> Shortcuts { get; set; } = new();

@@ -281,3 +281,14 @@
 "Verificar atualizações…" = "Verifica aggiornamenti…";
 "Avisar quando houver versão nova" = "Avvisami quando c'è una nuova versione";
 "Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho." = "Una volta al giorno SnapLens controlla la pagina delle versioni su GitHub. Non viene scaricato nulla automaticamente.";
+"Recebendo %@ de %@…" = "Ricezione %@ di %@…";
+"Sincronizado às %@" = "Sincronizzato alle %@";
+"Sincronização pausada: %@" = "Sincronizzazione in pausa: %@";
+"Sincronizar entre dispositivos" = "Sincronizza tra dispositivi";
+"Sincronizar a Biblioteca com meus outros computadores" = "Sincronizza la Libreria con i miei altri computer";
+"Últimos %@ dias" = "Ultimi %@ giorni";
+"Dias a sincronizar" = "Giorni da sincronizzare";
+"Nome deste computador" = "Nome di questo computer";
+"Sincronizar agora" = "Sincronizza ora";
+"Ligue em cada computador (Mac ou Windows) conectado à mesma conta do Google Drive. As capturas dos últimos dias aparecem na Biblioteca de todos. Os arquivos ficam na pasta “SnapLens Sync” do Drive; apagar num computador não apaga nos outros." = "Attivalo su ogni computer (Mac o Windows) collegato allo stesso account Google Drive. Le catture degli ultimi giorni compaiono nella Libreria di tutti. I file stanno nella cartella «SnapLens Sync» del Drive; eliminare su un computer non elimina sugli altri.";
+"Conecte o Google Drive acima para sincronizar a Biblioteca entre computadores." = "Collega Google Drive qui sopra per sincronizzare la Libreria tra computer.";

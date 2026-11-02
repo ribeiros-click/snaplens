@@ -32,6 +32,10 @@ public sealed class Item
     public string? ShareDrive { get; set; }
     /// Backup automático: id do arquivo em cada Drive ("onedrive"/"gdrive" → id).
     public Dictionary<string, string>? Backups { get; set; }
+    /// Sincronização entre dispositivos: id do arquivo na pasta "SnapLens Sync" do Google Drive.
+    public string? SyncId { get; set; }
+    /// Nome do computador de origem, quando o item veio de outro dispositivo (null = criado aqui).
+    public string? Device { get; set; }
 }
 
 /// Biblioteca: screenshots, vídeos e textos em %APPDATA%\SnapLens (history.json + images\ + videos\).
@@ -98,6 +102,22 @@ public sealed class Store
     }
 
     public Item? Find(Guid id) => Items.FirstOrDefault(i => i.Id == id);
+
+    /// Item vindo de outro dispositivo: grava o arquivo e insere na posição da data (sem disparar backup/sync).
+    public void ImportSynced(Item item, byte[]? data)
+    {
+        if (Items.Any(i => i.Id == item.Id)) return;
+        if (data != null && PathFor(item) is string path) System.IO.File.WriteAllBytes(path, data);
+        int at = Items.FindIndex(i => i.Date < item.Date);
+        Items.Insert(at < 0 ? Items.Count : at, item);
+        while (Items.Count(i => i.Kind != ItemKind.video) > MaxItems)
+        {
+            var last = Items.Last(i => i.Kind != ItemKind.video);
+            DeleteFile(last);
+            Items.Remove(last);
+        }
+        Save();
+    }
 
     public void Update(Item item)
     {

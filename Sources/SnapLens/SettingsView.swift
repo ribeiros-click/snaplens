@@ -167,6 +167,7 @@ private struct ShareSection: View {
             }
         }
         BackupSection()
+        SyncSection()
     }
 
     @AppStorage("cloud.onedrive.clientId") private var oneDriveID = ""
@@ -223,6 +224,52 @@ private struct BackupSection: View {
     private func refresh() {
         let now = CloudDrive.visible.filter(\.isConnected)
         if now != connected { connected = now }
+    }
+}
+
+/// Sincronização da Biblioteca entre computadores pelo Google Drive.
+private struct SyncSection: View {
+    @AppStorage("sync.enabled") private var enabled = false
+    @AppStorage("sync.days") private var days = 7
+    @AppStorage("sync.images") private var images = true
+    @AppStorage("sync.videos") private var videos = false
+    @AppStorage("sync.texts") private var texts = true
+    @ObservedObject private var sync = LibrarySync.shared
+    @State private var connected = CloudDrive.gdrive.isConnected
+    @State private var name = LibrarySync.deviceName
+
+    var body: some View {
+        Section(L("Sincronizar entre dispositivos")) {
+            Toggle(L("Sincronizar a Biblioteca com meus outros computadores"), isOn: Binding(
+                get: { enabled && connected },
+                set: { on in enabled = on; if on { sync.run() } }))
+                .disabled(!connected)
+            if enabled && connected {
+                Stepper(value: $days, in: 1...90) {
+                    Text(L("Últimos %@ dias", String(days)))
+                }
+                Toggle(L("Screenshots e imagens"), isOn: $images)
+                Toggle(L("Textos (OCR, IA e copiados)"), isOn: $texts)
+                Toggle(L("Gravações de vídeo"), isOn: $videos)
+                TextField(L("Nome deste computador"), text: $name)
+                    .onSubmit { LibrarySync.deviceName = name }
+                    .onChange(of: name) { _, v in LibrarySync.deviceName = v }
+                HStack {
+                    Button(L("Sincronizar agora")) { sync.run() }.disabled(sync.running)
+                    if sync.running { ProgressView().controlSize(.small) }
+                    Spacer()
+                    Text(sync.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+            }
+            Text(connected
+                 ? L("Ligue em cada computador (Mac ou Windows) conectado à mesma conta do Google Drive. As capturas dos últimos dias aparecem na Biblioteca de todos. Os arquivos ficam na pasta “SnapLens Sync” do Drive; apagar num computador não apaga nos outros.")
+                 : L("Conecte o Google Drive acima para sincronizar a Biblioteca entre computadores."))
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification).receive(on: RunLoop.main)) { _ in
+            let now = CloudDrive.gdrive.isConnected
+            if now != connected { connected = now }
+        }
     }
 }
 

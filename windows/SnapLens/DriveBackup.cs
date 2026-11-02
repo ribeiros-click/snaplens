@@ -75,7 +75,7 @@ public static class DriveBackup
         var since = Settings.Data.BackupSince ?? DateTime.Now;
         var key = drive.Key();
         return Store.Shared.Items.Where(i =>
-                i.Date >= since && (i.Backups == null || !i.Backups.ContainsKey(key)) &&
+                i.Date >= since && (i.Backups == null || !i.Backups.ContainsKey(key)) && i.Device == null &&
                 (i.Kind.IsImage() ? Settings.Data.BackupImages
                     : i.Kind == ItemKind.video ? Settings.Data.BackupVideos
                     : Settings.Data.BackupTexts && !string.IsNullOrEmpty(i.Text)))

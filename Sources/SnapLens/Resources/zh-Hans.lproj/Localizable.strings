@@ -281,3 +281,14 @@
 "Verificar atualizações…" = "检查更新…";
 "Avisar quando houver versão nova" = "有新版本时提醒我";
 "Uma vez por dia, o SnapLens consulta a página de versões no GitHub. Nada é baixado sozinho." = "SnapLens 每天检查一次 GitHub 上的版本页面，不会自动下载任何内容。";
+"Recebendo %@ de %@…" = "正在接收 %@ / %@…";
+"Sincronizado às %@" = "已于 %@ 同步";
+"Sincronização pausada: %@" = "同步已暂停：%@";
+"Sincronizar entre dispositivos" = "在设备间同步";
+"Sincronizar a Biblioteca com meus outros computadores" = "将资料库与我的其他电脑同步";
+"Últimos %@ dias" = "最近 %@ 天";
+"Dias a sincronizar" = "同步天数";
+"Nome deste computador" = "此电脑的名称";
+"Sincronizar agora" = "立即同步";
+"Ligue em cada computador (Mac ou Windows) conectado à mesma conta do Google Drive. As capturas dos últimos dias aparecem na Biblioteca de todos. Os arquivos ficam na pasta “SnapLens Sync” do Drive; apagar num computador não apaga nos outros." = "在每台连接到同一 Google Drive 账户的电脑（Mac 或 Windows）上开启。最近几天的截图会出现在所有电脑的资料库中。文件保存在 Drive 的“SnapLens Sync”文件夹中；在一台电脑上删除不会影响其他电脑。";
+"Conecte o Google Drive acima para sincronizar a Biblioteca entre computadores." = "请先在上方连接 Google Drive，以在电脑之间同步资料库。";

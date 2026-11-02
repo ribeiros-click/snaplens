@@ -3,6 +3,9 @@
 Cada PR que muda algo visível adiciona uma linha na seção da versão atual (a do arquivo `VERSION`).
 O texto da seção vira as notas da release no GitHub, publicada a cada merge no `main`.
 
+## 1.12
+- **Novo:** sincronizar a Biblioteca entre computadores. Ligue em Ajustes → Compartilhar em cada Mac ou PC conectado à mesma conta do Google Drive: as capturas e textos dos últimos dias (você escolhe de 1 a 90) aparecem em todos, com o nome do computador de origem. Vídeos são opcionais. Apagar num computador não apaga nos outros.
+
 ## 1.11
 - **Novo:** aviso de versão nova. O SnapLens consulta a página de versões uma vez por dia e mostra “SnapLens X disponível — baixar” no menu (Mac e Windows). Dá para verificar na hora em “Verificar atualizações…” ou desligar em Ajustes → Geral.
 - **Site:** textos e prints atualizados (Google Lens, Google Drive, backup, abas dos Ajustes); a política de privacidade passa a cobrir o Google Drive, o Google Lens, o Windows e a verificação de atualizações.
