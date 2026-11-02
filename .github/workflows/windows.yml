@@ -26,6 +26,10 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Unit tests
+        shell: pwsh
+        run: dotnet test windows/SnapLens.Tests -c Release
+
       - name: Build
         shell: pwsh
         env:

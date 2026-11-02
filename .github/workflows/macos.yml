@@ -53,6 +53,9 @@ jobs:
           security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
           rm -f "$RUNNER_TEMP/cert.p12"
 
+      - name: Unit tests
+        run: swift test
+
       - name: Build DMG
         run: |
           # Versão vem do arquivo VERSION; numa tag v*, a tag manda.
