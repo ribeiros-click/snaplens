@@ -46,7 +46,11 @@ Click 🔗 and you're done: the link is generated and copied. A dialog shows the
 
 Hosted at [lens.ribeiros.click](https://lens.ribeiros.click/) — or point the app at your own server in Settings.
 
-### Or save to your OneDrive / Google Drive
+### Or save to your Google Drive
+
+(OneDrive support is implemented but hidden for now — see `CloudDrive.visible` / `Cloud.Visible`.)
+
+**Automatic backup:** Settings → Share → *Automatic library backup* copies every new screenshot, recording and text to the chosen Drive folder (one-way; deleting in the Library doesn't delete in the drive). *Upload library now* sends older items too.
 
 Connect an account in Settings and the share dialog gains a **Save to** choice: the image goes to a `SnapLens` folder in your drive and gets a public view-only link. Differences from the SnapLens server: no view-once; expiry is enforced by the app itself (it deletes expired files when running), plus a real link expiry on OneDrive for work/school accounts. Revoking from the Library deletes the file. Google Drive uses the `drive.file` scope, so SnapLens can only see files it created.
 
@@ -140,6 +144,7 @@ Diagnostics: the app writes a trace to `~/Library/Logs/SnapLens/snaplens.log` (m
 Builds need OAuth client IDs, read from environment variables (or `.secrets/cloud.env`, git-ignored, as `KEY=value` lines) by `build.sh` and `windows/build.ps1`, and from the repository secrets of the same names in GitHub Actions. Without them, the drives show as “not configured”; users can also paste their own IDs under Settings → OAuth credentials (advanced).
 
 - `ONEDRIVE_CLIENT_ID` — [Microsoft Entra](https://entra.microsoft.com) → App registrations → New registration → *Accounts in any organizational directory and personal Microsoft accounts* → Authentication → Add platform → **Mobile and desktop applications** → redirect URI `http://localhost` → Allow public client flows: **Yes**. API permissions: Microsoft Graph delegated `Files.ReadWrite`, `offline_access`.
+- `GOOGLE_API_KEY` — same Google Cloud project → enable the **Google Picker API** → Credentials → Create credentials → **API key**, restricted to the Google Picker API. Used only by the folder picker (Settings → Share → Folder → Choose…), which opens Google's own picker in the browser and grants access to the chosen folder while keeping the `drive.file` scope.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — [Google Cloud Console](https://console.cloud.google.com) → enable the **Google Drive API** → OAuth consent screen (External, scope `.../auth/drive.file`, publish to production) → Credentials → Create OAuth client ID → **Desktop app**. For desktop apps Google does not treat the secret as confidential; the login uses PKCE.
 
 The login opens in the default browser and returns to a one-shot listener on `http://localhost:<random port>` (loopback only). Refresh tokens live in the Keychain / Windows Credential Manager.

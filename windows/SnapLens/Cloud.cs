@@ -31,9 +31,9 @@ public static class ShareDestinations
         _ => null,
     };
 
-    /// Destinos utilizáveis agora (o servidor sempre; os Drives só se conectados).
+    /// Destinos utilizáveis agora (o servidor sempre; os Drives só se exibidos e conectados).
     public static ShareDestination[] Available =>
-        Enum.GetValues<ShareDestination>().Where(d => d.Drive() is not CloudDrive c || c.IsConnected()).ToArray();
+        Enum.GetValues<ShareDestination>().Where(d => d.Drive() is not CloudDrive c || (Cloud.Visible.Contains(c) && c.IsConnected())).ToArray();
 
     public static ShareDestination Current
     {
@@ -48,10 +48,20 @@ public static class ShareDestinations
 
 public sealed record CloudUpload(string Id, string Url);
 
+public sealed class DriveFolderInfo
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+}
+
 public static class Cloud
 {
     public const string FolderName = "SnapLens";
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(120) };
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(15) };
+
+    /// Drives exibidos no app. O OneDrive está pronto no código, mas oculto por enquanto:
+    /// para reativá-lo, basta voltar a incluir `CloudDrive.OneDrive` aqui.
+    public static readonly CloudDrive[] Visible = { CloudDrive.GDrive };
     private static readonly Dictionary<CloudDrive, (string Token, DateTime Until)> Tokens = new();
 
     // MARK: Configuração (IDs gravados no build a partir de variáveis de ambiente, ou Ajustes → avançado)
@@ -69,6 +79,31 @@ public static class Cloud
 
     public static bool IsConfigured(this CloudDrive d) =>
         d.ClientId().Length > 0 && (d == CloudDrive.OneDrive || d.ClientSecret().Length > 0);
+
+    /// Chave de API do Google, usada só pelo seletor de pastas (Google Picker).
+    public static string ApiKey(this CloudDrive d) =>
+        d == CloudDrive.GDrive ? Config(Settings.Data.GoogleApiKey, "GoogleApiKey") : "";
+
+    /// Número do projeto do Google (o prefixo do ID do cliente), exigido pelo Google Picker.
+    private static string ProjectNumber(this CloudDrive d) => new(d.ClientId().TakeWhile(char.IsDigit).ToArray());
+
+    /// No Windows, só o Google tem seletor de pastas (o OneDrive está oculto).
+    public static bool CanPickFolder(this CloudDrive d) => d == CloudDrive.GDrive && d.IsConnected() && d.ApiKey().Length > 0;
+
+    // MARK: Pasta de destino
+
+    /// Pasta escolhida pelo usuário; null = pasta "SnapLens" criada pelo app na raiz.
+    public static DriveFolderInfo? Folder(this CloudDrive d) =>
+        Settings.Data.CloudFolders.TryGetValue(d.Key(), out var f) && f.Id.Length > 0 ? f : null;
+
+    public static void SetFolder(this CloudDrive d, DriveFolderInfo? f)
+    {
+        if (f == null) Settings.Data.CloudFolders.Remove(d.Key());
+        else Settings.Data.CloudFolders[d.Key()] = f;
+        Settings.Save();
+    }
+
+    public static string FolderDisplay(this CloudDrive d) => d.Folder()?.Name ?? FolderName;
 
     private static string Config(string custom, string metadataKey)
     {
@@ -96,6 +131,7 @@ public static class Cloud
     {
         CredentialStore.Set(RefreshKey(d), "");
         Settings.Data.CloudAccounts.Remove(d.Key());
+        Settings.Data.CloudFolders.Remove(d.Key());
         Settings.Save();
         lock (Tokens) Tokens.Remove(d);
     }
@@ -152,8 +188,17 @@ public static class Cloud
 
     // MARK: Upload / exclusão
 
-    public static Task<CloudUpload> Upload(CloudDrive d, byte[] png, string fileName, DateTime? expires) =>
-        d == CloudDrive.OneDrive ? OneDriveUpload(png, fileName, expires) : GoogleUpload(png, fileName);
+    /// Envia para o Drive e cria um link de leitura público (compartilhar).
+    public static async Task<CloudUpload> Upload(CloudDrive d, byte[] png, string fileName, DateTime? expires)
+    {
+        var file = await UploadFile(d, () => new MemoryStream(png, writable: false), png.Length, fileName, "image/png");
+        return d == CloudDrive.OneDrive ? await OneDriveLink(file.Id, expires) : await GoogleLink(file.Id, file.WebLink);
+    }
+
+    /// Envia um arquivo para a pasta escolhida (ou "SnapLens"), sem link público. Usado também pelo backup.
+    /// `open` é chamado a cada tentativa (um conteúdo HTTP não pode ser reenviado após renovar o token).
+    public static Task<(string Id, string? WebLink)> UploadFile(CloudDrive d, Func<Stream> open, long length, string fileName, string mime) =>
+        d == CloudDrive.OneDrive ? OneDrivePut(open, fileName, mime) : GooglePut(open, length, fileName, mime);
 
     /// Apaga o arquivo do Drive (o link deixa de funcionar). Arquivo já inexistente conta como sucesso.
     public static async Task Delete(CloudDrive d, string id)
@@ -169,14 +214,25 @@ public static class Cloud
         try { await Delete(d, id); } catch (Exception e) { Trace.Log($"cloud: não apagou {id}: {e.Message}"); }
     }
 
-    private static async Task<CloudUpload> OneDriveUpload(byte[] png, string fileName, DateTime? expires)
+    private static HttpContent StreamBody(Func<Stream> open, string mime)
     {
-        var path = Uri.EscapeDataString(FolderName) + "/" + Uri.EscapeDataString(fileName);
-        var item = await Api(CloudDrive.OneDrive, HttpMethod.Put,
-            $"https://graph.microsoft.com/v1.0/me/drive/root:/{path}:/content?@microsoft.graph.conflictBehavior=rename",
-            () => Bytes(png, "image/png"));
-        var id = item["id"]?.GetValue<string>() ?? throw new AppError(L("Resposta inesperada do %@.", "OneDrive"));
+        var c = new StreamContent(open());
+        c.Headers.ContentType = MediaTypeHeaderValue.Parse(mime);
+        return c;
+    }
 
+    // OneDrive (oculto por enquanto): envio simples, suficiente para imagens e textos.
+    private static async Task<(string, string?)> OneDrivePut(Func<Stream> open, string fileName, string mime)
+    {
+        var url = CloudDrive.OneDrive.Folder() is DriveFolderInfo f
+            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{Uri.EscapeDataString(f.Id)}:/{Uri.EscapeDataString(fileName)}:/content?@microsoft.graph.conflictBehavior=rename"
+            : $"https://graph.microsoft.com/v1.0/me/drive/root:/{Uri.EscapeDataString(FolderName)}/{Uri.EscapeDataString(fileName)}:/content?@microsoft.graph.conflictBehavior=rename";
+        var item = await Api(CloudDrive.OneDrive, HttpMethod.Put, url, () => StreamBody(open, mime));
+        return (item["id"]?.GetValue<string>() ?? throw new AppError(L("Resposta inesperada do %@.", "OneDrive")), null);
+    }
+
+    private static async Task<CloudUpload> OneDriveLink(string id, DateTime? expires)
+    {
         // Link anônimo com validade; contas pessoais não aceitam validade e algumas empresas bloqueiam links anônimos.
         var attempts = new List<object>();
         if (expires is DateTime e) attempts.Add(new { type = "view", scope = "anonymous", expirationDateTime = e.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture) });
@@ -195,6 +251,10 @@ public static class Cloud
         await DeleteQuietly(CloudDrive.OneDrive, id); // sem link, não deixa o arquivo órfão no Drive
         throw last ?? new AppError(L("Resposta inesperada do %@.", "OneDrive"));
     }
+
+    /// Pasta de destino: a escolhida no seletor do Google ou a "SnapLens" criada pelo app.
+    private static async Task<string> GoogleTarget() =>
+        CloudDrive.GDrive.Folder() is DriveFolderInfo f ? f.Id : await GoogleFolder();
 
     private static async Task<string> GoogleFolder()
     {
@@ -223,19 +283,44 @@ public static class Cloud
         return id;
     }
 
-    private static async Task<CloudUpload> GoogleUpload(byte[] png, string fileName)
+    private static async Task<(string, string?)> GooglePut(Func<Stream> open, long length, string fileName, string mime)
     {
-        var folder = await GoogleFolder();
-        HttpContent Body()
+        var folder = await GoogleTarget();
+        var meta = new { name = fileName, parents = new[] { folder } };
+        JsonObject file;
+        if (length <= 5 * 1024 * 1024)
         {
-            var multi = new MultipartContent("related", "SnapLens-" + Guid.NewGuid());
-            multi.Add(Json(new { name = fileName, parents = new[] { folder } }));
-            multi.Add(Bytes(png, "image/png"));
-            return multi;
+            // Upload "multipart": metadados + conteúdo numa só requisição (limite de 5 MB).
+            HttpContent Body()
+            {
+                var multi = new MultipartContent("related", "SnapLens-" + Guid.NewGuid());
+                multi.Add(Json(meta));
+                multi.Add(StreamBody(open, mime));
+                return multi;
+            }
+            file = await Api(CloudDrive.GDrive, HttpMethod.Post,
+                "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", Body);
         }
-        var file = await Api(CloudDrive.GDrive, HttpMethod.Post,
-            "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink", Body);
+        else
+        {
+            // Upload "resumable" (vídeos): abre a sessão e envia o conteúdo num único PUT.
+            var (_, location) = await Send(CloudDrive.GDrive, HttpMethod.Post,
+                "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink", () =>
+                {
+                    var c = Json(meta);
+                    c.Headers.TryAddWithoutValidation("X-Upload-Content-Type", mime);
+                    c.Headers.TryAddWithoutValidation("X-Upload-Content-Length", length.ToString(CultureInfo.InvariantCulture));
+                    return c;
+                });
+            if (location == null) throw new AppError(L("Resposta inesperada do %@.", "Google Drive"));
+            (file, _) = await Send(CloudDrive.GDrive, HttpMethod.Put, location.ToString(), () => StreamBody(open, mime));
+        }
         var id = file["id"]?.GetValue<string>() ?? throw new AppError(L("Resposta inesperada do %@.", "Google Drive"));
+        return (id, file["webViewLink"]?.GetValue<string>());
+    }
+
+    private static async Task<CloudUpload> GoogleLink(string id, string? webLink)
+    {
         try
         {
             await Api(CloudDrive.GDrive, HttpMethod.Post, $"https://www.googleapis.com/drive/v3/files/{id}/permissions",
@@ -246,8 +331,67 @@ public static class Cloud
             await DeleteQuietly(CloudDrive.GDrive, id); // ex.: domínio do Workspace bloqueia link público
             throw;
         }
-        return new CloudUpload(id, file["webViewLink"]?.GetValue<string>() ?? $"https://drive.google.com/file/d/{id}/view");
+        return new CloudUpload(id, webLink ?? $"https://drive.google.com/file/d/{id}/view");
     }
+
+    /// Abre o seletor de pastas do Google (Google Picker) no navegador. Escolher uma pasta lá dá ao SnapLens
+    /// acesso só àquela pasta, sem pedir permissão para ver o Drive inteiro. Retorna null se cancelado.
+    public static async Task<DriveFolderInfo?> PickGoogleFolder()
+    {
+        var d = CloudDrive.GDrive;
+        if (d.ApiKey().Length == 0) throw new AppError(L("Falta a chave de API do Google (veja “avançado”)."));
+        var token = await AccessToken(d);
+        var cfg = JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["token"] = token, ["key"] = d.ApiKey(), ["app"] = d.ProjectNumber(),
+            ["hl"] = L10n.Code == "zh-Hans" ? "zh-CN" : L10n.Code,
+            ["title"] = L("Escolha a pasta do SnapLens"),
+            ["ok"] = L("Pronto! Pode fechar esta aba e voltar ao SnapLens."),
+            ["cancel"] = L("Cancelado. Pode fechar esta aba."),
+        }).Replace("</", "<\\/");
+        var page = PickerPage(cfg);
+        using var receiver = new LoopbackReceiver((path, _) => path switch
+        {
+            "/" => (page, false),
+            "/picked" => ("ok", true),
+            _ => null,
+        });
+        TrayApp.Open($"http://localhost:{receiver.Port}/");
+        var reply = await receiver.WaitForCallback(TimeSpan.FromMinutes(10));
+        if (!reply.TryGetValue("id", out var id) || id.Length == 0) return null;
+        var name = reply.GetValueOrDefault("name", "");
+        return new DriveFolderInfo { Id = id, Name = name.Length > 0 ? name : "Google Drive" };
+    }
+
+    private static string PickerPage(string configJson) => """
+        <!doctype html><meta charset=utf-8><title>SnapLens</title>
+        <body style="font:16px 'Segoe UI',sans-serif;text-align:center;padding-top:60px;color:#333">
+        <h2>SnapLens</h2><p id=msg>…</p>
+        <script>
+        const CFG = %CFG%;
+        function done(q, text) {
+          fetch('/picked?' + q).finally(() => { document.getElementById('msg').textContent = text; });
+        }
+        function onPick(data) {
+          if (data.action === google.picker.Action.PICKED) {
+            const d = data.docs[0];
+            done('id=' + encodeURIComponent(d.id) + '&name=' + encodeURIComponent(d.name), CFG.ok);
+          } else if (data.action === google.picker.Action.CANCEL) {
+            done('cancel=1', CFG.cancel);
+          }
+        }
+        function start() {
+          const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+            .setIncludeFolders(true).setSelectFolderEnabled(true)
+            .setMimeTypes('application/vnd.google-apps.folder');
+          new google.picker.PickerBuilder().addView(view)
+            .setOAuthToken(CFG.token).setDeveloperKey(CFG.key).setAppId(CFG.app)
+            .setLocale(CFG.hl).setTitle(CFG.title).setCallback(onPick)
+            .build().setVisible(true);
+        }
+        </script>
+        <script src="https://apis.google.com/js/api.js" onload="gapi.load('picker', start)"></script>
+        """.Replace("%CFG%", configJson);
 
     private static async Task<string> FetchAccountName(CloudDrive d)
     {
@@ -273,7 +417,10 @@ public static class Cloud
     }
 
     /// `body` é uma fábrica: um HttpContent não pode ser reenviado após um 401 (token renovado).
-    private static async Task<JsonObject> Api(CloudDrive d, HttpMethod method, string url, Func<HttpContent>? body = null, bool allow404 = false)
+    private static async Task<JsonObject> Api(CloudDrive d, HttpMethod method, string url, Func<HttpContent>? body = null, bool allow404 = false) =>
+        (await Send(d, method, url, body, allow404)).Json;
+
+    private static async Task<(JsonObject Json, Uri? Location)> Send(CloudDrive d, HttpMethod method, string url, Func<HttpContent>? body = null, bool allow404 = false)
     {
         for (int attempt = 0; ; attempt++)
         {
@@ -283,9 +430,9 @@ public static class Cloud
             using var resp = await Http.SendAsync(req);
             var text = await resp.Content.ReadAsStringAsync();
             if (resp.StatusCode == HttpStatusCode.Unauthorized && attempt == 0) { lock (Tokens) Tokens.Remove(d); continue; }
-            if (allow404 && resp.StatusCode == HttpStatusCode.NotFound) return new JsonObject();
+            if (allow404 && resp.StatusCode == HttpStatusCode.NotFound) return (new JsonObject(), null);
             if (!resp.IsSuccessStatusCode) throw new AppError($"{d.Name()}: {ErrorMessage(text, (int)resp.StatusCode)}");
-            return Parse(text);
+            return (Parse(text), resp.Headers.Location);
         }
     }
 
@@ -349,8 +496,18 @@ public static class Cloud
         private readonly CancellationTokenSource cts = new();
         public int Port { get; }
 
-        public LoopbackReceiver()
+        /// (caminho, query) → (html, encerra a espera?) ou null = 404.
+        private readonly Func<string, Dictionary<string, string>, (string Html, bool Done)?> route;
+
+        /// Padrão: qualquer `/?…` é o retorno do login OAuth.
+        private static (string Html, bool Done)? OAuthRoute(string path, Dictionary<string, string> query) =>
+            path == "/" && query.Count > 0
+                ? ($"<!doctype html><meta charset=utf-8><title>SnapLens</title><body style='font:16px Segoe UI,sans-serif;text-align:center;padding-top:80px'><h2>SnapLens ✓</h2><p>{WebUtility.HtmlEncode(L("Pronto! Pode fechar esta aba e voltar ao SnapLens."))}</p>", true)
+                : null;
+
+        public LoopbackReceiver(Func<string, Dictionary<string, string>, (string Html, bool Done)?>? route = null)
         {
+            this.route = route ?? ((p, q) => OAuthRoute(p, q));
             v4 = new TcpListener(IPAddress.Loopback, 0);
             v4.Start();
             Port = ((IPEndPoint)v4.LocalEndpoint).Port;
@@ -396,19 +553,17 @@ public static class Cloud
                 var line = Encoding.UTF8.GetString(buf, 0, n).Split("\r\n")[0];
                 var target = line.Split(' ').ElementAtOrDefault(1) ?? "";
                 var qi = target.IndexOf('?');
-                bool isCallback = qi >= 0 && target[..qi] == "/";
-                var html = isCallback
-                    ? $"<!doctype html><meta charset=utf-8><title>SnapLens</title><body style='font:16px Segoe UI,sans-serif;text-align:center;padding-top:80px'><h2>SnapLens ✓</h2><p>{WebUtility.HtmlEncode(L("Pronto! Pode fechar esta aba e voltar ao SnapLens."))}</p>"
-                    : "Not found";
-                var body = Encoding.UTF8.GetBytes(html);
-                var head = Encoding.ASCII.GetBytes($"HTTP/1.1 {(isCallback ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
-                await stream.WriteAsync(head, readTimeout.Token);
-                await stream.WriteAsync(body, readTimeout.Token);
-                if (!isCallback) return;
-                result.TrySetResult(target[(qi + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries)
+                var path = qi >= 0 ? target[..qi] : target;
+                var query = qi < 0 ? new Dictionary<string, string>() : target[(qi + 1)..].Split('&', StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Split('=', 2))
                     .GroupBy(p => WebUtility.UrlDecode(p[0]))
-                    .ToDictionary(g => g.Key, g => WebUtility.UrlDecode(g.First().ElementAtOrDefault(1) ?? "")));
+                    .ToDictionary(g => g.Key, g => WebUtility.UrlDecode(g.First().ElementAtOrDefault(1) ?? ""));
+                var response = route(path, query);
+                var body = Encoding.UTF8.GetBytes(response?.Html ?? "Not found");
+                var head = Encoding.ASCII.GetBytes($"HTTP/1.1 {(response == null ? "404 Not Found" : "200 OK")}\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
+                await stream.WriteAsync(head, readTimeout.Token);
+                await stream.WriteAsync(body, readTimeout.Token);
+                if (response?.Done == true) result.TrySetResult(query);
             }
             catch (Exception e) { Trace.Log("oauth loopback: " + e.Message); } // conexão ociosa ou resetada: ignora
         }

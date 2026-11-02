@@ -70,25 +70,32 @@ public sealed class SettingsForm : Form
         Row(share, L("Servidor"), server);
         share.Controls.Add(Note(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app.")));
 
-        // OneDrive / Google Drive
-        var cloud = Section(L("Salvar no OneDrive ou Google Drive"));
-        foreach (var d in Enum.GetValues<CloudDrive>()) cloud.Controls.Add(CloudRow(d));
+        // Google Drive (OneDrive oculto por enquanto: ver Cloud.Visible)
+        var cloud = Section(L("Salvar no Google Drive"));
+        foreach (var d in Cloud.Visible) cloud.Controls.Add(CloudRow(d));
         cloud.Controls.Add(Note(L("Conecte uma conta para escolher, na hora de compartilhar, onde salvar a imagem. Ela vai para a pasta SnapLens do Drive e recebe um link de leitura público. O SnapLens só acessa os arquivos que ele mesmo cria (no Google Drive) e guarda o acesso no Gerenciador de Credenciais.")));
         var advanced = new LinkLabel { Text = L("Credenciais OAuth (avançado)"), AutoSize = true, Margin = new Padding(0, 6, 0, 2) };
         var advPanel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = Padding.Empty };
         advanced.LinkClicked += (_, _) => advPanel.Visible = !advPanel.Visible;
-        var odId = new TextBox { Width = 290, Text = Settings.Data.OneDriveClientId };
-        odId.TextChanged += (_, _) => { Settings.Data.OneDriveClientId = odId.Text.Trim(); Settings.Save(); };
-        Row(advPanel, L("OneDrive — ID do cliente"), odId);
+        if (Cloud.Visible.Contains(CloudDrive.OneDrive))
+        {
+            var odId = new TextBox { Width = 290, Text = Settings.Data.OneDriveClientId };
+            odId.TextChanged += (_, _) => { Settings.Data.OneDriveClientId = odId.Text.Trim(); Settings.Save(); };
+            Row(advPanel, L("OneDrive — ID do cliente"), odId);
+        }
         var gId = new TextBox { Width = 290, Text = Settings.Data.GoogleClientId };
         gId.TextChanged += (_, _) => { Settings.Data.GoogleClientId = gId.Text.Trim(); Settings.Save(); };
         Row(advPanel, L("Google — ID do cliente"), gId);
         var gSecret = new TextBox { Width = 290, Text = Settings.Data.GoogleClientSecret, UseSystemPasswordChar = true };
         gSecret.TextChanged += (_, _) => { Settings.Data.GoogleClientSecret = gSecret.Text.Trim(); Settings.Save(); };
         Row(advPanel, L("Google — chave secreta do cliente"), gSecret);
+        var gKey = new TextBox { Width = 290, Text = Settings.Data.GoogleApiKey, UseSystemPasswordChar = true };
+        gKey.TextChanged += (_, _) => { Settings.Data.GoogleApiKey = gKey.Text.Trim(); Settings.Save(); };
+        Row(advPanel, L("Google — chave de API (seletor de pastas)"), gKey);
         advPanel.Controls.Add(Note(L("Deixe em branco para usar as credenciais deste build. Preencha só se você registrou o seu próprio app na Microsoft ou no Google (redirecionamento: http://localhost).")));
         cloud.Controls.Add(advanced);
         cloud.Controls.Add(advPanel);
+        BuildBackupSection(Section(L("Backup automático da Biblioteca")));
 
         // IA
         aiPage = Page(L("IA"));
@@ -234,6 +241,64 @@ public sealed class SettingsForm : Form
     }
 
     /// Linha "OneDrive · conectado como x  [Desconectar]" / "[Conectar…]".
+    /// Backup automático da Biblioteca para um Drive conectado (mão única).
+    private void BuildBackupSection(FlowLayoutPanel box)
+    {
+        var target = Combo(260);
+        var images = Check(L("Screenshots e imagens"), Settings.Data.BackupImages);
+        images.CheckedChanged += (_, _) => { Settings.Data.BackupImages = images.Checked; Settings.Save(); };
+        var videos = Check(L("Gravações de vídeo"), Settings.Data.BackupVideos);
+        videos.CheckedChanged += (_, _) => { Settings.Data.BackupVideos = videos.Checked; Settings.Save(); };
+        var texts = Check(L("Textos (OCR, IA e copiados)"), Settings.Data.BackupTexts);
+        texts.CheckedChanged += (_, _) => { Settings.Data.BackupTexts = texts.Checked; Settings.Save(); };
+        var status = Ui.Label("", Ui.Small, Ui.Secondary);
+        status.Margin = new Padding(8, 7, 0, 0);
+        var sendAll = Ui.Button(L("Enviar a Biblioteca agora"), () => DriveBackup.Run(all: true));
+        var actions = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 2) };
+        actions.Controls.Add(sendAll);
+        actions.Controls.Add(status);
+        var note = Note("");
+        var options = new Control[] { images, videos, texts, actions };
+
+        Row(box, L("Enviar para"), target);
+        foreach (var c in options) box.Controls.Add(c);
+        box.Controls.Add(note);
+
+        var drives = new List<CloudDrive>();
+        bool updating = false;
+        void Refresh()
+        {
+            if (box.IsDisposed) return;
+            if (box.InvokeRequired) { box.BeginInvoke(Refresh); return; }
+            updating = true;
+            drives = Cloud.Visible.Where(d => d.IsConnected()).ToList();
+            target.Items.Clear();
+            target.Items.Add(L("Desligado"));
+            foreach (var d in drives) target.Items.Add(d.Name());
+            var current = DriveBackup.Drive;
+            target.SelectedIndex = current is CloudDrive c && drives.Contains(c) ? drives.IndexOf(c) + 1 : 0;
+            foreach (var o in options) o.Visible = current != null;
+            note.Text = current is CloudDrive cd
+                ? L("Pasta: %@. Cada captura nova vai sozinha para lá. É uma cópia de segurança: apagar na Biblioteca não apaga no Drive.", cd.FolderDisplay())
+                : drives.Count == 0
+                    ? L("Conecte o Google Drive acima para ativar o backup.")
+                    : L("Escolha um Drive para copiar sozinho cada captura nova, e a Biblioteca inteira quando quiser.");
+            status.Text = DriveBackup.Status;
+            sendAll.Enabled = !DriveBackup.Running;
+            updating = false;
+        }
+        target.SelectedIndexChanged += (_, _) =>
+        {
+            if (updating) return;
+            DriveBackup.Drive = target.SelectedIndex <= 0 ? null : drives[target.SelectedIndex - 1];
+            DriveBackup.Run();
+        };
+        Settings.Changed += Refresh;
+        DriveBackup.StatusChanged += Refresh;
+        box.Disposed += (_, _) => { Settings.Changed -= Refresh; DriveBackup.StatusChanged -= Refresh; };
+        Refresh();
+    }
+
     private static Control CloudRow(CloudDrive drive)
     {
         var panel = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Margin = new Padding(0, 2, 0, 4) };
@@ -247,11 +312,37 @@ public sealed class SettingsForm : Form
         error.MaximumSize = new Size(W - 30, 0);
         error.Visible = false;
         System.Windows.Forms.Button? button = null;
+        var folderRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 2, 0, 0) };
+        var folderLabel = Ui.Label("", Ui.Small, Ui.Secondary);
+        folderLabel.Margin = new Padding(0, 6, 8, 0);
+        folderLabel.MaximumSize = new Size(W - 24 - 200, 0);
+        folderLabel.AutoEllipsis = true;
+        System.Windows.Forms.Button? choose = null;
+        choose = Ui.Button(L("Escolher…"), async () =>
+        {
+            error.Visible = false;
+            choose!.Enabled = false;
+            try
+            {
+                if (await Cloud.PickGoogleFolder() is DriveFolderInfo f) drive.SetFolder(f);
+                if (panel.FindForm() is Form form) form.Activate();
+            }
+            catch (Exception e) { error.Text = e.Message; error.Visible = true; }
+            choose.Enabled = true;
+        });
+        var reset = Ui.Button(L("Padrão"), () => drive.SetFolder(null));
+        folderRow.Controls.Add(folderLabel);
+        folderRow.Controls.Add(choose);
+        folderRow.Controls.Add(reset);
 
         void Refresh()
         {
             if (status.IsDisposed) return;
             if (status.InvokeRequired) { status.BeginInvoke(Refresh); return; }
+            folderRow.Visible = drive.IsConnected();
+            folderLabel.Text = L("Pasta: %@", drive.FolderDisplay());
+            choose!.Enabled = drive.CanPickFolder();
+            reset.Visible = drive.Folder() != null;
             var account = drive.AccountName();
             status.Text = drive.IsConnected()
                 ? drive.Name() + " · " + (account.Length > 0 ? L("Conectado como %@", account) : L("Conectado"))
@@ -281,6 +372,7 @@ public sealed class SettingsForm : Form
         row.Controls.Add(status, 0, 0);
         row.Controls.Add(button, 1, 0);
         panel.Controls.Add(row);
+        panel.Controls.Add(folderRow);
         panel.Controls.Add(error);
         Refresh();
         return panel;

@@ -56,6 +56,7 @@ public sealed class TrayApp : ApplicationContext
         recTimer.Tick += (_, _) => UpdateRecordingTimer();
         driveExpiryTimer.Tick += async (_, _) => await PurgeExpiredDriveShares();
         driveExpiryTimer.Start();
+        DriveBackup.Start();
         ui.Post(async _ => await PurgeExpiredDriveShares(), null);
 
         // Troca de idioma: refaz o menu e as janelas (que guardam textos já traduzidos).
