@@ -17,6 +17,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo: o nº do build é a contagem de commits
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -30,8 +32,8 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          $version = if ($env:GITHUB_REF_TYPE -eq "tag") { $env:GITHUB_REF_NAME.TrimStart("v") } else { "1.0.0" }
-          ./windows/build.ps1 -Version $version
+          # Versão vem do arquivo VERSION; numa tag v*, a tag manda.
+          if ($env:GITHUB_REF_TYPE -eq "tag") { ./windows/build.ps1 -Version $env:GITHUB_REF_NAME.TrimStart("v") } else { ./windows/build.ps1 }
 
       - uses: actions/upload-artifact@v4
         with:

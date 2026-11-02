@@ -33,6 +33,8 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo: o nº do build é a contagem de commits
 
       - name: Import Developer ID certificate
         if: env.MACOS_CERT_P12 != ''
@@ -50,8 +52,8 @@ jobs:
 
       - name: Build DMG
         run: |
+          # Versão vem do arquivo VERSION; numa tag v*, a tag manda.
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then export VERSION="${GITHUB_REF_NAME#v}"; fi
-          export BUILD="$GITHUB_RUN_NUMBER"
           if [ -n "$NOTARY_APPLE_ID" ] && [ -n "$NOTARY_PASSWORD" ] && [ -n "$MACOS_CERT_P12" ]; then
             xcrun notarytool store-credentials snaplens --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD"
             export NOTARY_PROFILE=snaplens
