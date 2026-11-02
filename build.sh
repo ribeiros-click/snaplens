@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 APP=SnapLens.app
 # Credenciais OAuth do OneDrive / Google Drive (opcional): .secrets/cloud.env com
-#   ONEDRIVE_CLIENT_ID=...  GOOGLE_CLIENT_ID=...  GOOGLE_CLIENT_SECRET=...
+#   ONEDRIVE_CLIENT_ID=...  GOOGLE_CLIENT_ID=...  GOOGLE_CLIENT_SECRET=...  GOOGLE_API_KEY=...
 # (ou as mesmas variáveis no ambiente). Sem elas, o app mostra os Drives como "não configurados".
 [ -f .secrets/cloud.env ] && set -a && . .secrets/cloud.env && set +a
 
@@ -47,6 +47,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>SnapLensOneDriveClientID</key><string>${ONEDRIVE_CLIENT_ID:-}</string>
   <key>SnapLensGoogleClientID</key><string>${GOOGLE_CLIENT_ID:-}</string>
   <key>SnapLensGoogleClientSecret</key><string>${GOOGLE_CLIENT_SECRET:-}</string>
+  <key>SnapLensGoogleAPIKey</key><string>${GOOGLE_API_KEY:-}</string>
   <key>NSScreenCaptureUsageDescription</key><string>O SnapLens precisa gravar a tela para capturar screenshots.</string>
 </dict></plist>
 PLIST

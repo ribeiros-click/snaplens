@@ -5,7 +5,7 @@
 #   MACOS_CERT_P12        certificado "Developer ID Application" exportado do Keychain (.p12) em base64
 #   MACOS_CERT_PASSWORD   senha do .p12
 #   NOTARY_APPLE_ID, NOTARY_TEAM_ID, NOTARY_PASSWORD   (senha específica de app) para notarizar
-# Credenciais OAuth dos Drives: ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET.
+# Credenciais dos Drives: ONEDRIVE_CLIENT_ID, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_API_KEY (seletor de pastas).
 name: macOS build
 
 on:
@@ -30,6 +30,7 @@ jobs:
       ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 

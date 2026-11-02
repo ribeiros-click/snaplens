@@ -23,6 +23,8 @@ struct Item: Codable, Identifiable, Equatable {
     var shareOnce: Bool?
     /// "onedrive" / "gdrive" quando o link é de um arquivo no Drive do usuário; nil = servidor SnapLens.
     var shareDrive: String?
+    /// Backup automático: id do arquivo em cada Drive ("onedrive"/"gdrive" → id).
+    var backups: [String: String]?
 }
 
 @MainActor
@@ -31,6 +33,8 @@ final class Store: ObservableObject {
     static let maxItems = 500
 
     @Published private(set) var items: [Item] = []
+    /// Postada a cada item novo (object = o Store), para o backup automático.
+    static let inserted = Notification.Name("SnapLensStoreInserted")
 
     let dir: URL
     let imagesDir: URL
@@ -79,6 +83,7 @@ final class Store: ObservableObject {
             remove(last)
         }
         save()
+        NotificationCenter.default.post(name: Self.inserted, object: self)
         return item
     }
 

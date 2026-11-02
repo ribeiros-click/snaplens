@@ -19,7 +19,9 @@ enum ShareDestination: String, CaseIterable, Identifiable {
     var drive: CloudDrive? { CloudDrive(rawValue: rawValue) }
 
     /// Destinos utilizáveis agora (o servidor sempre; os Drives só se conectados).
-    static var available: [ShareDestination] { allCases.filter { $0.drive?.isConnected ?? true } }
+    static var available: [ShareDestination] {
+        allCases.filter { d in d.drive.map { CloudDrive.visible.contains($0) && $0.isConnected } ?? true }
+    }
 
     static var current: ShareDestination {
         get {
@@ -35,6 +37,10 @@ enum CloudDrive: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var name: String { self == .onedrive ? "OneDrive" : "Google Drive" }
 
+    /// Drives exibidos no app. O OneDrive está pronto no código, mas oculto por enquanto:
+    /// para reativá-lo, basta voltar a incluir `.onedrive` aqui.
+    static let visible: [CloudDrive] = [.gdrive]
+
     // MARK: Configuração OAuth
     // IDs vêm do Info.plist (gravados pelo build.sh a partir de variáveis de ambiente) ou de Ajustes → avançado.
 
@@ -42,6 +48,26 @@ enum CloudDrive: String, CaseIterable, Identifiable {
     /// O Google exige o "client secret" mesmo em apps de desktop (não é tratado como segredo; o PKCE protege o fluxo).
     var clientSecret: String { self == .gdrive ? config(plist: "SnapLensGoogleClientSecret", defaults: "cloud.gdrive.clientSecret") : "" }
     var isConfigured: Bool { !clientID.isEmpty && (self == .onedrive || !clientSecret.isEmpty) }
+    /// Chave de API do Google, usada só pelo seletor de pastas (Google Picker).
+    var apiKey: String { self == .gdrive ? config(plist: "SnapLensGoogleAPIKey", defaults: "cloud.gdrive.apiKey") : "" }
+    /// Número do projeto do Google (o prefixo do ID do cliente), exigido pelo Google Picker.
+    fileprivate var projectNumber: String { String(clientID.prefix { $0.isNumber }) }
+    /// O OneDrive navega pelas pastas dentro do app; o Google precisa da chave de API para abrir o seletor.
+    var canPickFolder: Bool { isConnected && (self == .onedrive || !apiKey.isEmpty) }
+
+    // MARK: Pasta de destino
+
+    private var folderKey: String { "cloud.\(rawValue).folder.chosen" }
+
+    /// Pasta escolhida pelo usuário; nil = pasta "SnapLens" criada pelo app na raiz.
+    var folder: DriveFolder? {
+        get { UserDefaults.standard.data(forKey: folderKey).flatMap { try? JSONDecoder().decode(DriveFolder.self, from: $0) } }
+        nonmutating set {
+            if let newValue, let d = try? JSONEncoder().encode(newValue) { UserDefaults.standard.set(d, forKey: folderKey) }
+            else { UserDefaults.standard.removeObject(forKey: folderKey) }
+        }
+    }
+    var folderDisplay: String { folder?.name ?? CloudClient.folderName }
 
     private func config(plist: String, defaults: String) -> String {
         let custom = (UserDefaults.standard.string(forKey: defaults) ?? "").trimmingCharacters(in: .whitespaces)
@@ -75,6 +101,7 @@ enum CloudDrive: String, CaseIterable, Identifiable {
     func disconnect() {
         Keychain.set("", account: refreshKey)
         UserDefaults.standard.removeObject(forKey: accountKey)
+        folder = nil
         Task { await TokenCache.shared.clear(self) }
     }
 }
@@ -82,6 +109,11 @@ enum CloudDrive: String, CaseIterable, Identifiable {
 struct CloudUpload {
     let id: String
     let url: String
+}
+
+struct DriveFolder: Codable, Identifiable, Hashable {
+    let id: String
+    let name: String
 }
 
 // MARK: Cliente
@@ -137,10 +169,20 @@ enum CloudClient {
         return name
     }
 
+    /// Envia para o Drive e cria um link de leitura público (compartilhar).
     static func upload(_ d: CloudDrive, data: Data, filename: String, expires: Date?) async throws -> CloudUpload {
+        let file = try await uploadFile(d, data: data, filename: filename, mime: "image/png")
         switch d {
-        case .onedrive: return try await oneDriveUpload(data: data, filename: filename, expires: expires)
-        case .gdrive: return try await googleUpload(data: data, filename: filename)
+        case .onedrive: return try await oneDriveLink(id: file.id, expires: expires)
+        case .gdrive: return try await googleLink(id: file.id, webLink: file.webLink)
+        }
+    }
+
+    /// Envia um arquivo para a pasta escolhida (ou "SnapLens"), sem link público. Usado também pelo backup.
+    static func uploadFile(_ d: CloudDrive, data: Data, filename: String, mime: String) async throws -> (id: String, webLink: String?) {
+        switch d {
+        case .onedrive: return (try await oneDrivePut(data: data, filename: filename, mime: mime), nil)
+        case .gdrive: return try await googlePut(data: data, filename: filename, mime: mime)
         }
     }
 
@@ -158,13 +200,55 @@ enum CloudClient {
 
     // MARK: OneDrive (Microsoft Graph)
 
-    private static func oneDriveUpload(data: Data, filename: String, expires: Date?) async throws -> CloudUpload {
-        let path = "\(folderName)/\(filename)".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? filename
-        let item = try await api(.onedrive, method: "PUT",
-                                 url: "https://graph.microsoft.com/v1.0/me/drive/root:/\(path):/content?@microsoft.graph.conflictBehavior=rename",
-                                 body: data, contentType: "image/png")
-        guard let id = item["id"] as? String else { throw cloudError(L("Resposta inesperada do %@.", "OneDrive")) }
+    private static func pathEncode(_ s: String) -> String {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "/:?#[]@!$&'()*+,;=")
+        return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? s
+    }
 
+    /// Endereço do item `filename` dentro da pasta de destino, no formato `…/{pasta}:/{nome}:`.
+    private static func oneDriveItemBase(_ filename: String) -> String {
+        if let f = CloudDrive.onedrive.folder {
+            return "https://graph.microsoft.com/v1.0/me/drive/items/\(f.id):/\(pathEncode(filename)):"
+        }
+        return "https://graph.microsoft.com/v1.0/me/drive/root:/\(pathEncode(folderName))/\(pathEncode(filename)):"
+    }
+
+    private static func oneDrivePut(data: Data, filename: String, mime: String) async throws -> String {
+        let base = oneDriveItemBase(filename)
+        // Envio simples aceita até 250 MB; acima disso (vídeos longos), sessão de upload em partes.
+        if data.count <= 200 * 1024 * 1024 {
+            let item = try await api(.onedrive, method: "PUT", url: base + "/content?@microsoft.graph.conflictBehavior=rename",
+                                     body: data, contentType: mime)
+            guard let id = item["id"] as? String else { throw cloudError(L("Resposta inesperada do %@.", "OneDrive")) }
+            return id
+        }
+        let session = try await api(.onedrive, method: "POST", url: base + "/createUploadSession",
+                                    body: try JSONSerialization.data(withJSONObject: ["item": ["@microsoft.graph.conflictBehavior": "rename"]]),
+                                    contentType: "application/json")
+        guard let uploadURL = (session["uploadUrl"] as? String).flatMap(URL.init(string:)) else {
+            throw cloudError(L("Resposta inesperada do %@.", "OneDrive"))
+        }
+        let chunk = 32 * 320 * 1024 // 10 MiB, múltiplo de 320 KiB como o Graph exige
+        var offset = 0
+        while offset < data.count {
+            let end = min(offset + chunk, data.count)
+            var req = URLRequest(url: uploadURL, timeoutInterval: 300)
+            req.httpMethod = "PUT"
+            req.setValue("bytes \(offset)-\(end - 1)/\(data.count)", forHTTPHeaderField: "Content-Range")
+            let (body, resp) = try await URLSession.shared.upload(for: req, from: data.subdata(in: offset..<end))
+            let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            guard (200..<300).contains(status) else { throw cloudError(errorMessage(body, status: status), drive: .onedrive) }
+            if status == 200 || status == 201 {
+                let item = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any]
+                if let id = item?["id"] as? String { return id }
+            }
+            offset = end
+        }
+        throw cloudError(L("Resposta inesperada do %@.", "OneDrive"))
+    }
+
+    private static func oneDriveLink(id: String, expires: Date?) async throws -> CloudUpload {
         // Link anônimo com validade; contas pessoais não aceitam validade e algumas empresas bloqueiam links anônimos.
         let iso = expires.map { ISO8601DateFormatter().string(from: $0) }
         var attempts: [[String: Any]] = []
@@ -186,7 +270,29 @@ enum CloudClient {
         throw lastError ?? cloudError(L("Resposta inesperada do %@.", "OneDrive"))
     }
 
+    /// Subpastas de uma pasta do OneDrive (nil = raiz), para o navegador de pastas em Ajustes.
+    static func oneDriveFolders(in parent: DriveFolder?) async throws -> [DriveFolder] {
+        let base = parent.map { "https://graph.microsoft.com/v1.0/me/drive/items/\($0.id)/children" }
+            ?? "https://graph.microsoft.com/v1.0/me/drive/root/children"
+        var next: String? = base + "?$select=id,name,folder&$top=200"
+        var result: [DriveFolder] = []
+        while let url = next {
+            let r = try await api(.onedrive, method: "GET", url: url)
+            for v in r["value"] as? [[String: Any]] ?? [] where v["folder"] != nil {
+                if let id = v["id"] as? String, let name = v["name"] as? String { result.append(DriveFolder(id: id, name: name)) }
+            }
+            next = r["@odata.nextLink"] as? String
+        }
+        return result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     // MARK: Google Drive (API v3)
+
+    /// Pasta de destino: a escolhida no seletor do Google ou a "SnapLens" criada pelo app.
+    private static func googleTarget() async throws -> String {
+        if let f = CloudDrive.gdrive.folder { return f.id }
+        return try await googleFolder()
+    }
 
     private static func googleFolder() async throws -> String {
         let key = "cloud.gdrive.folder"
@@ -212,20 +318,39 @@ enum CloudClient {
         return id
     }
 
-    private static func googleUpload(data: Data, filename: String) async throws -> CloudUpload {
-        let folder = try await googleFolder()
-        let boundary = "SnapLens-\(UUID().uuidString)"
-        var body = Data()
+    private static func googlePut(data: Data, filename: String, mime: String) async throws -> (id: String, webLink: String?) {
+        let folder = try await googleTarget()
         let meta = try JSONSerialization.data(withJSONObject: ["name": filename, "parents": [folder]])
-        body.append("--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".data(using: .utf8)!)
-        body.append(meta)
-        body.append("\r\n--\(boundary)\r\nContent-Type: image/png\r\n\r\n".data(using: .utf8)!)
-        body.append(data)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        let file = try await api(.gdrive, method: "POST",
+        let file: [String: Any]
+        if data.count <= 5 * 1024 * 1024 {
+            // Upload "multipart": metadados + conteúdo numa só requisição (limite de 5 MB).
+            let boundary = "SnapLens-\(UUID().uuidString)"
+            var body = Data()
+            body.append("--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".data(using: .utf8)!)
+            body.append(meta)
+            body.append("\r\n--\(boundary)\r\nContent-Type: \(mime)\r\n\r\n".data(using: .utf8)!)
+            body.append(data)
+            body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+            file = try await api(.gdrive, method: "POST",
                                  url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
                                  body: body, contentType: "multipart/related; boundary=\(boundary)")
+        } else {
+            // Upload "resumable" (vídeos): abre a sessão e envia o conteúdo num único PUT.
+            let (_, resp) = try await send(.gdrive, method: "POST",
+                                           url: "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,webViewLink",
+                                           body: meta, contentType: "application/json; charset=UTF-8",
+                                           headers: ["X-Upload-Content-Type": mime, "X-Upload-Content-Length": String(data.count)])
+            guard let location = resp.value(forHTTPHeaderField: "Location") else {
+                throw cloudError(L("Resposta inesperada do %@.", "Google Drive"))
+            }
+            let (body, _) = try await send(.gdrive, method: "PUT", url: location, body: data, contentType: mime)
+            file = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
+        }
         guard let id = file["id"] as? String else { throw cloudError(L("Resposta inesperada do %@.", "Google Drive")) }
+        return (id, file["webViewLink"] as? String)
+    }
+
+    private static func googleLink(id: String, webLink: String?) async throws -> CloudUpload {
         do {
             _ = try await api(.gdrive, method: "POST", url: "https://www.googleapis.com/drive/v3/files/\(id)/permissions",
                               body: try JSONSerialization.data(withJSONObject: ["role": "reader", "type": "anyone"]),
@@ -234,8 +359,70 @@ enum CloudClient {
             await deleteQuietly(.gdrive, id: id) // ex.: domínio do Workspace bloqueia link público
             throw error
         }
-        let link = file["webViewLink"] as? String ?? "https://drive.google.com/file/d/\(id)/view"
-        return CloudUpload(id: id, url: link)
+        return CloudUpload(id: id, url: webLink ?? "https://drive.google.com/file/d/\(id)/view")
+    }
+
+    /// Abre o seletor de pastas do Google (Google Picker) no navegador. Escolher uma pasta lá dá ao SnapLens
+    /// acesso só àquela pasta, sem pedir permissão para ver o Drive inteiro. Retorna nil se cancelado.
+    static func pickGoogleFolder() async throws -> DriveFolder? {
+        let d = CloudDrive.gdrive
+        guard !d.apiKey.isEmpty else { throw cloudError(L("Falta a chave de API do Google (veja “avançado”).")) }
+        let token = try await accessToken(d)
+        let cfg: [String: String] = [
+            "token": token, "key": d.apiKey, "app": d.projectNumber,
+            "hl": L10n.code == "zh-Hans" ? "zh-CN" : L10n.code,
+            "title": L("Escolha a pasta do SnapLens"),
+            "ok": L("Pronto! Pode fechar esta aba e voltar ao SnapLens."),
+            "cancel": L("Cancelado. Pode fechar esta aba."),
+        ]
+        let json = String(data: try JSONSerialization.data(withJSONObject: cfg), encoding: .utf8)!
+            .replacingOccurrences(of: "</", with: "<\\/")
+        let page = pickerPage(configJSON: json)
+        let receiver = LoopbackReceiver { path, query in
+            if path == "/" { return LoopbackResponse(html: page, result: nil) }
+            if path == "/picked" { return LoopbackResponse(html: "ok", result: query) }
+            return nil
+        }
+        let port = try await receiver.start()
+        defer { receiver.stop() }
+        let pageURL = URL(string: "http://localhost:\(port)/")!
+        await MainActor.run { _ = NSWorkspace.shared.open(pageURL) }
+        let reply = try await receiver.waitForCallback(timeout: 600)
+        let items = Dictionary(reply.map { ($0.name, $0.value ?? "") }, uniquingKeysWith: { a, _ in a })
+        guard let id = items["id"], !id.isEmpty else { return nil }
+        return DriveFolder(id: id, name: items["name"].flatMap { $0.isEmpty ? nil : $0 } ?? "Google Drive")
+    }
+
+    private static func pickerPage(configJSON: String) -> String {
+        """
+        <!doctype html><meta charset=utf-8><title>SnapLens</title>
+        <body style="font:16px -apple-system,'Segoe UI',sans-serif;text-align:center;padding-top:60px;color:#333">
+        <h2>SnapLens</h2><p id=msg>…</p>
+        <script>
+        const CFG = \(configJSON);
+        function done(q, text) {
+          fetch('/picked?' + q).finally(() => { document.getElementById('msg').textContent = text; });
+        }
+        function onPick(data) {
+          if (data.action === google.picker.Action.PICKED) {
+            const d = data.docs[0];
+            done('id=' + encodeURIComponent(d.id) + '&name=' + encodeURIComponent(d.name), CFG.ok);
+          } else if (data.action === google.picker.Action.CANCEL) {
+            done('cancel=1', CFG.cancel);
+          }
+        }
+        function start() {
+          const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+            .setIncludeFolders(true).setSelectFolderEnabled(true)
+            .setMimeTypes('application/vnd.google-apps.folder');
+          new google.picker.PickerBuilder().addView(view)
+            .setOAuthToken(CFG.token).setDeveloperKey(CFG.key).setAppId(CFG.app)
+            .setLocale(CFG.hl).setTitle(CFG.title).setCallback(onPick)
+            .build().setVisible(true);
+        }
+        </script>
+        <script src="https://apis.google.com/js/api.js" onload="gapi.load('picker', start)"></script>
+        """
     }
 
     // MARK: Conta
@@ -254,22 +441,32 @@ enum CloudClient {
     // MARK: HTTP
 
     private static func api(_ d: CloudDrive, method: String, url: String, body: Data? = nil, contentType: String? = nil,
-                            allow404: Bool = false, retried: Bool = false) async throws -> [String: Any] {
+                            allow404: Bool = false) async throws -> [String: Any] {
+        let (data, resp) = try await send(d, method: method, url: url, body: body, contentType: contentType, allow404: allow404)
+        if allow404 && resp.statusCode == 404 { return [:] }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+    }
+
+    /// Requisição autenticada; renova o token uma vez se o servidor responder 401.
+    private static func send(_ d: CloudDrive, method: String, url: String, body: Data? = nil, contentType: String? = nil,
+                             headers: [String: String] = [:], allow404: Bool = false, retried: Bool = false) async throws -> (Data, HTTPURLResponse) {
         let token = try await accessToken(d)
-        var req = URLRequest(url: URL(string: url)!, timeoutInterval: 120)
+        var req = URLRequest(url: URL(string: url)!, timeoutInterval: body.map { $0.count > 5_000_000 ? 900 : 120 } ?? 120)
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let contentType { req.setValue(contentType, forHTTPHeaderField: "Content-Type") }
-        req.httpBody = body
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
-        if status == 401 && !retried {
+        for (k, v) in headers { req.setValue(v, forHTTPHeaderField: k) }
+        let (data, resp): (Data, URLResponse)
+        if let body { (data, resp) = try await URLSession.shared.upload(for: req, from: body) }
+        else { (data, resp) = try await URLSession.shared.data(for: req) }
+        guard let http = resp as? HTTPURLResponse else { throw cloudError("HTTP 0", drive: d) }
+        if http.statusCode == 401 && !retried {
             await TokenCache.shared.clear(d)
-            return try await api(d, method: method, url: url, body: body, contentType: contentType, allow404: allow404, retried: true)
+            return try await send(d, method: method, url: url, body: body, contentType: contentType, headers: headers, allow404: allow404, retried: true)
         }
-        if allow404 && status == 404 { return [:] }
-        guard (200..<300).contains(status) else { throw cloudError(errorMessage(data, status: status), drive: d) }
-        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        if allow404 && http.statusCode == 404 { return (data, http) }
+        guard (200..<300).contains(http.statusCode) else { throw cloudError(errorMessage(data, status: http.statusCode), drive: d) }
+        return (data, http)
     }
 
     private static func accessToken(_ d: CloudDrive) async throws -> String {
@@ -343,8 +540,27 @@ private extension Data {
 
 // MARK: Receptor do redirecionamento OAuth (http://localhost:porta/)
 
-/// Servidor HTTP mínimo, só na interface de loopback, que espera o redirecionamento do login.
+struct LoopbackResponse {
+    let html: String
+    /// Não nil: encerra a espera com esta resposta.
+    let result: [URLQueryItem]?
+}
+
+/// Servidor HTTP mínimo, só na interface de loopback: recebe o redirecionamento do login
+/// ou serve a página do seletor de pastas do Google.
 private final class LoopbackReceiver: @unchecked Sendable {
+    typealias Route = @Sendable (_ path: String, _ query: [URLQueryItem]) -> LoopbackResponse?
+
+    /// Padrão: qualquer `/?…` é o retorno do login OAuth.
+    static let oauthRoute: Route = { path, query in
+        guard path == "/", !query.isEmpty else { return nil }
+        let html = "<!doctype html><meta charset=utf-8><title>SnapLens</title><body style='font:16px -apple-system,sans-serif;text-align:center;padding-top:80px'><h2>SnapLens ✓</h2><p>\(L("Pronto! Pode fechar esta aba e voltar ao SnapLens."))</p>"
+        return LoopbackResponse(html: html, result: query)
+    }
+
+    private let route: Route
+    init(route: @escaping Route = LoopbackReceiver.oauthRoute) { self.route = route }
+
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "snaplens.oauth")
     private var callback: CheckedContinuation<[URLQueryItem], Error>?
@@ -400,14 +616,11 @@ private final class LoopbackReceiver: @unchecked Sendable {
             let request = data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
             let target = request.split(separator: " ", maxSplits: 2).dropFirst().first.map(String.init) ?? ""
             let comps = URLComponents(string: "http://localhost" + target)
-            let isCallback = comps?.path == "/" && comps?.queryItems?.isEmpty == false
-            let html = isCallback
-                ? "<!doctype html><meta charset=utf-8><title>SnapLens</title><body style='font:16px -apple-system,sans-serif;text-align:center;padding-top:80px'><h2>SnapLens ✓</h2><p>\(L("Pronto! Pode fechar esta aba e voltar ao SnapLens."))</p>"
-                : "Not found"
-            let body = Data(html.utf8)
-            let head = "HTTP/1.1 \(isCallback ? "200 OK" : "404 Not Found")\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
+            let response = comps.flatMap { self.route($0.path, $0.queryItems ?? []) }
+            let body = Data((response?.html ?? "Not found").utf8)
+            let head = "HTTP/1.1 \(response == nil ? "404 Not Found" : "200 OK")\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-store\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n"
             conn.send(content: Data(head.utf8) + body, completion: .contentProcessed { _ in conn.cancel() })
-            if isCallback { self.finish(.success(comps?.queryItems ?? [])) }
+            if let result = response?.result { self.queue.async { self.finish(.success(result)) } }
         }
     }
 }

@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupHotKeys()
         startClipboardMonitor()
         startDriveExpiry()
+        DriveBackup.shared.start()
         NotificationCenter.default.addObserver(forName: Recorder.stateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.recordingStateChanged() }
         }

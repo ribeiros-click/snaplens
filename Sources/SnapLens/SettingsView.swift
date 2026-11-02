@@ -149,23 +149,134 @@ private struct ShareSection: View {
             Text(L("Ao clicar em “link” no overlay ou na Biblioteca, você escolhe a validade (ver uma vez, 1 dia, 5 dias, X dias ou nunca) antes do envio. Links são anônimos — nenhuma conta necessária. Guarde o token de exclusão para apagar um link fora do app."))
                 .font(.caption).foregroundStyle(.secondary)
         }
-        Section(L("Salvar no OneDrive ou Google Drive")) {
-            ForEach(CloudDrive.allCases) { CloudDriveRow(drive: $0) }
+        Section(L("Salvar no Google Drive")) {
+            ForEach(CloudDrive.visible) { CloudDriveRow(drive: $0) }
             Text(L("Conecte uma conta para escolher, na hora de compartilhar, onde salvar a imagem. Ela vai para a pasta SnapLens do Drive e recebe um link de leitura público. O SnapLens só acessa os arquivos que ele mesmo cria (no Google Drive) e guarda o acesso no Keychain."))
                 .font(.caption).foregroundStyle(.secondary)
             DisclosureGroup(L("Credenciais OAuth (avançado)")) {
-                TextField(L("OneDrive — ID do cliente"), text: $oneDriveID)
+                if CloudDrive.visible.contains(.onedrive) { TextField(L("OneDrive — ID do cliente"), text: $oneDriveID) }
                 TextField(L("Google — ID do cliente"), text: $googleID)
                 SecureField(L("Google — chave secreta do cliente"), text: $googleSecret)
+                SecureField(L("Google — chave de API (seletor de pastas)"), text: $googleAPIKey)
                 Text(L("Deixe em branco para usar as credenciais deste build. Preencha só se você registrou o seu próprio app na Microsoft ou no Google (redirecionamento: http://localhost)."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
+        BackupSection()
     }
 
     @AppStorage("cloud.onedrive.clientId") private var oneDriveID = ""
     @AppStorage("cloud.gdrive.clientId") private var googleID = ""
     @AppStorage("cloud.gdrive.clientSecret") private var googleSecret = ""
+    @AppStorage("cloud.gdrive.apiKey") private var googleAPIKey = ""
+}
+
+/// Backup automático da Biblioteca para um Drive conectado (mão única).
+private struct BackupSection: View {
+    @AppStorage("backup.drive") private var driveRaw = ""
+    @AppStorage("backup.images") private var images = true
+    @AppStorage("backup.videos") private var videos = true
+    @AppStorage("backup.texts") private var texts = true
+    @ObservedObject private var backup = DriveBackup.shared
+    @State private var connected: [CloudDrive] = []
+
+    var body: some View {
+        Section(L("Backup automático da Biblioteca")) {
+            Picker(L("Enviar para"), selection: Binding(
+                get: { connected.contains { $0.rawValue == driveRaw } ? driveRaw : "" },
+                set: { raw in
+                    DriveBackup.drive = CloudDrive(rawValue: raw)
+                    driveRaw = raw
+                    backup.run()
+                })) {
+                Text(L("Desligado")).tag("")
+                ForEach(connected) { Text($0.name).tag($0.rawValue) }
+            }
+            if let d = CloudDrive(rawValue: driveRaw), connected.contains(d) {
+                Toggle(L("Screenshots e imagens"), isOn: $images)
+                Toggle(L("Gravações de vídeo"), isOn: $videos)
+                Toggle(L("Textos (OCR, IA e copiados)"), isOn: $texts)
+                HStack {
+                    Button(L("Enviar a Biblioteca agora")) { backup.run(all: true) }
+                        .disabled(backup.running)
+                    if backup.running { ProgressView().controlSize(.small) }
+                    Spacer()
+                    Text(backup.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                }
+                Text(L("Pasta: %@. Cada captura nova vai sozinha para lá. É uma cópia de segurança: apagar na Biblioteca não apaga no Drive.", d.folderDisplay))
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text(connected.isEmpty
+                     ? L("Conecte o Google Drive acima para ativar o backup.")
+                     : L("Escolha um Drive para copiar sozinho cada captura nova, e a Biblioteca inteira quando quiser."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification).receive(on: RunLoop.main)) { _ in refresh() }
+    }
+
+    private func refresh() {
+        let now = CloudDrive.visible.filter(\.isConnected)
+        if now != connected { connected = now }
+    }
+}
+
+/// Navegador de pastas do OneDrive (Microsoft Graph), aberto por "Escolher…" em Ajustes.
+private struct OneDriveFolderPicker: View {
+    var onPick: (DriveFolder) -> Void
+    var onCancel: () -> Void
+    @State private var path: [DriveFolder] = []
+    @State private var folders: [DriveFolder] = []
+    @State private var loading = false
+    @State private var errorText: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L("Escolha a pasta do OneDrive")).font(.headline)
+            HStack(spacing: 6) {
+                Button { path.removeLast(); load() } label: { Image(systemName: "chevron.left") }
+                    .disabled(path.isEmpty || loading)
+                Text((["OneDrive"] + path.map(\.name)).joined(separator: " › "))
+                    .lineLimit(1).truncationMode(.head).foregroundStyle(.secondary)
+            }
+            ZStack {
+                List(folders) { f in
+                    Button { path.append(f); load() } label: {
+                        Label(f.name, systemImage: "folder").frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                if loading { ProgressView() }
+                else if let errorText { Text(errorText).foregroundStyle(.red).padding() }
+                else if folders.isEmpty { Text(L("Nenhuma subpasta")).foregroundStyle(.secondary) }
+            }
+            .frame(height: 260)
+            HStack {
+                Button(L("Cancelar"), role: .cancel) { onCancel() }.keyboardShortcut(.cancelAction)
+                Spacer()
+                Button(L("Escolher esta pasta")) {
+                    let name = (["OneDrive"] + path.map(\.name)).joined(separator: "/")
+                    onPick(DriveFolder(id: path.last?.id ?? "root", name: name))
+                }
+                .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent).disabled(loading)
+            }
+        }
+        .padding(18)
+        .frame(width: 420)
+        .onAppear(perform: load)
+    }
+
+    private func load() {
+        loading = true
+        errorText = nil
+        let parent = path.last
+        Task { @MainActor in
+            do { folders = try await CloudClient.oneDriveFolders(in: parent) }
+            catch { folders = []; errorText = error.localizedDescription }
+            loading = false
+        }
+    }
 }
 
 private struct CloudDriveRow: View {
@@ -174,6 +285,9 @@ private struct CloudDriveRow: View {
     @State private var account = ""
     @State private var busy = false
     @State private var errorText: String?
+    @State private var folder = ""
+    @State private var customFolder = false
+    @State private var browsing = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -197,15 +311,52 @@ private struct CloudDriveRow: View {
                     Button(L("Conectar…")) { connect() }.disabled(busy || !drive.isConfigured)
                 }
             }
+            if connected {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder").foregroundStyle(.secondary)
+                    Text(L("Pasta: %@", folder)).font(.caption).lineLimit(1).truncationMode(.middle)
+                    Spacer()
+                    if customFolder {
+                        Button(L("Padrão")) { drive.folder = nil; refresh() }.controlSize(.small)
+                            .help(L("Voltar para a pasta SnapLens criada pelo app"))
+                    }
+                    Button(L("Escolher…")) { chooseFolder() }.controlSize(.small)
+                        .disabled(busy || !drive.canPickFolder)
+                        .help(drive.canPickFolder ? "" : L("Falta a chave de API do Google (veja “avançado”)."))
+                }
+            }
             if let errorText { Text(errorText).font(.caption).foregroundStyle(.red) }
         }
         .onAppear(perform: refresh)
         .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification).receive(on: RunLoop.main)) { _ in refresh() }
+        .sheet(isPresented: $browsing) {
+            OneDriveFolderPicker(onPick: { f in
+                drive.folder = f
+                browsing = false
+                refresh()
+            }, onCancel: { browsing = false })
+        }
     }
 
     private func refresh() {
         connected = drive.isConnected
         account = drive.accountName
+        folder = drive.folderDisplay
+        customFolder = drive.folder != nil
+    }
+
+    private func chooseFolder() {
+        errorText = nil
+        if drive == .onedrive { browsing = true; return }
+        busy = true
+        Task { @MainActor in
+            do {
+                if let f = try await CloudClient.pickGoogleFolder() { drive.folder = f }
+                NSApp.activate(ignoringOtherApps: true)
+            } catch { errorText = error.localizedDescription }
+            busy = false
+            refresh()
+        }
     }
 
     private func connect() {
