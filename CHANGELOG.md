@@ -6,6 +6,7 @@ O texto da seção vira as notas da release no GitHub, publicada a cada merge no
 ## 1.12.1
 - **Correção:** um item recebido de outro computador e apagado aqui não volta mais na sincronização seguinte (Mac e Windows).
 - **Correção:** as abas dos Ajustes ficavam escondidas atrás de “»” no macOS 26.
+- **Correção:** a tela Sobre mostra a versão instalada (no Mac aparecia sempre 1.0) e descreve os recursos atuais.
 
 ## 1.12
 - **Novo:** sincronizar a Biblioteca entre computadores. Ligue em Ajustes → Compartilhar em cada Mac ou PC conectado à mesma conta do Google Drive: as capturas e textos dos últimos dias (você escolhe de 1 a 90) aparecem em todos, com o nome do computador de origem. Vídeos são opcionais. Apagar num computador não apaga nos outros.

@@ -204,7 +204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         para.alignment = .center
         let base: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.labelColor, .paragraphStyle: para]
         let credits = NSMutableAttributedString(
-            string: L("Captura de tela com anotações, OCR e descrição de imagens com IA, histórico de screenshots e área de transferência.") + "\n\n" + L("Criado por") + "\n",
+            string: L("Captura e gravação de tela com anotações, OCR, IA e busca no Google Lens. Biblioteca de screenshots, textos e vídeos, com backup e sincronização pelo Google Drive.") + "\n\n" + L("Criado por") + "\n",
             attributes: base)
         credits.append(NSAttributedString(string: email, attributes: base.merging([
             .link: URL(string: "mailto:\(email)")!, .font: NSFont.systemFont(ofSize: 11, weight: .semibold)]) { $1 }))
@@ -212,8 +212,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "SnapLens",
-            .applicationVersion: "1.0",
-            .version: "",
+            .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+            .version: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             .credits: credits,
         ])
     }
