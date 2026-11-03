@@ -13,19 +13,32 @@ struct SettingsView: View {
     @AppStorage("settings.tab") private var tab: Tab = .general
 
     var body: some View {
-        TabView(selection: $tab) {
-            Form { generalSections }.formStyle(.grouped)
-                .tabItem { Label(L("Geral"), systemImage: "gearshape") }.tag(Tab.general)
-            Form { shortcutSection }.formStyle(.grouped)
-                .tabItem { Label(L("Atalhos"), systemImage: "keyboard") }.tag(Tab.shortcuts)
-            Form { recordingSection }.formStyle(.grouped)
-                .tabItem { Label(L("Gravação"), systemImage: "record.circle") }.tag(Tab.recording)
-            Form { ShareSection() }.formStyle(.grouped)
-                .tabItem { Label(L("Compartilhar"), systemImage: "link") }.tag(Tab.share)
-            Form { AISection() }.formStyle(.grouped)
-                .tabItem { Label(L("IA"), systemImage: "sparkles") }.tag(Tab.ai)
+        // Seletor próprio em vez de TabView: com o SDK do macOS 26 as abas do TabView vão para a barra de título
+        // e o resultado muda conforme o SDK do build. Assim fica igual em qualquer build.
+        VStack(spacing: 0) {
+            Picker("", selection: $tab) {
+                Text(L("Geral")).tag(Tab.general)
+                Text(L("Atalhos")).tag(Tab.shortcuts)
+                Text(L("Gravação")).tag(Tab.recording)
+                Text(L("Compartilhar")).tag(Tab.share)
+                Text(L("IA")).tag(Tab.ai)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+            Group {
+                switch tab {
+                case .general: Form { generalSections }
+                case .shortcuts: Form { shortcutSection }
+                case .recording: Form { recordingSection }
+                case .share: Form { ShareSection() }
+                case .ai: Form { AISection() }
+                }
+            }
+            .formStyle(.grouped)
         }
-        .padding(.top, 6)
         .frame(width: 560, height: 640)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // Volta dos Ajustes do Sistema: reflete a aprovação (ou remoção) feita lá.

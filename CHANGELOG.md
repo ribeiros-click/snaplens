@@ -3,6 +3,9 @@
 Cada PR que muda algo visível adiciona uma linha na seção da versão atual (a do arquivo `VERSION`).
 O texto da seção vira as notas da release no GitHub, publicada a cada merge no `main`.
 
+## 1.12.2
+- **Correção:** as abas dos Ajustes ficavam por cima dos botões da janela no macOS 26; agora ficam no topo do conteúdo, iguais em qualquer versão do macOS.
+
 ## 1.12.1
 - **Correção:** um item recebido de outro computador e apagado aqui não volta mais na sincronização seguinte (Mac e Windows).
 - **Correção:** as abas dos Ajustes ficavam escondidas atrás de “»” no macOS 26.
