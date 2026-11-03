@@ -475,6 +475,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 640),
                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
             w.title = "SnapLens — " + L("Ajustes")
+            w.toolbarStyle = .preference
             w.contentView = NSHostingView(rootView: SettingsView())
             w.isReleasedWhenClosed = false
             w.center()

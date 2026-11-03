@@ -120,3 +120,54 @@ final class SyncPlanTests: XCTestCase {
         XCTAssertNil(i.file)
     }
 }
+
+/// Recebidos apagados aqui não voltam na próxima sincronização.
+@MainActor
+final class SyncDismissedTests: XCTestCase {
+    private var dir: URL!
+
+    override func setUp() async throws {
+        dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    }
+
+    override func tearDown() async throws {
+        try? FileManager.default.removeItem(at: dir)
+    }
+
+    private func received(daysAgo: Double) -> Item {
+        var i = Item(kind: .clipboardText, text: "de outro")
+        i.date = Date().addingTimeInterval(-daysAgo * 86400)
+        i.device = "PC"
+        i.syncId = "f-" + i.id.uuidString
+        return i
+    }
+
+    func testRemovedReceivedItemStaysKnownAfterReload() throws {
+        let store = Store(dir: dir)
+        let remote = received(daysAgo: 1)
+        store.importSynced(remote, data: nil)
+        let local = store.addText("daqui", kind: .clipboardText)
+        store.remove(remote)
+        store.remove(local)
+        XCTAssertEqual(Set(store.dismissedSync.keys), [remote.id]) // só o que veio de outro aparelho
+        XCTAssertTrue(store.syncKnownIDs.contains(remote.id))
+
+        let reloaded = Store(dir: dir)
+        XCTAssertTrue(reloaded.syncKnownIDs.contains(remote.id))
+        let props = SyncPlan.props(for: remote, deviceID: "PC-1", deviceName: "PC")
+        XCTAssertNil(SyncPlan.incoming(props: props, fileID: "f", localIDs: reloaded.syncKnownIDs, deviceID: "MAC-1",
+                                       cutoff: Date().addingTimeInterval(-7 * 86400)))
+    }
+
+    func testClearRemembersReceivedAndPruneForgetsOld() {
+        let store = Store(dir: dir)
+        let recent = received(daysAgo: 1), old = received(daysAgo: 100)
+        store.importSynced(recent, data: nil)
+        store.importSynced(old, data: nil)
+        store.clear { $0.isText }
+        XCTAssertEqual(Set(store.dismissedSync.keys), [recent.id, old.id])
+        store.pruneDismissed(before: Date().addingTimeInterval(-90 * 86400))
+        XCTAssertEqual(Set(store.dismissedSync.keys), [recent.id])
+        XCTAssertEqual(Set(Store(dir: dir).dismissedSync.keys), [recent.id])
+    }
+}

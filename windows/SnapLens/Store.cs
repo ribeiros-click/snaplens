@@ -53,6 +53,9 @@ public sealed class Store
     public string ImagesDir { get; }
     public string VideosDir { get; }
     private string IndexPath => Path.Combine(Dir, "history.json");
+    private string DismissedPath => Path.Combine(Dir, "sync-dismissed.json");
+    /// Itens vindos de outro dispositivo que foram apagados aqui (id → data do item), para a sincronização não os trazer de volta.
+    public Dictionary<Guid, DateTime> DismissedSync { get; private set; } = new();
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 
     public Store(string? customDir = null)
@@ -68,6 +71,28 @@ public sealed class Store
                 Items = JsonSerializer.Deserialize<List<Item>>(System.IO.File.ReadAllText(IndexPath), Json) ?? new();
         }
         catch (Exception e) { Trace.Log("store: índice ilegível: " + e.Message); }
+        try
+        {
+            if (System.IO.File.Exists(DismissedPath))
+                DismissedSync = JsonSerializer.Deserialize<Dictionary<Guid, DateTime>>(System.IO.File.ReadAllText(DismissedPath), Json) ?? new();
+        }
+        catch (Exception e) { Trace.Log("store: lista de apagados ilegível: " + e.Message); }
+    }
+
+    /// Ids que a sincronização não deve baixar: os que já estão aqui e os recebidos que foram apagados.
+    public HashSet<Guid> SyncKnownIds()
+    {
+        var ids = Items.Select(i => i.Id).ToHashSet();
+        ids.UnionWith(DismissedSync.Keys);
+        return ids;
+    }
+
+    /// Esquece os apagados de antes de `date` (já fora de qualquer janela de sincronização).
+    public void PruneDismissed(DateTime date)
+    {
+        if (DismissedSync.Values.All(d => d >= date)) return;
+        DismissedSync = DismissedSync.Where(kv => kv.Value >= date).ToDictionary(kv => kv.Key, kv => kv.Value);
+        SaveDismissed();
     }
 
     public string? PathFor(Item item) =>
@@ -95,6 +120,7 @@ public sealed class Store
             var last = Items.Last(i => i.Kind != ItemKind.video);
             DeleteFile(last);
             Items.Remove(last);
+            Dismiss(new[] { last });
         }
         Save();
         Inserted?.Invoke(item);
@@ -115,6 +141,7 @@ public sealed class Store
             var last = Items.Last(i => i.Kind != ItemKind.video);
             DeleteFile(last);
             Items.Remove(last);
+            Dismiss(new[] { last });
         }
         Save();
     }
@@ -131,12 +158,14 @@ public sealed class Store
     {
         DeleteFile(item);
         Items.RemoveAll(i => i.Id == item.Id);
+        Dismiss(new[] { item });
         Save();
     }
 
     public void Clear(Func<ItemKind, bool> match)
     {
         foreach (var item in Items.Where(i => match(i.Kind))) DeleteFile(item);
+        Dismiss(Items.Where(i => match(i.Kind)).ToList());
         Items.RemoveAll(i => match(i.Kind));
         Save();
     }
@@ -146,6 +175,25 @@ public sealed class Store
         var p = PathFor(item);
         if (p == null) return;
         try { System.IO.File.Delete(p); } catch (Exception e) { Trace.Log("store: não apagou " + p + ": " + e.Message); }
+    }
+
+    private void Dismiss(IEnumerable<Item> removed)
+    {
+        var received = removed.Where(i => i.Device != null).ToList();
+        if (received.Count == 0) return;
+        foreach (var item in received) DismissedSync[item.Id] = item.Date;
+        SaveDismissed();
+    }
+
+    private void SaveDismissed()
+    {
+        try
+        {
+            var tmp = DismissedPath + ".tmp";
+            System.IO.File.WriteAllText(tmp, JsonSerializer.Serialize(DismissedSync, Json));
+            System.IO.File.Move(tmp, DismissedPath, true);
+        }
+        catch (Exception e) { Trace.Log("store: falha ao salvar apagados: " + e.Message); }
     }
 
     private void Save()

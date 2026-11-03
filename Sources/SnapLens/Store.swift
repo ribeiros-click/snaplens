@@ -44,6 +44,9 @@ final class Store: ObservableObject {
     let imagesDir: URL
     let videosDir: URL
     private var indexURL: URL { dir.appendingPathComponent("history.json") }
+    private var dismissedURL: URL { dir.appendingPathComponent("sync-dismissed.json") }
+    /// Itens vindos de outro dispositivo que foram apagados aqui (id → data do item), para a sincronização não os trazer de volta.
+    private(set) var dismissedSync: [UUID: Date] = [:]
 
     init(dir customDir: URL? = nil) {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -56,6 +59,21 @@ final class Store: ObservableObject {
            let decoded = try? JSONDecoder().decode([Item].self, from: data) {
             items = decoded
         }
+        if let data = try? Data(contentsOf: dismissedURL),
+           let decoded = try? JSONDecoder().decode([UUID: Date].self, from: data) {
+            dismissedSync = decoded
+        }
+    }
+
+    /// Ids que a sincronização não deve baixar: os que já estão aqui e os recebidos que foram apagados.
+    var syncKnownIDs: Set<UUID> { Set(items.map(\.id)).union(dismissedSync.keys) }
+
+    /// Esquece os apagados de antes de `date` (já fora de qualquer janela de sincronização).
+    func pruneDismissed(before date: Date) {
+        let kept = dismissedSync.filter { $0.value >= date }
+        guard kept.count != dismissedSync.count else { return }
+        dismissedSync = kept
+        saveDismissed()
     }
 
     func url(for item: Item) -> URL? {
@@ -113,6 +131,7 @@ final class Store: ObservableObject {
     func remove(_ item: Item) {
         if let u = url(for: item) { try? FileManager.default.removeItem(at: u) }
         items.removeAll { $0.id == item.id }
+        dismiss([item])
         save()
     }
 
@@ -120,8 +139,22 @@ final class Store: ObservableObject {
         for item in items where match(item.kind) {
             if let u = url(for: item) { try? FileManager.default.removeItem(at: u) }
         }
+        dismiss(items.filter { match($0.kind) })
         items.removeAll { match($0.kind) }
         save()
+    }
+
+    private func dismiss(_ removed: [Item]) {
+        let received = removed.filter { $0.device != nil }
+        guard !received.isEmpty else { return }
+        for item in received { dismissedSync[item.id] = item.date }
+        saveDismissed()
+    }
+
+    private func saveDismissed() {
+        if let data = try? JSONEncoder().encode(dismissedSync) {
+            try? data.write(to: dismissedURL, options: .atomic)
+        }
     }
 
     private func save() {
