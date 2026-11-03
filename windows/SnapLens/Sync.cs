@@ -142,7 +142,8 @@ public static class LibrarySync
             }
             // 2. Traz o que veio dos outros.
             var remote = await Cloud.SyncList(after: cutoff);
-            var local = Store.Shared.Items.Select(i => i.Id).ToHashSet();
+            // Inclui os recebidos que o usuário apagou aqui, para não voltarem.
+            var local = Store.Shared.SyncKnownIds();
             var o = Options;
             var incoming = remote
                 .Select(f => SyncPlan.Incoming(f.Props, f.Id, local, device, cutoff))
@@ -166,6 +167,7 @@ public static class LibrarySync
             {
                 try { await Cloud.Delete(CloudDrive.GDrive, old.Id); } catch (Exception e) { Trace.Log("sync: não apagou antigo: " + e.Message); }
             }
+            Store.Shared.PruneDismissed(DateTime.Now.AddDays(-90));
             SetStatus(L("Sincronizado às %@", DateTime.Now.ToString("t", L10n.Culture)));
         }
         catch (Exception e)

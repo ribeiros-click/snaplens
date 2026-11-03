@@ -419,7 +419,7 @@ public sealed class TrayApp : ApplicationContext
     private void ShowAbout()
     {
         var text = "SnapLens " + Application.ProductVersion.Split('+')[0] + "\n\n"
-                   + L("Captura de tela com anotações, OCR e descrição de imagens com IA, histórico de screenshots e área de transferência.")
+                   + L("Captura e gravação de tela com anotações, OCR, IA e busca no Google Lens. Biblioteca de screenshots, textos e vídeos, com backup e sincronização pelo Google Drive.")
                    + "\n\n" + L("Criado por") + "\ncontato@ribeiros.click\n\n© 2026 · " + L("Todos os direitos reservados");
         MessageBox.Show(text, L("Sobre o SnapLens"), MessageBoxButtons.OK, MessageBoxIcon.Information);
     }

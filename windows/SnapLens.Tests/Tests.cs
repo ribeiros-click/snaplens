@@ -119,3 +119,53 @@ public class SyncPlanTests
         Assert.Null(i.File);
     }
 }
+
+/// Recebidos apagados aqui não voltam na próxima sincronização.
+public class SyncDismissedTests : IDisposable
+{
+    private readonly string dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+    public void Dispose()
+    {
+        try { Directory.Delete(dir, true); } catch { }
+    }
+
+    private static Item Received(double daysAgo)
+    {
+        var i = new Item { Kind = ItemKind.clipboardText, Text = "de outro", Date = DateTime.Now.AddDays(-daysAgo), Device = "Mac" };
+        i.SyncId = "f-" + i.Id;
+        return i;
+    }
+
+    [Fact]
+    public void RemovedReceivedItemStaysKnownAfterReload()
+    {
+        var store = new Store(dir);
+        var remote = Received(1);
+        store.ImportSynced(remote, null);
+        var local = store.AddText("daqui", ItemKind.clipboardText);
+        store.Remove(remote);
+        store.Remove(local);
+        Assert.Equal(new[] { remote.Id }, store.DismissedSync.Keys); // só o que veio de outro aparelho
+        Assert.Contains(remote.Id, store.SyncKnownIds());
+
+        var reloaded = new Store(dir);
+        Assert.Contains(remote.Id, reloaded.SyncKnownIds());
+        var props = SyncPlan.Props(remote, "MAC-1", "MacBook");
+        Assert.Null(SyncPlan.Incoming(props, "f", reloaded.SyncKnownIds(), "PC-2", DateTime.Now.AddDays(-7)));
+    }
+
+    [Fact]
+    public void ClearRemembersReceivedAndPruneForgetsOld()
+    {
+        var store = new Store(dir);
+        Item recent = Received(1), old = Received(100);
+        store.ImportSynced(recent, null);
+        store.ImportSynced(old, null);
+        store.Clear(k => k.IsText());
+        Assert.Equal(new HashSet<Guid> { recent.Id, old.Id }, store.DismissedSync.Keys.ToHashSet());
+        store.PruneDismissed(DateTime.Now.AddDays(-90));
+        Assert.Equal(new[] { recent.Id }, store.DismissedSync.Keys);
+        Assert.Equal(new[] { recent.Id }, new Store(dir).DismissedSync.Keys);
+    }
+}

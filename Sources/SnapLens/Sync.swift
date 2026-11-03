@@ -141,7 +141,8 @@ final class LibrarySync: ObservableObject {
             }
             // 2. Traz o que veio dos outros.
             let remote = try await CloudClient.syncList(after: cutoff)
-            let local = Set(Store.shared.items.map(\.id))
+            // Inclui os recebidos que o usuário apagou aqui, para não voltarem.
+            let local = Store.shared.syncKnownIDs
             let incoming = remote.compactMap { f in
                 SyncPlan.incoming(props: f.props, fileID: f.id, localIDs: local, deviceID: device, cutoff: cutoff)
             }
@@ -162,6 +163,7 @@ final class LibrarySync: ObservableObject {
             for old in try await CloudClient.syncList(before: cutoff, device: device) {
                 try? await CloudClient.delete(.gdrive, id: old.id)
             }
+            Store.shared.pruneDismissed(before: Date().addingTimeInterval(-90 * 86400))
             let f = DateFormatter()
             f.locale = L10n.locale
             f.timeStyle = .short
